@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>Buz Operasyonu — Takım Savaşı</title>
+<style>
+* { box-sizing:border-box; -webkit-tap-highlight-color:transparent; -webkit-user-select:none; user-select:none; }
+html, body { margin:0; height:100%; overflow:hidden; background:#0b1220; color:#fff; font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; touch-action:none; overscroll-behavior:none; }
+canvas#gl { position:fixed; inset:0; width:100%; height:100%; display:block; }
+[hidden] { display:none !important; }
+.btn { background:#26324d; color:#fff; border:1px solid #3a4870; border-radius:12px; padding:12px 16px; font-size:16px; font-weight:700; }
+.btn.pri { background:linear-gradient(#ff8a4d,#e8591c); border-color:#ff9a63; }
+.btn:active { transform:scale(.97); }
+#menu { position:fixed; inset:0; background:radial-gradient(120% 80% at 50% 0%, #20365e, #0b1220); display:flex; align-items:center; justify-content:center; padding:16px; z-index:50; overflow:auto; }
+.card { background:#18233a; border:1px solid #2f3d5f; border-radius:16px; padding:16px; width:100%; max-width:460px; }
+h1 { margin:0 0 4px; text-align:center; letter-spacing:.08em; font-size:26px; } .sub { color:#93a1c4; text-align:center; font-size:13px; margin:0 0 14px; }
+.room { display:flex; justify-content:space-between; align-items:center; gap:8px; background:#223052; border-radius:12px; padding:12px; margin:8px 0; }
+.room small { color:#93a1c4; display:block; }
+#menuMsg { color:#ffb4a8; text-align:center; min-height:20px; font-size:14px; }
+.help { color:#93a1c4; font-size:12.5px; line-height:1.5; margin-top:10px; }
+/* HUD */
+#hud { position:fixed; inset:0; pointer-events:none; z-index:10; }
+#cross { position:absolute; left:50%; top:50%; width:22px; height:22px; margin:-11px 0 0 -11px; }
+#cross::before, #cross::after { content:""; position:absolute; background:#9fffb0; opacity:.9; }
+#cross::before { left:10px; top:0; width:2px; height:22px; -webkit-mask:linear-gradient(#000 35%,transparent 35% 65%,#000 65%); mask:linear-gradient(#000 35%,transparent 35% 65%,#000 65%); }
+#cross::after { top:10px; left:0; height:2px; width:22px; -webkit-mask:linear-gradient(90deg,#000 35%,transparent 35% 65%,#000 65%); mask:linear-gradient(90deg,#000 35%,transparent 35% 65%,#000 65%); }
+#cross.hit::before, #cross.hit::after { background:#ff4d4d; }
+#scopeOv { position:absolute; inset:0; background:radial-gradient(circle at 50% 50%, transparent 0 24vmin, #000 24.5vmin); }
+#scopeOv::before { content:""; position:absolute; left:0; right:0; top:50%; height:1px; background:#000; } #scopeOv::after { content:""; position:absolute; top:0; bottom:0; left:50%; width:1px; background:#000; }
+.hudbox { position:absolute; background:rgba(8,14,28,.55); border-radius:12px; padding:6px 12px; font-weight:800; }
+#hp { left:12px; bottom:calc(12px + env(safe-area-inset-bottom)); font-size:24px; } #hp small { font-size:13px; opacity:.8; margin-left:8px; }
+#ammo { right:12px; bottom:calc(12px + env(safe-area-inset-bottom)); font-size:24px; text-align:right; } #ammo small { display:block; font-size:12px; opacity:.8; }
+#money { left:12px; bottom:calc(64px + env(safe-area-inset-bottom)); font-size:16px; color:#ffd34d; }
+#top { left:50%; top:8px; transform:translateX(-50%); display:flex; gap:14px; align-items:center; font-size:18px; }
+#top .t { color:#ff9a4d; } #top .ct { color:#6db0ff; } #tmr { min-width:54px; text-align:center; }
+#feed { position:absolute; right:10px; top:56px; text-align:right; font-size:13px; font-weight:700; text-shadow:0 1px 3px #000; }
+#feed div { background:rgba(8,14,28,.55); padding:3px 8px; border-radius:8px; margin-bottom:3px; }
+#msg { position:absolute; left:0; right:0; top:22%; text-align:center; font-size:28px; font-weight:900; text-shadow:0 2px 8px #000; padding:0 12px; }
+#msg small { display:block; font-size:15px; font-weight:600; opacity:.9; }
+#vign { position:absolute; inset:0; box-shadow:inset 0 0 120px 30px rgba(255,0,0,.0); transition:box-shadow .25s; }
+#vign.hurt { box-shadow:inset 0 0 120px 40px rgba(255,0,0,.55); }
+#slots { position:absolute; left:50%; transform:translateX(-50%); bottom:calc(10px + env(safe-area-inset-bottom)); display:flex; gap:6px; pointer-events:auto; }
+#slots button { background:rgba(8,14,28,.6); color:#fff; border:2px solid #3a4870; border-radius:10px; padding:6px 8px; font-size:12px; font-weight:800; min-width:56px; }
+#slots button.on { border-color:#ffd34d; }
+/* dokunmatik */
+#touch { position:fixed; inset:0; z-index:12; pointer-events:none; }
+#joy { position:absolute; left:18px; bottom:calc(86px + env(safe-area-inset-bottom)); width:130px; height:130px; border-radius:50%; background:rgba(255,255,255,.08); border:2px solid rgba(255,255,255,.25); pointer-events:auto; touch-action:none; }
+#joy i { position:absolute; left:42px; top:42px; width:46px; height:46px; border-radius:50%; background:rgba(255,255,255,.35); }
+#look { position:absolute; right:0; top:0; width:55%; bottom:0; pointer-events:auto; touch-action:none; }
+.tb { position:absolute; width:62px; height:62px; border-radius:50%; background:rgba(255,255,255,.16); border:2px solid rgba(255,255,255,.35); color:#fff; font-weight:800; font-size:12px; pointer-events:auto; touch-action:none; display:flex; align-items:center; justify-content:center; text-align:center; }
+#bFire { right:18px; bottom:calc(120px + env(safe-area-inset-bottom)); width:84px; height:84px; background:rgba(255,80,50,.45); font-size:15px; }
+#bJump { right:112px; bottom:calc(86px + env(safe-area-inset-bottom)); } #bReload { right:18px; bottom:calc(214px + env(safe-area-inset-bottom)); }
+#bScope { right:96px; bottom:calc(190px + env(safe-area-inset-bottom)); } #bBuy { left:18px; top:70px; width:54px; height:54px; } #bScore { left:80px; top:70px; width:54px; height:54px; }
+#bMenu { left:142px; top:70px; width:54px; height:54px; } #bSwap { left:18px; top:134px; width:54px; height:54px; }
+/* satın alma / skor */
+.ov { position:fixed; inset:0; background:rgba(5,8,16,.78); z-index:30; display:flex; align-items:center; justify-content:center; padding:12px; }
+.ov .card { max-height:92vh; overflow:auto; }
+.shop button { display:flex; justify-content:space-between; width:100%; margin:6px 0; }
+.shop button[disabled] { opacity:.4; }
+table { width:100%; border-collapse:collapse; font-size:14px; } td, th { padding:5px 6px; text-align:left; } th { color:#93a1c4; font-weight:600; }
+tr.me td { background:rgba(255,211,77,.12); } .tT { color:#ff9a4d; } .tCT { color:#6db0ff; }
+#rot { position:fixed; inset:0; z-index:60; background:#0b1220; display:none; align-items:center; justify-content:center; text-align:center; font-size:20px; padding:30px; }
+@media (orientation:portrait) { body.playing #rot { display:flex; } }
+</style>
+</head>
+<body>
+<canvas id="gl"></canvas>
+<div id="rot">📱↻<br><br>Telefonu yan çevir<br><small style="font-size:14px;color:#93a1c4">Oyun yatay ekranda oynanır</small></div>
+
+<div id="hud" hidden>
+  <div id="scopeOv" hidden></div><div id="vign"></div><div id="cross"></div>
+  <div class="hudbox" id="top"><span class="t" id="sT">0</span><span id="tmr">0:00</span><span class="ct" id="sCT">0</span></div>
+  <div id="feed"></div><div id="msg"></div>
+  <div class="hudbox" id="hp">❤ 100<small>🛡 0</small></div><div class="hudbox" id="money">$800</div>
+  <div class="hudbox" id="ammo">30<small>/ 90</small></div>
+  <div id="slots"></div>
+</div>
+
+<div id="touch" hidden>
+  <div id="joy"><i></i></div><div id="look"></div>
+  <div class="tb" id="bFire">ATEŞ</div><div class="tb" id="bJump">ZIPLA</div><div class="tb" id="bReload">ŞARJÖR</div><div class="tb" id="bScope">NİŞAN</div>
+  <div class="tb" id="bBuy">SATIN<br>AL</div><div class="tb" id="bScore">SKOR</div><div class="tb" id="bSwap">SİLAH</div><div class="tb" id="bMenu">MENÜ</div>
+</div>
+
+<div class="ov" id="shop" hidden><div class="card shop"><h3 style="margin:0 0 6px">🛒 Silah Dükkânı <span id="shopMoney" style="float:right;color:#ffd34d"></span></h3><div id="shopList"></div><button class="btn" id="shopClose" type="button" style="width:100%;margin-top:6px">Kapat</button></div></div>
+<div class="ov" id="board" hidden><div class="card"><h3 style="margin:0 0 6px">Skor tablosu</h3><div id="boardBody"></div><button class="btn" id="boardClose" type="button" style="width:100%;margin-top:6px">Kapat</button></div></div>
+
+<div id="menu">
+  <div class="card">
+    <h1>❄ BUZ OPERASYONU</h1>
+    <p class="sub">Takım savaşı · Kızıllar (T) vs Mavililer (CT) · buz haritası</p>
+    <div id="rooms"></div>
+    <button class="btn pri" id="btnBot" type="button" style="width:100%;margin-top:6px">🤖 Antrenman (botlara karşı)</button>
+    <div id="menuMsg"></div>
+    <div class="help"><b>Kontroller (bilgisayar):</b> WASD yürü · fare bak/ateş · boşluk zıpla · R şarjör · 1-4 silah · B satın al · Tab skor · sağ tık / Z dürbün<br><b>Telefon:</b> sol çubuk yürü · sağ yarıyı sürükle bak · ATEŞ düğmesi.<br>Tur başında 8 sn satın alma süresi vardır; rakip takımı tamamen elerseniz tur sizindir. Her tur para kazanırsınız.</div>
+    <p class="help"><a href="../" style="color:#93a1c4">‹ Ana lobi</a></p>
+  </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<script src="three.min.js"></script>
+<script src="map.js"></script>
+<script src="game.js"></script>
+</body>
+</html>
