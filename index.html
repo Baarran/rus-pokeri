@@ -627,6 +627,11 @@ body.sl-lock { overflow: hidden; overscroll-behavior: none; }
 .ch-text { overflow-wrap: anywhere; white-space: pre-wrap; }
 .ch-form { display: flex; gap: 8px; padding: 10px 12px calc(10px + env(safe-area-inset-bottom)); border-top: 1px solid rgba(243,234,215,.12); background: rgba(0,0,0,.25); }
 .ch-form input { flex: 1; min-width: 0; padding: 12px 14px; border-radius: 12px; border: 1px solid rgba(243,234,215,.2); background: rgba(0,0,0,.3); color: inherit; font: inherit; font-size: 16px; }
+
+#chatFab { position: fixed; right: 12px; bottom: 38%; z-index: 30; width: 46px; height: 46px; border-radius: 50%; border: 1px solid rgba(217,180,91,.6); background: rgba(20,40,30,.92); font-size: 22px; box-shadow: 0 6px 16px rgba(0,0,0,.4); }
+#chatFab span { position: absolute; top: -4px; right: -4px; min-width: 20px; height: 20px; padding: 0 5px; border-radius: 10px; background: #e5484d; color: #fff; font-size: 12px; font-weight: 800; display: grid; place-items: center; }
+#chatPop { position: fixed; left: 12px; right: 12px; top: calc(10px + env(safe-area-inset-top)); z-index: 60; max-width: 460px; margin: 0 auto; padding: 10px 14px; border-radius: 14px; background: #f3ead7; color: #1a1208; box-shadow: 0 8px 24px rgba(0,0,0,.45); overflow-wrap: anywhere; }
+#chatPop b { color: #8a5a00; }
 </style>
 </head>
 <body>
@@ -9011,7 +9016,7 @@ window.CORE = (function () {
 /* Genel sohbet: herkes yazar, son 80 mesaj görünür. Mesajlar rp/chat/{zaman-anahtarı} altında. */
 (function () {
   'use strict';
-  var CORE = window.CORE, msgs = {}, lastSend = 0, ref = null, readKey = 'rp_chat_read';
+  var CORE = window.CORE, msgs = {}, lastSend = 0, ref = null, readKey = 'rp_chat_read', startAt = 0, popT = null;
   function $(id) { return document.getElementById(id); }
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
   function list() { return Object.keys(msgs).sort().slice(-80).map(function (k) { return msgs[k]; }); }
@@ -9044,11 +9049,35 @@ window.CORE = (function () {
     ref.child(key).set({ uid: CORE.pid, name: CORE.me.name, text: text, at: at }).catch(function (e) { console.warn(e); var t = $('toast'); t.textContent = 'Mesaj gönderilemedi.'; t.hidden = false; setTimeout(function () { t.hidden = true; }, 2500); });
     return true;
   }
+  // her ekranda görünen sohbet düğmesi + yeni mesaj bildirimi
+  function fab() {
+    var f = $('chatFab');
+    if (!f) {
+      f = document.createElement('button'); f.type = 'button'; f.id = 'chatFab'; f.setAttribute('aria-label', 'Sohbet');
+      f.innerHTML = '💬<span id="chatFabN" hidden></span>';
+      f.onclick = function () { location.hash = '#chat'; };
+      document.body.appendChild(f);
+      var pop = document.createElement('div'); pop.id = 'chatPop'; pop.hidden = true;
+      pop.onclick = function () { pop.hidden = true; location.hash = '#chat'; };
+      document.body.appendChild(pop);
+    }
+    var show = CORE.ready && !!CORE.user && ['chat', 'slither'].indexOf(CORE.view) < 0;
+    f.hidden = !show;
+    var n = CORE.chatUnread || 0, b = $('chatFabN'); b.hidden = !n; b.textContent = n > 9 ? '9+' : n;
+  }
+  function popup(m) {
+    var pop = $('chatPop'); if (!pop || CORE.view === 'chat') return;
+    var nm = (CORE.users[m.uid] && CORE.users[m.uid].name) || m.name || 'Oyuncu';
+    pop.innerHTML = '<b>' + esc(nm) + '</b> ' + esc(m.text.length > 70 ? m.text.slice(0, 70) + '…' : m.text);
+    pop.hidden = false; clearTimeout(popT); popT = setTimeout(function () { pop.hidden = true; }, 4500);
+    try { if (navigator.vibrate) navigator.vibrate(60); } catch (e) {}
+  }
   function onMsg(s) {
     var v = s.val(); if (!v || typeof v.text !== 'string') return;
+    var fresh = !msgs[s.key] && v.at >= startAt && v.uid !== CORE.pid;
     msgs[s.key] = v;
     var keys = Object.keys(msgs).sort(); while (keys.length > 120) delete msgs[keys.shift()];
-    if (CORE.view === 'chat') { render(); markRead(); } else setUnread(unread());
+    if (CORE.view === 'chat') { render(); markRead(); } else { setUnread(unread()); if (fresh) popup(v); }
   }
   document.addEventListener('submit', function (e) {
     if (e.target.id !== 'chatForm') return;
@@ -9062,11 +9091,12 @@ window.CORE = (function () {
   });
   CORE.whenReady(function () {
     if (!CORE.db) return;
-    var base = CORE.db.ref('rp/chat'); ref = base;
+    var base = CORE.db.ref('rp/chat'); ref = base; startAt = CORE.serverNow() - 1500;
     var q = base.limitToLast ? base.limitToLast(80) : base;
     q.on('child_added', onMsg, function (e) { console.warn(e); });
     q.on('child_removed', function (s) { delete msgs[s.key]; if (CORE.view === 'chat') render(); else setUnread(unread()); });
-    CORE.onChange(function () { if (CORE.view === 'chat') { render(); markRead(); } });
+    CORE.onChange(function () { fab(); if (CORE.view === 'chat') { render(); markRead(); } });
+    fab();
   });
 })();
 
