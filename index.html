@@ -401,6 +401,30 @@ a.btn { text-decoration: none; display: inline-flex; align-items: center; justif
 .scoretbl.players td:nth-child(2) { color: var(--muted); font-size: 12.5px; white-space: nowrap; }
 @media (min-width: 900px) { .lobby-tables { grid-template-columns: 1fr 1fr; } }
 
+.sl-stage { position: fixed; inset: 0; z-index: 40; background: #05100c; touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
+.sl-stage canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; }
+.sl-top { position: absolute; top: calc(10px + env(safe-area-inset-top)); left: 10px; right: 190px; display: flex; gap: 6px; align-items: center; flex-wrap: wrap; pointer-events: none; }
+.sl-chip { pointer-events: auto; background: rgba(0,0,0,.55); color: var(--ink); border: 1px solid var(--line); border-radius: 10px; padding: 6px 10px; font-weight: 800; font-size: 13px; font-variant-numeric: tabular-nums; }
+.sl-exit { font-size: 20px; line-height: 1; padding: 4px 12px; cursor: pointer; }
+.sl-board { position: absolute; top: calc(10px + env(safe-area-inset-top)); right: 10px; width: 170px; display: grid; gap: 3px; padding: 8px 10px; border-radius: 10px; background: rgba(0,0,0,.45); font-size: 12px; pointer-events: none; }
+.sl-board div { display: flex; justify-content: space-between; gap: 6px; color: #e8e2d0; white-space: nowrap; overflow: hidden; }
+.sl-board div span { overflow: hidden; text-overflow: ellipsis; }
+.sl-board div.mine { color: var(--gold); }
+.sl-board div.dead { opacity: .45; text-decoration: line-through; }
+.sl-board i, .sl-dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 5px; vertical-align: middle; }
+.sl-center { position: absolute; inset: 0; display: grid; place-content: center; justify-items: center; text-align: center; gap: 10px; pointer-events: none; padding: 20px; }
+.sl-count { font-family: var(--display); font-size: 104px; font-weight: 700; color: #fff; text-shadow: 0 4px 24px rgba(0,0,0,.6); line-height: 1; }
+.sl-dead { font-family: var(--display); font-size: 52px; font-weight: 700; color: var(--loss); text-shadow: 0 4px 24px rgba(0,0,0,.6); }
+.sl-sub { color: #fff; font-weight: 700; font-size: 14px; background: rgba(0,0,0,.5); padding: 7px 12px; border-radius: 10px; max-width: 36ch; }
+.sl-boost { position: absolute; right: 18px; bottom: calc(24px + env(safe-area-inset-bottom)); width: 88px; height: 88px; border-radius: 50%; border: 2px solid rgba(255,255,255,.55); background: rgba(217,180,91,.35); color: #fff; font-weight: 900; font-size: 16px; letter-spacing: .06em; touch-action: none; }
+.sl-boost.on { background: rgba(217,180,91,.9); color: #1d1606; }
+@media (pointer: fine) { .sl-boost { display: none; } }
+.sl-result { position: absolute; left: 50%; bottom: calc(16px + env(safe-area-inset-bottom)); transform: translateX(-50%); width: min(92vw, 460px); display: grid; gap: 10px; max-height: 70vh; overflow: auto; }
+body.sl-lock { overflow: hidden; overscroll-behavior: none; }
+.sl-art { display: flex; align-items: center; height: 48px; }
+.sl-art span { width: 20px; height: 20px; border-radius: 50%; margin-left: -6px; border: 2px solid rgba(0,0,0,.35); }
+.sl-art span:first-child { width: 26px; height: 26px; margin-left: 0; background: #f2c14e; position: relative; z-index: 2; }
+
 </style>
 </head>
 <body>
@@ -476,6 +500,12 @@ a.btn { text-decoration: none; display: inline-flex; align-items: center; justif
       <div class="gc-title">Eşli Pişti</div>
       <div class="gc-sub">4 kişi · 2'ye 2 · kazanan takım potu bölüşür</div>
       <div class="tbls" id="tbls-esli"></div>
+    </div>
+    <div class="game-card">
+      <div class="gc-art sl-art"><span></span><span style="background:#f2c14e"></span><span style="background:#e5b444"></span><span style="background:#d8a73a"></span><span style="background:#cb9a30"></span><span style="background:#be8d27"></span><span style="background:#b1801e"></span></div>
+      <div class="gc-title">Slither</div>
+      <div class="gc-sub">Yılan büyütme · en az 2 kişi, sınırsız · giriş çipi, son kalan potu alır</div>
+      <div class="tbls" id="tbls-slither"></div>
     </div>
   </div>
   <div id="lobbyBoard"></div>
@@ -650,6 +680,37 @@ a.btn { text-decoration: none; display: inline-flex; align-items: center; justif
   <footer class="actions" id="bjActions" aria-live="polite"></footer>
   </main>
   <aside class="rules-side panel" id="bjRulesR" aria-label="Ödemeler"></aside>
+</div>
+
+<div class="view game-view" id="slitherView" hidden>
+  <aside class="rules-side panel" id="slRulesL" aria-label="Slither kuralları"></aside>
+  <main class="game-col">
+  <header class="top">
+    <a class="ghost back" href="#" aria-label="Lobiye dön">‹</a>
+    <div class="brand">Slither<small id="slRound">Masa</small></div>
+    <div class="spacer"></div>
+    <span class="pill" title="Çipin"><span class="dot"></span><span id="slChipsVal">—</span></span>
+    <button class="ghost" type="button" data-act="sl-board">Çipler</button>
+    <button class="ghost rules-btn" type="button" data-act="sl-rules">Kurallar</button>
+  </header>
+  <div id="slBanner"></div>
+  <section aria-label="Oyuncular"><div class="seats" id="slSeats"></div></section>
+  <footer class="actions" id="slActions" aria-live="polite"></footer>
+  </main>
+  <aside class="rules-side panel" id="slRulesR" aria-label="Kim kazanır"></aside>
+</div>
+<div class="sl-stage" id="slStage" hidden>
+  <canvas id="slCanvas" aria-label="Oyun alanı"></canvas>
+  <div class="sl-top">
+    <button type="button" class="sl-chip sl-exit" data-act="sl-close" aria-label="Masaya dön">‹</button>
+    <span class="sl-chip" id="slTime">0:00</span>
+    <span class="sl-chip" id="slPot">Pot</span>
+    <span class="sl-chip" id="slAlive"></span>
+  </div>
+  <div class="sl-board" id="slBoard"></div>
+  <div class="sl-center" id="slCenter"></div>
+  <button type="button" class="sl-boost" id="slBoost" hidden>HIZ</button>
+  <div class="sl-result panel" id="slResult" hidden></div>
 </div>
 
 <div class="sheet" id="sheet" hidden>
@@ -1613,13 +1674,13 @@ var FB_CONFIG = { apiKey: "AIzaSyBsP1VNPJpt1Y6MN0FwDCmvuHeZxaDoTGU", authDomain:
 /* Ortak bağlantı: Firebase, hesaplar, admin, çevrimiçi durumu, ses, lobi yönlendirme */
 window.CORE = (function () {
   'use strict';
-  var VIEWS = ['lobby', 'poker', 'okey', 'holdem', 'pisti', 'esli', 'bj', 'kayit', 'admin'];
-  var GAMES = ['poker', 'okey', 'holdem', 'pisti', 'esli', 'bj'];
-  var TITLES = { poker: 'Rus Pokeri', okey: 'Okey', holdem: 'Texas Hold\'em', pisti: 'Pişti', esli: 'Eşli Pişti', bj: 'Blackjack', kayit: 'Kayıtlar', admin: 'Admin paneli' };
+  var VIEWS = ['lobby', 'poker', 'okey', 'holdem', 'pisti', 'esli', 'bj', 'slither', 'kayit', 'admin'];
+  var GAMES = ['poker', 'okey', 'holdem', 'pisti', 'esli', 'bj', 'slither'];
+  var TITLES = { poker: 'Rus Pokeri', okey: 'Okey', holdem: 'Texas Hold\'em', pisti: 'Pişti', esli: 'Eşli Pişti', bj: 'Blackjack', slither: 'Slither', kayit: 'Kayıtlar', admin: 'Admin paneli' };
   var core = { db: null, auth: null, user: null, me: null, pid: null, connected: false, online: {}, ownerId: null, error: null,
     view: 'lobby', table: 1, TABLES: 3, bootAt: Date.now(), ready: false, authKnown: false,
-    ledger: {}, users: {}, requests: {}, bans: {}, deleted: {}, weekly: {}, weeklyLoaded: false, ledgerLoaded: false, START_CHIPS: 1000, GAMES: ['poker', 'okey', 'holdem', 'pisti', 'esli', 'bj'] };
-  core.GAME_NAMES = { poker: 'Rus Pokeri', okey: 'Okey', holdem: 'Hold\'em', pisti: 'Pişti', esli: 'Eşli Pişti', bj: 'Blackjack', admin: 'Admin', start: 'Başlangıç', prize: 'Haftalık ödül' };
+    ledger: {}, users: {}, requests: {}, bans: {}, deleted: {}, weekly: {}, weeklyLoaded: false, ledgerLoaded: false, START_CHIPS: 1000, GAMES: ['poker', 'okey', 'holdem', 'pisti', 'esli', 'bj', 'slither'] };
+  core.GAME_NAMES = { poker: 'Rus Pokeri', okey: 'Okey', holdem: 'Hold\'em', pisti: 'Pişti', esli: 'Eşli Pişti', bj: 'Blackjack', slither: 'Slither', admin: 'Admin', start: 'Başlangıç', prize: 'Haftalık ödül' };
   var subs = [], readyFns = [];
   core.onChange = function (fn) { subs.push(fn); };
   core.emit = function () { subs.forEach(function (f) { try { f(); } catch (e) { console.error(e); } }); };
@@ -1808,6 +1869,9 @@ window.CORE = (function () {
   function scheduleWeekly() { clearTimeout(weekTimer); weekTimer = setTimeout(processWeekly, 2500); }
   setInterval(processWeekly, 60000);
 
+  // Sunucu saati (telefonların saatleri farklı olabilir; gerçek zamanlı oyunlar bunu kullanır)
+  core.serverOffset = 0;
+  core.serverNow = function () { return Date.now() + (core.serverOffset || 0); };
   core.userName = function (uid) { return (core.users[uid] && core.users[uid].name) || 'Oyuncu'; };
   core.bannerText = function (loaded) {
     if (core.error === 'config') return 'Site ayarı eksik: Firebase bilgileri girilmemiş.';
@@ -2100,6 +2164,7 @@ window.CORE = (function () {
     if (want && !core.isAdmin()) { try { sessionStorage.setItem('rp_loginMsg', 'Admin girişi sadece ' + core.ADMIN_NAME + ' içindir.'); } catch (e) {} core.logout(); return; }
     if (want) location.hash = '#admin';
     db.ref('.info/connected').on('value', function (s) { core.connected = !!s.val(); setPresence(); core.emit(); });
+    db.ref('.info/serverTimeOffset').on('value', function (s) { core.serverOffset = Number(s.val()) || 0; }, function () {});
     db.ref('rp/users').on('value', function (s) { core.users = s.val() || {}; core.emit(); }, function () {});
     db.ref('rp/requests').on('value', function (s) { core.requests = s.val() || {}; core.emit(); }, function () {});
     db.ref('rp/bans').on('value', function (s) { core.bans = s.val() || {}; core.emit(); }, function () {});
@@ -2164,7 +2229,7 @@ window.CORE = (function () {
     if (!t) return '—';
     try { return new Date(t).toLocaleString('tr-TR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }); } catch (e) { return '—'; }
   }
-  var GAMES = ['poker', 'okey', 'holdem', 'pisti', 'esli', 'bj'];
+  var GAMES = ['poker', 'okey', 'holdem', 'pisti', 'esli', 'bj', 'slither'];
   var GDESC = {
     poker: 'Krupiyeye karşı · 1–6 kişi · kart değiştir, 6. kart al',
     okey: '2–4 kişi · giriş çipi, kazanan potu alır',
@@ -2322,7 +2387,7 @@ window.CORE = (function () {
   function groupEntries(uid) {
     var l = CORE.ledger[uid] || {}, groups = {};
     Object.keys(l).forEach(function (k) {
-      var e = l[k], i = k.lastIndexOf('-'), grp = /^(poker|okey|holdem|pisti|esli|bj)-/.test(k) && i > 0 ? k.slice(0, i) : k, suf = k.slice(i + 1);
+      var e = l[k], i = k.lastIndexOf('-'), grp = /^(poker|okey|holdem|pisti|esli|bj|slither)-/.test(k) && i > 0 ? k.slice(0, i) : k, suf = k.slice(i + 1);
       var g = groups[grp] = groups[grp] || { d: 0, at: 0, g: e.g, tb: e.tb, notes: [], open: false, closed: false };
       g.d += Number(e.d) || 0; g.at = Math.max(g.at, e.at || 0);
       if (e.n && g.notes.indexOf(e.n) < 0) g.notes.push(e.n);
@@ -4795,6 +4860,636 @@ window.CORE = (function () {
     $('bjRulesR').innerHTML = '<h3>Ödemeler</h3>' + rulesPay();
     CORE.onChange(function () { if (tb) render(); });
     CORE.onTable('bj', attach);
+  });
+})();
+
+</script>
+<script>
+/* Slither (yılan büyütme) masası: giriş çipli, gerçek zamanlı.
+   Herkes kendi yılanını kendi telefonunda yürütür, konumunu saniyede ~7 kez yazar; çarpışmaya çarpan kendisi karar verir.
+   En son hayatta kalan ya da süre bitince en uzun olan potu alır. */
+(function () {
+  'use strict';
+  var CORE = window.CORE, RP = window.RP;
+  var pid = null, tb = 0, R = {}, st = null, seats = {}, live = {}, foodVer = {}, drops = {};
+  var loaded = { st: false, seats: false, live: false }, roundRefsKey = '';
+  var busy = false, stakeChoice = 100, stageOpen = false, stageKey = '', autoOpened = {};
+  var DUR = 180000, COUNT = 5000, SEND_MS = 150, STALE = 8000, GRACE = 2500;
+  var SPEED = 150, BOOST = 290, TURN = 3.4, START_LEN = 130, SPACING = 4, MIN_BOOST = 170;
+  var COLORS = ['#f2c14e', '#ef6f6c', '#5bc0eb', '#9bc53d', '#c879ff', '#ff9f1c', '#2ec4b6', '#f15bb5', '#e8e2d0', '#ff595e', '#8ac926', '#1982c4'];
+  var me = null, input = { ta: null, boost: false, left: false, right: false, kboost: false };
+  var pellets = [], pelKey = '', lastSend = 0, lastFinal = 0, lastHud = 0;
+
+  function $(id) { return document.getElementById(id); }
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  function fmt(n) { n = Number(n || 0); return (n < 0 ? '−' : '') + Math.abs(n).toLocaleString('tr-TR'); }
+  function sfmt(n) { n = Number(n || 0); return (n > 0 ? '+' : n < 0 ? '−' : '±') + Math.abs(n).toLocaleString('tr-TR'); }
+  function clone(o) { return o == null ? o : JSON.parse(JSON.stringify(o)); }
+  function nameOf(id) { var s = seats[id]; return (s && s.name) || CORE.userName(id); }
+  function joined() { return !!(pid && seats[pid] && seats[pid].name); }
+  function now() { return CORE.serverNow(); }
+  function seated() {
+    return Object.keys(seats).filter(function (id) { return seats[id] && seats[id].sit && !seats[id].banned && !CORE.isBanned(id) && seats[id].name; })
+      .sort(function (a, b) { return (seats[a].sitAt || 0) - (seats[b].sitAt || 0); });
+  }
+  function round() { var s = st || {}; return s.players && s.players.length && s.seed ? s : null; }
+  function active() { var s = round(); return s && !s.result ? s : null; }
+  function arenaR(s) { return 1100 + 140 * s.players.length; }
+  function radius(len) { return 8 + Math.sqrt(Math.max(0, len - START_LEN)) * 0.22; }
+  function colorOf(s, id) { var i = s ? s.players.indexOf(id) : -1; return COLORS[(i < 0 ? 0 : i) % COLORS.length]; }
+  function dist(ax, ay, bx, by) { var dx = ax - bx, dy = ay - by; return Math.sqrt(dx * dx + dy * dy); }
+  function segDist(px, py, ax, ay, bx, by) {
+    var dx = bx - ax, dy = by - ay, l2 = dx * dx + dy * dy, t = l2 ? ((px - ax) * dx + (py - ay) * dy) / l2 : 0;
+    t = t < 0 ? 0 : t > 1 ? 1 : t;
+    return dist(px, py, ax + t * dx, ay + t * dy);
+  }
+  function angDiff(a, b) { var d = a - b; while (d > Math.PI) d -= 2 * Math.PI; while (d < -Math.PI) d += 2 * Math.PI; return d; }
+
+  // ---------- yem: tohumdan üretilir, yenen yemin yeni sürümü başka yerde çıkar ----------
+  function pellet(s, i, ver) {
+    var rng = RP.makeRng(s.seed + ':f:' + i + ':' + ver), ar = arenaR(s) - 50, ang = rng() * 6.2832, rad = Math.sqrt(rng()) * ar;
+    return { x: Math.cos(ang) * rad, y: Math.sin(ang) * rad, c: Math.floor(rng() * COLORS.length), v: 1 + Math.floor(rng() * 3), ver: ver };
+  }
+  function ensurePellets(s) {
+    var key = tb + ':' + s.no + ':' + s.seed;
+    if (pelKey === key) return;
+    pelKey = key; pellets = [];
+    var n = 220 + 60 * s.players.length;
+    for (var i = 0; i < n; i++) pellets.push(pellet(s, i, foodVer[i] || 0));
+  }
+  function applyFood(i, ver) {
+    i = +i; foodVer[i] = Math.max(foodVer[i] || 0, ver);
+    var s = round(); if (!s || !pellets[i]) return;
+    if (pellets[i].ver < foodVer[i]) pellets[i] = pellet(s, i, foodVer[i]);
+  }
+  function parsePts(str) {
+    var a = String(str || '').split(','), out = [];
+    for (var i = 0; i + 1 < a.length; i += 2) out.push([+a[i], +a[i + 1]]);
+    return out;
+  }
+
+  // ---------- kendi yılanım ----------
+  function spawn(s) {
+    var i = s.players.indexOf(pid), n = s.players.length, ang0 = 2 * Math.PI * i / n, r0 = arenaR(s) * 0.55;
+    var x = Math.cos(ang0) * r0, y = Math.sin(ang0) * r0, a = ang0 + Math.PI / 2, path = [];
+    for (var d = SPACING; d <= START_LEN; d += SPACING) path.push([x - Math.cos(a) * d, y - Math.sin(a) * d]);
+    me = { no: s.no, seed: s.seed, x: x, y: y, a: a, len: START_LEN, path: path, dead: false, da: 0, boost: false, sentDead: false };
+  }
+  function resume(s, e) {
+    var pts = parsePts(e.p), path = [];
+    for (var k = 1; k < pts.length; k++) {
+      var a = pts[k - 1], b = pts[k], L = dist(a[0], a[1], b[0], b[1]), steps = Math.max(1, Math.round(L / SPACING));
+      for (var j = 1; j <= steps; j++) path.push([a[0] + (b[0] - a[0]) * j / steps, a[1] + (b[1] - a[1]) * j / steps]);
+    }
+    me = { no: s.no, seed: s.seed, x: e.x, y: e.y, a: e.a || 0, len: e.l || START_LEN, path: path, dead: !!e.d, da: e.da || 0, boost: false, sentDead: !!e.d };
+  }
+  function syncMe() {
+    var s = round();
+    if (!s || s.players.indexOf(pid) < 0) { me = null; return; }
+    if (me && me.no === s.no && me.seed === s.seed) return;
+    if (!loaded.live) return;
+    var e = live[pid];
+    if (e && e.n === s.no && e.sd === s.seed) resume(s, e); else spawn(s);
+  }
+  function trim() {
+    var total = 0, px = me.x, py = me.y, p = me.path;
+    for (var i = 0; i < p.length; i++) {
+      var d = dist(px, py, p[i][0], p[i][1]);
+      if (total + d >= me.len) {
+        var f = d ? (me.len - total) / d : 0;
+        p[i] = [px + (p[i][0] - px) * f, py + (p[i][1] - py) * f];
+        p.length = i + 1; return;
+      }
+      total += d; px = p[i][0]; py = p[i][1];
+    }
+  }
+  function sparse() {
+    var step = Math.max(10, me.len / 36), out = [Math.round(me.x), Math.round(me.y)], acc = 0, px = me.x, py = me.y, p = me.path;
+    for (var i = 0; i < p.length; i++) {
+      acc += dist(px, py, p[i][0], p[i][1]); px = p[i][0]; py = p[i][1];
+      if (acc >= step || i === p.length - 1) { out.push(Math.round(px), Math.round(py)); acc = 0; }
+    }
+    return out.join(',');
+  }
+  function others(s) {
+    var t = now(), out = [];
+    s.players.forEach(function (id) {
+      if (id === pid) return;
+      var e = live[id];
+      if (!e || e.n !== s.no || e.sd !== s.seed || e.d || t - (e.t || 0) > STALE) return;
+      out.push({ id: id, e: e, pts: e._pts || (e._pts = parsePts(e.p)), r: e.r || radius(e.l || START_LEN) });
+    });
+    return out;
+  }
+  function step(s, dt) {
+    if (!me || me.dead || me.no !== s.no) return;
+    var t = now();
+    if (t < s.startAt || s.result) return;
+    var target = input.ta == null ? me.a : input.ta;
+    if (input.left) target = me.a - 1; else if (input.right) target = me.a + 1;
+    var turn = TURN * dt * (me.boost ? 0.75 : 1);
+    me.a += Math.max(-turn, Math.min(turn, angDiff(target, me.a)));
+    me.boost = (input.boost || input.kboost) && me.len > MIN_BOOST;
+    var sp = me.boost ? BOOST : SPEED;
+    if (me.boost) me.len = Math.max(START_LEN, me.len - 32 * dt);
+    me.x += Math.cos(me.a) * sp * dt; me.y += Math.sin(me.a) * sp * dt;
+    if (!me.path.length || dist(me.x, me.y, me.path[0][0], me.path[0][1]) >= SPACING) me.path.unshift([me.x, me.y]);
+    // yem
+    var r = radius(me.len), reach = r + 14;
+    for (var i = 0; i < pellets.length; i++) {
+      var p = pellets[i];
+      if (Math.abs(p.x - me.x) < reach && Math.abs(p.y - me.y) < reach && dist(p.x, p.y, me.x, me.y) < r + 3 + p.v * 1.5) {
+        me.len += 5 * p.v;
+        var nv = p.ver + 1; foodVer[i] = nv; pellets[i] = pellet(s, i, nv);
+        if (R.food) R.food.child(String(i)).set(nv).catch(function () {});
+      }
+    }
+    Object.keys(drops).forEach(function (uid) {
+      var d = drops[uid]; if (!d || !d._pts) return;
+      d._pts.forEach(function (q, k) {
+        if ((d.e && d.e[k]) || (d._eaten && d._eaten[k])) return;
+        if (Math.abs(q[0] - me.x) < reach && Math.abs(q[1] - me.y) < reach && dist(q[0], q[1], me.x, me.y) < r + 7) {
+          me.len += 14; d._eaten = d._eaten || {}; d._eaten[k] = 1;
+          if (R.drops) R.drops.child(uid + '/e/' + k).set(1).catch(function () {});
+        }
+      });
+    });
+    trim();
+    // duvar ve çarpışma
+    if (t < s.startAt + GRACE) return;
+    if (Math.sqrt(me.x * me.x + me.y * me.y) > arenaR(s) - r * 0.6) return die(s, 'Duvara çarptın');
+    var os = others(s);
+    for (var oi = 0; oi < os.length; oi++) {
+      var o = os[oi], pts = o.pts;
+      if (!pts.length || dist(me.x, me.y, pts[0][0], pts[0][1]) > (o.e.l || START_LEN) + 120) continue;
+      for (var k = 0; k + 1 < pts.length; k++) {
+        if (segDist(me.x, me.y, pts[k][0], pts[k][1], pts[k + 1][0], pts[k + 1][1]) < r * 0.7 + o.r * 0.9) return die(s, nameOf(o.id) + '\'e çarptın');
+      }
+    }
+  }
+  function die(s, why) {
+    me.dead = true; me.da = now(); me.why = why;
+    send(s, true);
+    // gövde yem olur
+    var pts = [], acc = 0, px = me.x, py = me.y;
+    me.path.forEach(function (q) { acc += dist(px, py, q[0], q[1]); px = q[0]; py = q[1]; if (acc >= 11) { pts.push(Math.round(q[0]), Math.round(q[1])); acc = 0; } });
+    if (R.drops) R.drops.child(pid).set({ p: pts.slice(0, 300).join(','), at: now() }).catch(function () {});
+    if (navigator.vibrate) try { navigator.vibrate(200); } catch (e) {}
+  }
+  function send(s, force) {
+    if (!me || me.no !== s.no || !R.live) return;
+    if (me.sentDead && !force) return;
+    var t = Date.now();
+    if (!force && t - lastSend < SEND_MS) return;
+    lastSend = t;
+    var o = { n: s.no, sd: s.seed, x: Math.round(me.x), y: Math.round(me.y), a: Math.round(me.a * 100) / 100, l: Math.round(me.len), r: Math.round(radius(me.len) * 10) / 10,
+      b: me.boost ? 1 : 0, d: me.dead ? 1 : 0, t: now(), p: sparse() };
+    if (me.dead) { o.da = me.da; me.sentDead = true; }
+    R.live.child(pid).set(o).catch(function () {});
+  }
+
+  // ---------- tur durumu ve bitiş ----------
+  function status(s) {
+    var t = now();
+    return s.players.map(function (id) {
+      var e = live[id] && live[id].n === s.no && live[id].sd === s.seed ? live[id] : null, alive, len, da;
+      if (id === pid && me && me.no === s.no) { alive = !me.dead; len = me.len; da = me.da; }
+      else if (!e) { alive = t < s.startAt + STALE; len = START_LEN; da = s.startAt; }
+      else { alive = !e.d && t - (e.t || 0) < STALE; len = e.l || START_LEN; da = e.d ? (e.da || e.t) : (e.t || s.startAt); }
+      return { id: id, alive: alive, len: Math.round(len), da: da };
+    });
+  }
+  function checkEnd(s) {
+    var t = now();
+    if (t < s.startAt + GRACE || s.result || Date.now() - lastFinal < 1500) return;
+    var sts = status(s), alive = sts.filter(function (x) { return x.alive; }), timeUp = t >= s.startAt + s.dur;
+    if (!timeUp && alive.length > 1) return;
+    var pool, winners;
+    if (alive.length) {
+      pool = alive; var best = Math.max.apply(null, pool.map(function (x) { return x.len; }));
+      winners = timeUp ? pool.filter(function (x) { return x.len === best; }) : pool;
+    } else {
+      var last = Math.max.apply(null, sts.map(function (x) { return x.da || 0; }));
+      winners = sts.filter(function (x) { return (x.da || 0) === last; });
+    }
+    lastFinal = Date.now();
+    var lens = {}; sts.forEach(function (x) { lens[x.id] = x.len; });
+    var w = winners.map(function (x) { return x.id; }), expect = s.no, seed = s.seed;
+    R.st.transaction(function (cur) {
+      if (cur === null) return null;
+      if (!cur.players || cur.no !== expect || cur.seed !== seed || cur.result) return;
+      var next = clone(cur); next.result = { winners: w, lens: lens, at: now(), timeUp: timeUp }; return next;
+    }).catch(function () {});
+  }
+  function pseudoGame(s) {
+    var sc = {}; s.players.forEach(function (id) { sc[id] = s.result && s.result.winners.indexOf(id) >= 0 ? 1 : 0; });
+    return { id: s.gid, players: s.players, stake: s.stake, n: s.no, over: !!s.result, scores: sc };
+  }
+
+  // ---------- çizim ----------
+  var cv = null, ctx = null, W = 0, H = 0, DPR = 1, cam = { x: 0, y: 0, z: 1 };
+  function resize() {
+    if (!cv) return;
+    var w = cv.clientWidth, h = cv.clientHeight, dpr = Math.min(2, window.devicePixelRatio || 1);
+    if (w !== W || h !== H || dpr !== DPR) { W = w; H = h; DPR = dpr; cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr); }
+  }
+  function leader(s) {
+    var best = null;
+    status(s).forEach(function (x) { if (x.alive && (!best || x.len > best.len)) best = x; });
+    return best;
+  }
+  function headOf(s, id) {
+    if (id === pid && me && me.no === s.no) return { x: me.x, y: me.y, len: me.len };
+    var e = live[id]; return e && e.n === s.no ? { x: e.x, y: e.y, len: e.l || START_LEN } : null;
+  }
+  function bodyPath(pts, zoom) {
+    ctx.beginPath();
+    var sx = function (x) { return (x - cam.x) * zoom + W / 2; }, sy = function (y) { return (y - cam.y) * zoom + H / 2; };
+    ctx.moveTo(sx(pts[0][0]), sy(pts[0][1]));
+    if (pts.length === 2) { ctx.lineTo(sx(pts[1][0]), sy(pts[1][1])); return; }
+    for (var i = 1; i < pts.length - 1; i++) {
+      var mx = (pts[i][0] + pts[i + 1][0]) / 2, my = (pts[i][1] + pts[i + 1][1]) / 2;
+      ctx.quadraticCurveTo(sx(pts[i][0]), sy(pts[i][1]), sx(mx), sy(my));
+    }
+    var l = pts[pts.length - 1]; ctx.lineTo(sx(l[0]), sy(l[1]));
+  }
+  function drawSnake(pts, r, color, a, boost, label, mine) {
+    if (pts.length < 2) return;
+    var z = cam.z;
+    ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    bodyPath(pts, z);
+    if (boost) { ctx.strokeStyle = 'rgba(255,255,255,.35)'; ctx.lineWidth = (2 * r + 10) * z; ctx.stroke(); }
+    ctx.strokeStyle = 'rgba(0,0,0,.55)'; ctx.lineWidth = (2 * r + 3) * z; ctx.stroke();
+    ctx.strokeStyle = color; ctx.lineWidth = 2 * r * z; ctx.stroke();
+    ctx.strokeStyle = 'rgba(255,255,255,.18)'; ctx.lineWidth = Math.max(1, r * 0.5 * z); ctx.setLineDash([r * 0.9 * z, r * 1.6 * z]); ctx.stroke(); ctx.setLineDash([]);
+    var hx = (pts[0][0] - cam.x) * z + W / 2, hy = (pts[0][1] - cam.y) * z + H / 2;
+    for (var side = -1; side <= 1; side += 2) {
+      var ex = hx + Math.cos(a + side * 0.55) * r * 0.62 * z, ey = hy + Math.sin(a + side * 0.55) * r * 0.62 * z;
+      ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(ex, ey, r * 0.36 * z, 0, 6.2832); ctx.fill();
+      ctx.fillStyle = '#111'; ctx.beginPath(); ctx.arc(ex + Math.cos(a) * r * 0.12 * z, ey + Math.sin(a) * r * 0.12 * z, r * 0.18 * z, 0, 6.2832); ctx.fill();
+    }
+    if (label) {
+      ctx.font = '700 ' + Math.max(11, Math.round(12 * Math.min(1.2, z + 0.2))) + 'px Manrope, system-ui, sans-serif';
+      ctx.textAlign = 'center'; ctx.fillStyle = mine ? '#f2c14e' : 'rgba(255,255,255,.85)';
+      ctx.fillText(label, hx, hy - (r + 10) * z);
+    }
+  }
+  function draw(s) {
+    if (!cv || !ctx) return;
+    resize();
+    ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+    var t = now(), focus = me && !me.dead && me.no === s.no ? { x: me.x, y: me.y, len: me.len } : (function () { var l = leader(s); return l ? headOf(s, l.id) : null; })();
+    focus = focus || { x: 0, y: 0, len: START_LEN };
+    var base = Math.max(0.55, Math.min(1.35, Math.min(W, H) / 560));
+    var zt = base * Math.max(0.5, 1 - (focus.len - START_LEN) / 6000);
+    cam.z += (zt - cam.z) * 0.08; cam.x = focus.x; cam.y = focus.y;
+    var z = cam.z, AR = arenaR(s);
+    // zemin
+    ctx.fillStyle = '#05100c'; ctx.fillRect(0, 0, W, H);
+    ctx.save();
+    ctx.beginPath(); ctx.arc((0 - cam.x) * z + W / 2, (0 - cam.y) * z + H / 2, AR * z, 0, 6.2832); ctx.clip();
+    ctx.fillStyle = '#0d2a20'; ctx.fillRect(0, 0, W, H);
+    var g = 70, x0 = Math.floor((cam.x - W / 2 / z) / g) * g, y0 = Math.floor((cam.y - H / 2 / z) / g) * g;
+    ctx.fillStyle = 'rgba(255,255,255,.05)';
+    for (var gx = x0; gx < cam.x + W / 2 / z + g; gx += g) for (var gy = y0; gy < cam.y + H / 2 / z + g; gy += g) {
+      var off = (Math.round(gy / g) % 2) ? g / 2 : 0;
+      ctx.beginPath(); ctx.arc((gx + off - cam.x) * z + W / 2, (gy - cam.y) * z + H / 2, 2.2 * z, 0, 6.2832); ctx.fill();
+    }
+    ctx.restore();
+    ctx.strokeStyle = '#d64545'; ctx.lineWidth = 6 * z;
+    ctx.beginPath(); ctx.arc((0 - cam.x) * z + W / 2, (0 - cam.y) * z + H / 2, AR * z, 0, 6.2832); ctx.stroke();
+    var vx = W / 2 / z + 30, vy = H / 2 / z + 30;
+    // yemler
+    pellets.forEach(function (p) {
+      if (Math.abs(p.x - cam.x) > vx || Math.abs(p.y - cam.y) > vy) return;
+      var px = (p.x - cam.x) * z + W / 2, py = (p.y - cam.y) * z + H / 2, rr = (3 + p.v * 1.6) * z;
+      ctx.fillStyle = COLORS[p.c] + '44'; ctx.beginPath(); ctx.arc(px, py, rr * 2, 0, 6.2832); ctx.fill();
+      ctx.fillStyle = COLORS[p.c]; ctx.beginPath(); ctx.arc(px, py, rr, 0, 6.2832); ctx.fill();
+    });
+    Object.keys(drops).forEach(function (uid) {
+      var d = drops[uid]; if (!d || !d._pts) return;
+      var col = colorOf(s, uid);
+      d._pts.forEach(function (q, k) {
+        if ((d.e && d.e[k]) || (d._eaten && d._eaten[k])) return;
+        if (Math.abs(q[0] - cam.x) > vx || Math.abs(q[1] - cam.y) > vy) return;
+        var px = (q[0] - cam.x) * z + W / 2, py = (q[1] - cam.y) * z + H / 2;
+        ctx.fillStyle = col + '55'; ctx.beginPath(); ctx.arc(px, py, 11 * z, 0, 6.2832); ctx.fill();
+        ctx.fillStyle = col; ctx.beginPath(); ctx.arc(px, py, 5.5 * z, 0, 6.2832); ctx.fill();
+      });
+    });
+    // diğer yılanlar (son konumdan biraz ileri tahmin edilir; akıcı görünsün)
+    others(s).forEach(function (o) {
+      var e = o.e, pts = o.pts.slice(), lag = Math.min(0.35, Math.max(0, (t - e.t) / 1000)), sp = e.b ? BOOST : SPEED;
+      if (t >= s.startAt && pts.length) pts.unshift([pts[0][0] + Math.cos(e.a) * sp * lag, pts[0][1] + Math.sin(e.a) * sp * lag]);
+      drawSnake(pts, o.r, colorOf(s, o.id), e.a, e.b, nameOf(o.id), false);
+    });
+    if (me && !me.dead && me.no === s.no) drawSnake([[me.x, me.y]].concat(me.path), radius(me.len), colorOf(s, pid), me.a, me.boost, nameOf(pid), true);
+  }
+
+  // ---------- HUD ve ekranlar ----------
+  function mmss(ms) { var x = Math.max(0, Math.ceil(ms / 1000)); return Math.floor(x / 60) + ':' + ('0' + (x % 60)).slice(-2); }
+  function hud(s) {
+    var t = now(), sts = status(s).sort(function (a, b) { return (b.alive - a.alive) || b.len - a.len; }), alive = sts.filter(function (x) { return x.alive; }).length;
+    $('slTime').textContent = s.result ? 'Bitti' : t < s.startAt ? 'Başlıyor' : mmss(s.startAt + s.dur - t);
+    $('slPot').textContent = 'Pot ' + fmt(s.stake * s.players.length);
+    $('slAlive').textContent = alive + '/' + s.players.length + ' hayatta';
+    $('slBoard').innerHTML = sts.slice(0, 6).map(function (x, i) {
+      return '<div class="' + (x.id === pid ? 'mine' : '') + (x.alive ? '' : ' dead') + '"><span>' + (i + 1) + '. <i style="background:' + colorOf(s, x.id) + '"></i>' + esc(nameOf(x.id)) + '</span><b>' + fmt(x.len) + '</b></div>';
+    }).join('');
+    var c = $('slCenter'), msg = '';
+    if (s.result) msg = '';
+    else if (t < s.startAt) msg = '<div class="sl-count">' + Math.ceil((s.startAt - t) / 1000) + '</div><div class="sl-sub">Parmağınla ya da fareyle yön ver' + (matchMedia('(pointer: coarse)').matches ? ' · hız için sağ alttaki düğme' : ' · hız için tıkla ya da boşluk') + '</div>';
+    else if (me && me.dead && me.no === s.no) msg = '<div class="sl-dead">Öldün</div><div class="sl-sub">' + esc(me.why || '') + ' · uzunluğun ' + fmt(Math.round(me.len)) + '. Tur bitene kadar izliyorsun.</div>';
+    else if (!me && s.players.indexOf(pid) < 0) msg = '<div class="sl-sub">İzliyorsun</div>';
+    if (c.getAttribute('data-m') !== msg) { c.innerHTML = msg; c.setAttribute('data-m', msg); }
+    var showBoost = !!(me && !me.dead && me.no === s.no && !s.result);
+    $('slBoost').hidden = !showBoost;
+    var res = $('slResult');
+    if (s.result) {
+      var html = resultHTML(s);
+      if (res.getAttribute('data-k') !== s.gid) { res.innerHTML = html; res.setAttribute('data-k', s.gid); }
+      res.hidden = false;
+    } else { res.hidden = true; res.setAttribute('data-k', ''); }
+  }
+  function resultHTML(s) {
+    var r = s.result, pot = s.stake * s.players.length, w = r.winners || [], share = w.length ? Math.floor(pot / w.length) : 0;
+    var ids = s.players.slice().sort(function (a, b) { return (w.indexOf(b) >= 0) - (w.indexOf(a) >= 0) || (r.lens[b] || 0) - (r.lens[a] || 0); });
+    return '<div class="label">Tur ' + s.no + ' bitti' + (r.timeUp ? ' · süre doldu' : '') + '</div>' +
+      '<div class="res-title">' + (w.length ? w.map(function (id) { return esc(nameOf(id)); }).join(', ') + ' kazandı' : 'Kazanan yok') + '</div>' +
+      '<div class="prev">' + ids.map(function (id) {
+        var won = w.indexOf(id) >= 0, d = won ? share - s.stake : -s.stake;
+        return '<div class="row"><b><i class="sl-dot" style="background:' + colorOf(s, id) + '"></i>' + esc(nameOf(id)) + (id === pid ? ' · sen' : '') + '</b><span>' + fmt(r.lens[id] || 0) + ' uzunluk · <span class="amt ' + (d > 0 ? 'pos' : d < 0 ? 'neg' : 'zero') + '">' + sfmt(d) + '</span></span></div>';
+      }).join('') + '</div>' +
+      '<button type="button" class="btn primary" data-act="sl-close">Masaya dön</button>';
+  }
+  function openStage() {
+    stageOpen = true; $('slStage').hidden = false; document.body.classList.add('sl-lock');
+    cv = $('slCanvas'); ctx = cv.getContext('2d'); W = 0; resize();
+  }
+  function closeStage() { stageOpen = false; $('slStage').hidden = true; document.body.classList.remove('sl-lock'); input.boost = false; }
+
+  // ---------- masa paneli ----------
+  function btn(act, label, o) {
+    o = o || {};
+    return '<button type="button" class="btn ' + (o.cls || '') + '" data-act="' + act + '"' + (o.data || '') + (o.disabled || busy ? ' disabled' : '') + '>' +
+      label + (o.small ? '<small>' + o.small + '</small>' : '') + '</button>';
+  }
+  function render() {
+    var s = round(), a = active();
+    $('slRound').textContent = 'Masa ' + tb + (s ? ' · Tur ' + s.no : '');
+    $('slChipsVal').textContent = fmt(CORE.balance(pid));
+    var bt = CORE.bannerText(loaded.st);
+    $('slBanner').innerHTML = bt ? '<div class="banner">' + esc(bt) + '</div>' : '';
+    if (s) {
+      CORE.syncGame('slither', tb, pseudoGame(s), false);
+      syncMe();
+      // tur başlayınca oyuncunun ekranı kendiliğinden açılır
+      var k = tb + ':' + s.no + ':' + s.seed;
+      if (a && s.players.indexOf(pid) >= 0 && !autoOpened[k] && CORE.view === 'slither') { autoOpened[k] = true; openStage(); }
+    }
+    if (stageOpen && (!s || CORE.view !== 'slither')) closeStage();
+    var list = seated(), out = '', h = '';
+    if (s && s.result) out += '<div class="gameover">' + resultHTML(s).replace('<button type="button" class="btn primary" data-act="sl-close">Masaya dön</button>', '') + '</div>';
+    out += '<div class="section-head"><h2>Masada oturanlar</h2><span>' + list.length + ' kişi</span></div>';
+    if (!list.length) out += '<div class="empty-note">Henüz kimse oturmadı. En az 2 kişi oturunca tur başlatılabilir; üst sınır yok.</div>';
+    list.forEach(function (id) {
+      out += '<div class="seat' + (id === pid ? ' mine' : '') + '"><div class="who">' + (CORE.here(id, 'slither') ? '<span class="on-dot"></span>' : '') + esc(nameOf(id)) + '</div><div class="amt zero">' + fmt(CORE.balance(id)) + ' çip</div>' +
+        '<div class="sub"><span class="tag gold">Oturuyor</span>' + (a && a.players.indexOf(id) >= 0 ? ' <span class="tag">Turda</span>' : '') + '</div></div>';
+    });
+    $('slSeats').innerHTML = out;
+    var el = $('slActions');
+    if (CORE.error) { el.innerHTML = '<div class="msg">Masa şu an açılamıyor.</div>'; return; }
+    if (!(loaded.st && loaded.seats)) { el.innerHTML = '<div class="msg">Masaya bağlanılıyor…</div>'; return; }
+    if (!joined()) {
+      el.innerHTML = (a ? '<div class="msg">Tur sürüyor · ' + a.players.length + ' oyuncu · pot <span class="pot">' + fmt(a.stake * a.players.length) + '</span></div>' +
+        '<div class="row2">' + btn('sl-open', 'İzle') + btn('sl-join', 'Masaya otur', { cls: 'primary', small: 'Sonraki tura katıl' }) + '</div>'
+        : '<div class="msg">Oynamak için masaya otur.</div>' + btn('sl-join', 'Masaya otur', { cls: 'primary' }));
+      return;
+    }
+    if (seats[pid].banned || CORE.isBanned(pid)) { el.innerHTML = '<div class="msg">Admin seni bu masadan çıkardı.</div>'; return; }
+    var iSit = !!seats[pid].sit, myBal = CORE.balance(pid);
+    if (a) {
+      var inIt = a.players.indexOf(pid) >= 0;
+      h += '<div class="msg">Tur sürüyor · ' + a.players.length + ' oyuncu · pot <span class="pot">' + fmt(a.stake * a.players.length) + '</span></div>';
+      h += btn('sl-open', inIt ? 'Oyuna dön' : 'İzle', { cls: 'primary', small: inIt ? (me && me.dead ? 'Öldün; tur bitince sonuç yazılır' : 'Yılanın seni bekliyor') : 'Tur bitince yeni tura katılabilirsin' });
+    } else {
+      h += '<div class="lenpick-label">Giriş çipi · herkes koyar, en son hayatta kalan ya da süre bitince en uzun olan potu alır</div>' + CORE.stakePicker('sl-stake', stakeChoice);
+      var poor = myBal < stakeChoice;
+      h += '<div class="row2">' + (iSit ? btn('sl-stand', 'Masadan kalk', { small: 'İzlemeye geç' }) : btn('sl-sit', 'Masaya otur', { small: list.length + ' kişi oturuyor' })) +
+        btn('sl-start', 'Turu başlat', { cls: 'primary', disabled: !iSit || list.length < 2 || poor,
+          small: list.length < 2 ? 'En az 2 kişi gerekli' : poor ? 'Çipin yetmiyor (' + fmt(myBal) + ')' : list.length + ' kişi · pot ' + fmt(stakeChoice * list.length) }) + '</div>';
+    }
+    el.innerHTML = h;
+  }
+
+  // ---------- yazma ----------
+  function toast(t) { var el = $('toast'); el.textContent = t; el.hidden = false; clearTimeout(toast._t); toast._t = setTimeout(function () { el.hidden = true; }, 3200); }
+  function write(fn) {
+    if (busy) return Promise.resolve(false);
+    busy = true; render();
+    return Promise.resolve().then(fn).then(function () { return true; }, function (e) {
+      console.warn(e);
+      if (/PERMISSION/i.test(String((e && (e.code || e.message)) || ''))) { CORE.error = 'perm'; CORE.emit(); } else toast('Kaydedilemedi. Bağlantını kontrol edip tekrar dene.');
+      return false;
+    }).then(function (ok) { busy = false; render(); return ok; });
+  }
+  function saveSeat(patch) {
+    var next = clone(seats[pid] || {});
+    Object.keys(patch).forEach(function (k) { next[k] = patch[k]; });
+    return R.seats.child(pid).set(clone(next));
+  }
+  function startRound(stake) {
+    var why = '', newNo = 0;
+    return write(function () {
+      return R.st.transaction(function (cur) {
+        why = '';
+        var c = cur || {};
+        if (c.players && c.seed && !c.result) { why = 'Tur zaten sürüyor.'; return; }
+        var players = seated();
+        if (players.length < 2) { why = 'Turu başlatmak için en az 2 kişi oturmalı.'; return; }
+        var poor = players.filter(function (id) { return CORE.balance(id) < stake; });
+        if (poor.length) { why = poor.map(nameOf).join(', ') + ' için çip yetmiyor (' + fmt(stake) + ' gerekli).'; return; }
+        newNo = (c.no || 0) + 1;
+        var prev = c.result ? { no: c.no, winners: c.result.winners, pot: c.stake * c.players.length } : (c.prev || null);
+        return clone({ no: newNo, seed: CORE.rnd(), gid: CORE.rnd().slice(0, 8), players: players, stake: stake, startAt: now() + COUNT, dur: DUR, prev: prev });
+      }).then(function (res) {
+        if (!res.committed) { if (why) toast(why); return; }
+        var base = 'rp/t/slither/' + tb + '/';
+        // eski turların yem ve ceset kayıtlarını temizle
+        CORE.db.ref(base + 'f').remove().catch(function () {}); CORE.db.ref(base + 'dr').remove().catch(function () {});
+      });
+    });
+  }
+  function cancelRound() {
+    return write(function () {
+      return R.st.transaction(function (cur) {
+        if (cur === null) return null;
+        var next = clone(cur); delete next.players; delete next.seed; delete next.result; delete next.gid;
+        return clone(next);
+      }).then(function (res) { if (res.committed) { CORE.refundOpen('slither', tb); closeSheet(); closeStage(); toast('Tur iptal edildi; giriş çipleri iade edildi.'); } });
+    });
+  }
+
+  // ---------- alt sayfalar ----------
+  function openSheet(html) { $('sheetPanel').innerHTML = html; $('sheet').hidden = false; }
+  function closeSheet() { $('sheet').hidden = true; $('sheetPanel').innerHTML = ''; }
+  function rulesHTML() {
+    return '<p>Yılanını büyüt, diğerlerini kendine çarptır. En az 2 kişi oynanır, üst sınır yok.</p>' +
+      '<h4>Tur</h4><ol><li>Masaya oturanlar giriş çipini (50, 100, 250 ya da 500) seçer, biri turu başlatır. Herkesin giriş çipi ortaya konur.</li>' +
+      '<li>5 saniyelik geri sayımdan sonra yılanlar hareket eder. Tur en fazla 3 dakika sürer.</li>' +
+      '<li>Parmağını ya da fareni hangi yöne tutarsan yılan oraya döner. Hız için telefonda sağ alttaki düğmeye bas, bilgisayarda tıkla ya da boşluğa bas. Hızlanınca biraz kısalırsın.</li>' +
+      '<li>Yemleri yiyerek uzarsın. Başın başka bir yılanın gövdesine değerse ölürsün; kırmızı duvara çarparsan da ölürsün. Kendine çarpmak serbest.</li>' +
+      '<li>Ölen yılanın gövdesi büyük yemlere dönüşür.</li></ol>' +
+      '<h4>Kazanan</h4><p>En son hayatta kalan potun hepsini alır. Süre biterse hayatta olanlardan en uzun olan alır; eşitlikte pot bölüşülür. Tur iptal edilirse giriş çipleri iade edilir.</p>' +
+      '<h4>Bağlantı</h4><p>Uygulamadan çıkan ya da bağlantısı 8 saniyeden uzun kopan oyuncu ölmüş sayılır.</p>';
+  }
+  function boardHTML() {
+    var ids = Object.keys(seats).filter(function (id) { return seats[id] && seats[id].name; });
+    ids.sort(function (a, b) { return CORE.tableNet(b, 'slither', tb) - CORE.tableNet(a, 'slither', tb); });
+    var h = '<div class="panel-head"><h3>Slither · Masa ' + tb + '</h3><button class="ghost" type="button" data-act="close">Kapat</button></div>';
+    h += ids.length ? '<table><thead><tr><th>Oyuncu</th><th class="n">Bu masada</th><th class="n">Çip</th></tr></thead><tbody>' + ids.map(function (id, i) {
+      var n = CORE.tableNet(id, 'slither', tb);
+      return '<tr><td>' + (i + 1) + '. ' + esc(nameOf(id)) + (id === pid ? ' <span class="tag gold">sen</span>' : '') + '</td><td class="n"><span class="amt ' + (n > 0 ? 'pos' : n < 0 ? 'neg' : 'zero') + '">' + sfmt(n) + '</span></td><td class="n">' + fmt(CORE.balance(id)) + '</td></tr>';
+    }).join('') + '</tbody></table>' : '<p>Henüz masaya oturan yok.</p>';
+    if (CORE.isAdmin()) {
+      h += CORE.adminHTML(seats, { pre: 'sl', esc: esc, sit: true });
+      if (active()) h += '<h4>Admin</h4>' + btn('sl-askcancel', 'Bu turu iptal et', { cls: 'danger', small: 'Giriş çipleri iade edilir' });
+    }
+    return h;
+  }
+
+  // ---------- olaylar ----------
+  document.addEventListener('click', function (e) {
+    var t = e.target.closest('[data-act]');
+    if (!t || t.disabled) return;
+    var act = t.getAttribute('data-act');
+    if (act.indexOf('sl-') !== 0) return;
+    switch (act) {
+      case 'sl-rules': openSheet('<div class="panel-head"><h3>Slither</h3><button class="ghost" type="button" data-act="close">Kapat</button></div>' + rulesHTML()); break;
+      case 'sl-board': openSheet(boardHTML()); break;
+      case 'sl-join': write(function () { var base = seats[pid] || {}; return saveSeat({ name: CORE.me.name, sit: true, sitAt: Date.now(), joinedAt: base.joinedAt || Date.now() }); }); break;
+      case 'sl-sit': write(function () { return saveSeat({ sit: true, sitAt: Date.now() }); }); break;
+      case 'sl-stand': write(function () { return saveSeat({ sit: false }); }); break;
+      case 'sl-stake': stakeChoice = +t.getAttribute('data-stake'); render(); break;
+      case 'sl-start': startRound(stakeChoice); break;
+      case 'sl-open': openStage(); break;
+      case 'sl-close': closeStage(); render(); break;
+      case 'sl-adm': if (CORE.isAdmin()) write(function () { return CORE.adminOp(R.seats, seats, t.getAttribute('data-op'), t.getAttribute('data-id')); }).then(function () { openSheet(boardHTML()); }); break;
+      case 'sl-askcancel':
+        openSheet('<h3>Bu tur iptal edilsin mi?</h3><p>Tur hiç oynanmamış sayılır, giriş çipleri iade edilir.</p><div class="row2">' + btn('close', 'Vazgeç') + btn('sl-cancel', 'İptal et', { cls: 'danger' }) + '</div>'); break;
+      case 'sl-cancel': if (CORE.isAdmin()) cancelRound(); break;
+    }
+  });
+  function pointerAim(ev) {
+    if (!stageOpen || !cv || !me || me.dead) return;
+    var rc = cv.getBoundingClientRect(), x = ev.clientX - rc.left, y = ev.clientY - rc.top;
+    var hx = (me.x - cam.x) * cam.z + W / 2, hy = (me.y - cam.y) * cam.z + H / 2;
+    if (Math.abs(x - hx) + Math.abs(y - hy) > 6) input.ta = Math.atan2(y - hy, x - hx);
+  }
+  function bindInput() {
+    var c = $('slCanvas'), b = $('slBoost');
+    c.addEventListener('pointermove', pointerAim);
+    c.addEventListener('pointerdown', function (ev) { pointerAim(ev); if (ev.pointerType === 'mouse') input.boost = true; });
+    window.addEventListener('pointerup', function (ev) { if (ev.pointerType === 'mouse') input.boost = false; });
+    b.addEventListener('pointerdown', function (ev) { ev.preventDefault(); input.boost = true; b.classList.add('on'); });
+    ['pointerup', 'pointercancel', 'pointerleave'].forEach(function (n) { b.addEventListener(n, function () { input.boost = false; b.classList.remove('on'); }); });
+    window.addEventListener('keydown', function (ev) {
+      if (!stageOpen) return;
+      if (ev.key === 'ArrowLeft' || ev.key === 'a' || ev.key === 'A') input.left = true;
+      else if (ev.key === 'ArrowRight' || ev.key === 'd' || ev.key === 'D') input.right = true;
+      else if (ev.key === ' ' || ev.key === 'ArrowUp' || ev.key === 'w' || ev.key === 'W') { input.kboost = true; ev.preventDefault(); }
+      else return;
+      input.ta = null;
+    });
+    window.addEventListener('keyup', function (ev) {
+      if (ev.key === 'ArrowLeft' || ev.key === 'a' || ev.key === 'A') input.left = false;
+      else if (ev.key === 'ArrowRight' || ev.key === 'd' || ev.key === 'D') input.right = false;
+      else if (ev.key === ' ' || ev.key === 'ArrowUp' || ev.key === 'w' || ev.key === 'W') input.kboost = false;
+    });
+    window.addEventListener('resize', function () { W = 0; });
+    // telefon uygulamadan çıkınca kod durur; diğerleri 8 saniye haber alamazsa ölü sayar, dönünce bu cihaz da kabul eder
+    document.addEventListener('visibilitychange', function () {
+      if (document.hidden) return;
+      var s = active();
+      if (s && me && !me.dead && me.no === s.no && now() > s.startAt + GRACE && lastSend && Date.now() - lastSend > STALE) die(s, 'Uygulamadan çıktığın için');
+    });
+  }
+
+  // ---------- ana döngü ----------
+  var lastSim = 0;
+  // Oyun adımı: ekran çizilmese de (sekme arkada) zaman kadar ilerler, küçük adımlara bölünür
+  function simulate(s, ms) {
+    var total = lastSim ? Math.min(1.5, (ms - lastSim) / 1000) : 0; lastSim = ms;
+    if (s.result) return;
+    if (me && me.no === s.no && !me.dead) {
+      while (total > 0 && me && !me.dead) { var d = Math.min(0.05, total); step(s, d); total -= d; }
+      if (me) send(s, false);
+    }
+    checkEnd(s);
+  }
+  setInterval(function () {
+    var s = round(), ms = performance.now();
+    if (s && ms - lastSim > 200) { ensurePellets(s); simulate(s, ms); }
+  }, 100);
+  function frame(ts) {
+    requestAnimationFrame(frame);
+    var s = round();
+    if (!s) { lastSim = 0; return; }
+    ensurePellets(s);
+    simulate(s, performance.now());
+    if (stageOpen && CORE.view === 'slither') {
+      draw(s);
+      if (ts - lastHud > 200) { lastHud = ts; hud(s); }
+    }
+  }
+
+  // ---------- masaya bağlanma ----------
+  function attachRound() {
+    var s = round(), key = s ? s.no + ':' + s.seed : '';
+    if (key === roundRefsKey) return;
+    roundRefsKey = key;
+    if (R.food) { R.food.off(); R.food = null; }
+    if (R.drops) { R.drops.off(); R.drops = null; }
+    foodVer = {}; drops = {}; pelKey = '';
+    if (!s || !CORE.db) return;
+    var base = 'rp/t/slither/' + tb + '/';
+    R.food = CORE.db.ref(base + 'f/' + s.no); R.drops = CORE.db.ref(base + 'dr/' + s.no);
+    var onF = function (sn) { applyFood(sn.key, Number(sn.val()) || 0); };
+    R.food.on('child_added', onF); R.food.on('child_changed', onF);
+    var onD = function (sn) { var v = sn.val() || {}, old = drops[sn.key] || {}; v._pts = old._pts || parsePts(v.p); v._eaten = old._eaten; drops[sn.key] = v; };
+    R.drops.on('child_added', onD); R.drops.on('child_changed', onD);
+  }
+  function attach(t) {
+    ['st', 'seats', 'live', 'food', 'drops'].forEach(function (k) { if (R[k]) { R[k].off(); R[k] = null; } });
+    tb = t; st = null; seats = {}; live = {}; foodVer = {}; drops = {}; me = null; pelKey = ''; roundRefsKey = '';
+    loaded = { st: false, seats: false, live: false };
+    closeStage(); render();
+    if (!CORE.db) return;
+    var base = 'rp/t/slither/' + t + '/';
+    R.st = CORE.db.ref(base + 'state'); R.seats = CORE.db.ref(base + 'seats'); R.live = CORE.db.ref(base + 'live');
+    function onErr(e) { console.warn(e); CORE.error = 'perm'; CORE.emit(); }
+    R.st.on('value', function (s) { if (tb !== t) return; st = s.val(); loaded.st = true; attachRound(); render(); }, onErr);
+    R.seats.on('value', function (s) { if (tb !== t) return; seats = s.val() || {}; loaded.seats = true; render(); }, onErr);
+    R.live.once('value').then(function (s) {
+      if (tb !== t) return;
+      live = s.val() || {}; loaded.live = true;
+      var onL = function (sn) { if (tb !== t) return; live[sn.key] = sn.val(); };
+      R.live.on('child_added', onL); R.live.on('child_changed', onL);
+      R.live.on('child_removed', function (sn) { if (tb === t) delete live[sn.key]; });
+      render();
+    });
+    try { CORE.db.ref(base + 'live/' + CORE.pid).onDisconnect().remove(); } catch (e) {}
+  }
+  window.__slDebug = { kill: function () { var s = active(); if (s && me && !me.dead) die(s, 'test'); }, me: function () { return me; }, steer: function (a) { input.ta = a; }, circle: function (on) { input.left = !!on; } };
+  CORE.whenReady(function () {
+    pid = CORE.pid;
+    var rh = rulesHTML(), cut = rh.indexOf('<h4>Kazanan</h4>');
+    $('slRulesL').innerHTML = '<h3>Slither nasıl oynanır</h3>' + rh.slice(0, cut);
+    $('slRulesR').innerHTML = '<h3>Kim kazanır</h3>' + rh.slice(cut).replace('<h4>Kazanan</h4>', '');
+    bindInput();
+    CORE.onChange(function () { if (tb) render(); });
+    CORE.onTable('slither', attach);
+    requestAnimationFrame(frame);
   });
 })();
 
