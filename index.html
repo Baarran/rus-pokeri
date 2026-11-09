@@ -139,6 +139,17 @@ button.card { border: 0; padding: 0; }
 .mine-hand .cards { --cw: min(16.5vw, 72px); gap: 7px; padding-top: 14px; }
 .mine-hand .cards.six { --cw: min(14vw, 62px); gap: 5px; }
 .seat.out { opacity: .55; }
+.lenpick { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+.lenbtn { min-height: 40px; border-radius: 10px; border: 1px solid var(--line); background: rgba(243,234,215,.06); color: var(--ink); font-weight: 800; font-size: 14px; }
+.lenbtn.on { background: var(--gold); color: var(--gold-ink); border-color: var(--gold); }
+.lenpick-label { font-size: 12px; color: var(--muted); text-align: center; }
+.scroll-x { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.scoretbl th, .scoretbl td { white-space: nowrap; padding: 6px 7px; }
+.scoretbl tr.win td { color: var(--win); }
+.scoretbl td.tot { font-weight: 800; }
+.gameover { display: grid; gap: 6px; padding: 14px; border-radius: 12px; background: rgba(217,180,91,.12); border: 1px solid rgba(217,180,91,.45); }
+.gstatus { display: flex; justify-content: space-between; gap: 8px; align-items: center; padding: 8px 12px; border-radius: 10px; background: rgba(0,0,0,.18); font-size: 13.5px; }
+.gstatus b { color: var(--gold); }
 .badge { display: inline-grid; place-items: center; min-width: 22px; height: 20px; padding: 0 5px; border-radius: 999px; font-size: 10.5px; font-weight: 800; vertical-align: middle; margin-left: 3px; background: #f3ead7; color: #1a1a1a; }
 .badge.sb { background: #2f6fb5; color: #fff; }
 .badge.bb { background: #b7342b; color: #fff; }
@@ -308,6 +319,7 @@ th { color: var(--muted); font-weight: 600; font-size: 12px; }
 .res-head { display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; font-size: 14px; }
 .res-pen { color: var(--muted); font-variant-numeric: tabular-nums; }
 .res-pen.neg b { color: var(--loss); }
+.res-pen b.pos { color: var(--win); }
 .res-tiles { display: flex; flex-wrap: wrap; gap: 6px; }
 .grp { display: inline-flex; gap: 2px; padding: 3px; border-radius: 6px; background: rgba(0,0,0,.22); }
 .grp.loose { background: rgba(241,148,130,.14); }
@@ -969,7 +981,7 @@ var VERITABANI = "https://ruspokeri-de28e-default-rtdb.europe-west1.firebasedata
     var hands = g.hands.map(function (h) { return h.slice(); });
     var discards = hands.map(function () { return []; });
     var center = g.center.slice();
-    var turn = st.starter, phase = 'discard', lastDrawn = null, end = null, drawnFrom = null;
+    var turn = st.starter, phase = 'discard', lastDrawn = null, end = null, drawnFrom = null, noLeft = false;
     var acts = st.actions || [];
     for (var i = 0; i < acts.length && !end; i++) {
       var a = acts[i];
@@ -977,32 +989,49 @@ var VERITABANI = "https://ruspokeri-de28e-default-rtdb.europe-west1.firebasedata
       var prev = (turn - 1 + n) % n;
       if (phase === 'draw') {
         if (a.t === 'd' && a.src === 'c' && center.length) { lastDrawn = center.shift(); drawnFrom = 'c'; hands[turn].push(lastDrawn); phase = 'discard'; }
-        else if (a.t === 'd' && a.src === 'p' && discards[prev].length) { lastDrawn = discards[prev].pop(); drawnFrom = 'p'; hands[turn].push(lastDrawn); phase = 'discard'; }
+        else if (a.t === 'd' && a.src === 'p' && !noLeft && discards[prev].length) { lastDrawn = discards[prev].pop(); drawnFrom = 'p'; hands[turn].push(lastDrawn); phase = 'discard'; }
         else if (a.t === 'auto' && center.length) { discards[turn].push(center.shift()); advance(); }
       } else {
         var at = a.tile != null ? hands[turn].indexOf(a.tile) : -1;
+        var locked = drawnFrom === 'p' ? lastDrawn : null;   // soldan alınan taş aynı tur atılamaz
+        if (at >= 0 && a.tile === locked && (a.t === 'x' || a.t === 'f')) continue;
+        if (a.t === 'u') {
+          if (locked != null && hands[turn].indexOf(locked) >= 0) {
+            hands[turn].splice(hands[turn].indexOf(locked), 1); discards[prev].push(locked);
+            phase = 'draw'; lastDrawn = null; drawnFrom = null; noLeft = true;
+          }
+          continue;
+        }
         if (a.t === 'x' && at >= 0) { hands[turn].splice(at, 1); discards[turn].push(a.tile); advance(); }
         else if (a.t === 'f' && at >= 0) {
           var rest = hands[turn].filter(function (x) { return x !== a.tile; });
           var kind = finishKind(rest, g);
           if (kind) { hands[turn] = rest; discards[turn].push(a.tile); end = { winner: turn, tile: a.tile, kind: kind, okey: isJoker(a.tile, g) }; }
         } else if (a.t === 'auto') {
-          var tt = lastDrawn != null && hands[turn].indexOf(lastDrawn) >= 0 ? lastDrawn : hands[turn][hands[turn].length - 1];
+          var tt = lastDrawn != null && lastDrawn !== locked && hands[turn].indexOf(lastDrawn) >= 0 ? lastDrawn : null;
+          if (tt == null) { for (var q = hands[turn].length - 1; q >= 0; q--) if (hands[turn][q] !== locked) { tt = hands[turn][q]; break; } }
           hands[turn].splice(hands[turn].indexOf(tt), 1); discards[turn].push(tt); advance();
         }
       }
     }
-    function advance() { turn = (turn + 1) % n; phase = 'draw'; lastDrawn = null; drawnFrom = null; }
+    function advance() { turn = (turn + 1) % n; phase = 'draw'; lastDrawn = null; drawnFrom = null; noLeft = false; }
     if (!end && phase === 'draw' && center.length === 0) end = { draw: true };
 
     var res = { g: g, n: n, hands: hands, discards: discards, centerCount: center.length, turn: turn, phase: phase,
-      lastDrawn: lastDrawn, drawnFrom: drawnFrom, end: end, actionCount: acts.length };
+      lastDrawn: lastDrawn, drawnFrom: drawnFrom, noLeft: noLeft, locked: phase === 'discard' && drawnFrom === 'p' ? lastDrawn : null,
+      end: end, actionCount: acts.length };
     if (end) {
+      var f2 = (end.kind === 'cift' ? 2 : 1) * (end.okey ? 2 : 1);
       res.penalties = hands.map(function (h, s) {
-        if (end.draw || s === end.winner) return { base: 0, factor: 0, pen: 0 };
-        var base = penaltyBase(h, g);
-        var factor = g.mult * (end.kind === 'cift' ? 2 : 1) * (end.okey ? 2 : 1);
-        return { base: base, factor: factor, pen: base * factor };
+        if (end.draw) return { base: 0, factor: 0, pen: 0 };
+        if (s === end.winner) {
+          // biten: gösterge çarpanı × 10 siler (çiftle 2 kat); okeyle biterse çarpan × 100
+          var ded = g.mult * (end.okey ? 100 : 10) * (end.kind === 'cift' ? 2 : 1);
+          return { base: 0, factor: 0, pen: -ded, winner: true };
+        }
+        var ar = arrange(h, g);
+        if (!ar.groups.length) return { base: 0, factor: g.mult * 100 * f2, pen: g.mult * 100 * f2, noPer: true };
+        return { base: ar.cost, factor: g.mult * f2, pen: ar.cost * g.mult * f2 };
       });
     }
     return res;
@@ -1206,6 +1235,78 @@ window.CORE = (function () {
     return '';
   };
 
+  // ---------- oyun: 3 / 5 / 7 / 11 ellik bölümler ----------
+  function cl(o) { return o == null ? o : JSON.parse(JSON.stringify(o)); }
+  core.GAME_LENS = [3, 5, 7, 11];
+  core.newGame = function (len, n) { return { n: n, len: len, played: 0, scores: {}, hist: [], over: false }; };
+  core.applyHand = function (game, deltas, no) {
+    var g = cl(game); g.scores = g.scores || {}; g.hist = g.hist || []; g.played = g.played || 0;
+    Object.keys(deltas).forEach(function (id) { g.scores[id] = (g.scores[id] || 0) + deltas[id]; });
+    g.hist.push({ no: no, d: deltas }); g.played += 1;
+    if (g.played >= g.len) g.over = true;
+    return g;
+  };
+  // Bitmiş ama henüz yazılmamış eli de katarak gösterilecek oyun
+  core.gameDisplay = function (game, pending, no) {
+    if (!game) return null;
+    var g = cl(game); g.scores = g.scores || {}; g.hist = g.hist || []; g.played = g.played || 0;
+    return pending && !g.over ? core.applyHand(g, pending, no) : g;
+  };
+  core.winners = function (game, lowerBetter) {
+    var sc = game.scores || {}, ids = Object.keys(sc);
+    if (!ids.length) return [];
+    var best = null;
+    ids.forEach(function (id) { if (best == null || (lowerBetter ? sc[id] < best : sc[id] > best)) best = sc[id]; });
+    return ids.filter(function (id) { return sc[id] === best; });
+  };
+  core.archive = function (list, game, lowerBetter) {
+    var a = (list || []).slice(-4);
+    a.push({ n: game.n, len: game.len, played: game.played || 0, scores: game.scores || {}, winners: core.winners(game, lowerBetter), at: Date.now() });
+    return a;
+  };
+  core.lenPicker = function (act, sel) {
+    return '<div class="lenpick" role="radiogroup" aria-label="Oyun kaç el sürsün">' + core.GAME_LENS.map(function (l) {
+      return '<button type="button" class="lenbtn' + (l === sel ? ' on' : '') + '" role="radio" aria-checked="' + (l === sel) + '" data-act="' + act + '" data-len="' + l + '">' + l + ' el</button>';
+    }).join('') + '</div>';
+  };
+  core.gameLabel = function (g, handActive) {
+    if (!g) return 'Oyun yok';
+    var k = Math.min(g.len, (g.played || 0) + (handActive ? 1 : 0));
+    return 'Oyun ' + g.n + ' · El ' + Math.max(k, 1) + '/' + g.len;
+  };
+  // el el puan tablosu. o: {lowerBetter, fmt, esc, nameOf, me, extra}
+  core.scoreTable = function (g, o) {
+    var sc = g.scores || {}, hist = g.hist || [], ids = Object.keys(sc);
+    (o.extra || []).forEach(function (id) { if (ids.indexOf(id) < 0) ids.push(id); });
+    ids.sort(function (a, b) { return o.lowerBetter ? (sc[a] || 0) - (sc[b] || 0) : (sc[b] || 0) - (sc[a] || 0); });
+    var win = g.over ? core.winners(g, o.lowerBetter) : [];
+    var head = '<tr><th>Oyuncu</th>';
+    for (var i = 1; i <= g.len; i++) head += '<th class="n">' + i + '</th>';
+    head += '<th class="n">Toplam</th></tr>';
+    var rows = ids.map(function (id) {
+      var tr = '<tr' + (win.indexOf(id) >= 0 ? ' class="win"' : '') + '><td>' + o.esc(o.nameOf(id)) + (id === o.me ? ' <span class="tag gold">sen</span>' : '') + (win.indexOf(id) >= 0 ? ' <span class="tag win">Kazandı</span>' : '') + '</td>';
+      for (var k = 0; k < g.len; k++) {
+        var hh = hist[k], d = hh && hh.d ? hh.d[id] : undefined;
+        tr += '<td class="n">' + (hh ? (d == null ? '—' : o.fmt(d)) : '') + '</td>';
+      }
+      return tr + '<td class="n tot">' + o.fmt(sc[id] || 0) + '</td></tr>';
+    }).join('');
+    return '<div class="scroll-x"><table class="scoretbl"><thead>' + head + '</thead><tbody>' + rows + '</tbody></table></div>';
+  };
+  core.lastGamesHTML = function (list, o) {
+    if (!list || !list.length) return '';
+    return '<h4>Önceki oyunlar</h4><div class="prev">' + list.slice().reverse().map(function (x) {
+      return '<div class="row"><b>Oyun ' + x.n + ' · ' + x.len + ' el</b><span>' + (x.winners && x.winners.length ? x.winners.map(function (id) { return o.esc(o.nameOf(id)); }).join(', ') + ' kazandı' : 'Kazanan yok') + '</span></div>';
+    }).join('') + '</div>';
+  };
+  core.gameOverHTML = function (g, o) {
+    var w = core.winners(g, o.lowerBetter);
+    var sc = g.scores || {};
+    return '<div class="gameover"><div class="label">Oyun ' + g.n + ' bitti · ' + g.len + ' el</div>' +
+      '<div class="res-title">' + (w.length ? 'Kazanan: ' + w.map(function (id) { return o.esc(o.nameOf(id)); }).join(', ') : 'Kazanan yok') + '</div>' +
+      (w.length ? '<div class="hint" style="text-align:left">' + o.scoreWord + ': ' + o.fmt(sc[w[0]] || 0) + '</div>' : '') + '</div>';
+  };
+
   function setPresence() {
     if (!core.db || !core.connected) return;
     var me = core.db.ref('rp/online/' + core.pid);
@@ -1272,7 +1373,7 @@ window.CORE = (function () {
   var stateDoc = null, seats = {};
   var loaded = { state: false, seats: false };
   var selected = [], selKey = '';
-  var anteChoice = 25, busy = false;
+  var anteChoice = 25, busy = false, lenChoice = 5;
   var turnSeen = {}, skipShownKey = '';
   var V = null;
 
@@ -1312,6 +1413,16 @@ window.CORE = (function () {
     return c;
   }
   function nameOf(id) { var s = seats[id]; return (s && s.name) || 'Oyuncu'; }
+  function pendingDeltas(v) {
+    var b = bankOf(stateDoc);
+    if (!(v.sim && v.sim.phase === 'done' && (b.applied || 0) < v.st.no)) return null;
+    var d = {}; v.sim.players.forEach(function (p) { d[p.id] = p.net; });
+    return d;
+  }
+  function gameDisp(v) { return CORE.gameDisplay((stateDoc || {}).game, pendingDeltas(v), v.st.no); }
+  function gOpts() { return { lowerBetter: false, fmt: sfmt, esc: esc, nameOf: nameOf, me: pid, scoreWord: 'Kâr' }; }
+  function currentRebuys() { var o = {}; Object.keys(seats).forEach(function (id) { o[id] = (seats[id] && seats[id].rebuys) || 0; }); return o; }
+  function nextGameNo(c) { return (c.game ? c.game.n : (c.lastGames && c.lastGames.length ? c.lastGames[c.lastGames.length - 1].n : 0)) + 1; }
   function joined() { return !!(pid && seats[pid] && seats[pid].name); }
   function isOwner() { return CORE.isOwner(); }
   function curDec(no) {
@@ -1340,7 +1451,8 @@ window.CORE = (function () {
     var v = V, st = v.st, sim = v.sim;
     if (selKey !== st.no + ':' + (sim ? st.seed : '')) { selected = []; selKey = st.no + ':' + (sim ? st.seed : ''); }
 
-    $('roundNo').textContent = 'El #' + st.no;
+    var gdH = gameDisp(v);
+    $('roundNo').textContent = gdH ? CORE.gameLabel(gdH, !(sim && sim.phase === 'done')) : 'Oyun yok';
     $('myChipsVal').textContent = joined() ? fmt(chipsOf(pid, v)) : '—';
 
     var banner = CORE.bannerText(loaded.state);
@@ -1394,7 +1506,11 @@ window.CORE = (function () {
     if (!sim) {
       $('seatsTitle').textContent = 'Ante koyanlar';
       $('seatsCount').textContent = Math.min(v.anted.length, MAX_SEATS) + ' / ' + MAX_SEATS;
-      if (!v.anted.length) out = '<div class="empty-note">Henüz kimse ante koymadı. Ante koyan oyuncular burada görünür; en fazla 6 kişi aynı elde oynar.</div>';
+      var gdS = gameDisp(v);
+      if (gdS && gdS.over) out += CORE.gameOverHTML(gdS, gOpts());
+      if (gdS && gdS.played) out += '<div class="section-head"><h2>Oyun ' + gdS.n + ' kârları</h2><span>' + gdS.played + ' / ' + gdS.len + ' el</span></div>' + CORE.scoreTable(gdS, gOpts());
+      if (!gdS) out += '<div class="empty-note">Oyun başlamadı. Aşağıdan kaç el oynanacağını seçip oyunu başlatın; her oyunda herkes ' + fmt(START) + ' fişle başlar.</div>';
+      else if (!v.anted.length) out += '<div class="empty-note">Henüz kimse ante koymadı. Ante koyan oyuncular burada görünür; en fazla 6 kişi aynı elde oynar.</div>';
       v.anted.forEach(function (id, i) {
         var s = seats[id];
         out += seatRow({ id: id, name: nameOf(id), mine: id === pid, amt: fmt(s.ante), amtCls: 'zero',
@@ -1416,6 +1532,8 @@ window.CORE = (function () {
     }
     $('seatsTitle').textContent = 'Bu el';
     $('seatsCount').textContent = sim.players.length + ' oyuncu';
+    var gdE = sim.phase === 'done' ? gameDisp(v) : null;
+    if (gdE && gdE.over) out += CORE.gameOverHTML(gdE, gOpts()) + CORE.scoreTable(gdE, gOpts());
     sim.players.forEach(function (p, i) {
       var mine = p.id === pid, amt = '', amtCls = 'zero', turn = false, tags = [];
       if (p.draw === 'x') tags.push('<span class="tag">' + p.drawCount + ' kart değişti</span>');
@@ -1516,6 +1634,12 @@ window.CORE = (function () {
 
     if (!sim) {
       var mySeat = seats[pid], iAnted = mySeat.anteRound === st.no && ANTES.indexOf(mySeat.ante) >= 0;
+      var gdA = gameDisp(v);
+      if (!gdA || gdA.over) {
+        h += '<div class="lenpick-label">' + (gdA ? 'Yeni oyun' : 'Oyun') + ' kaç el sürsün? Herkes ' + fmt(START) + ' fişle başlar.</div>' + CORE.lenPicker('p-len', lenChoice);
+        h += btn('begingame', gdA ? 'Yeni oyunu başlat' : 'Oyunu başlat', { cls: 'primary', small: lenChoice + ' el' });
+        el.innerHTML = h; return;
+      }
       if (iAnted) {
         var n = Math.min(v.anted.length, MAX_SEATS);
         h += '<div class="msg">Ante\'n masada: <b>' + fmt(mySeat.ante) + '</b>. Herkes ante koyunca kartları dağıt.</div>';
@@ -1574,7 +1698,11 @@ window.CORE = (function () {
       } else {
         h += '<div class="msg">El bitti.</div>';
       }
-      h += btn('newround', 'Yeni el', { cls: 'primary' });
+      var gdD = gameDisp(v);
+      if (!gdD || gdD.over) {
+        h += '<div class="lenpick-label">Yeni oyun kaç el sürsün? Fişler ' + fmt(START) + '\'e döner.</div>' + CORE.lenPicker('p-len', lenChoice);
+        h += btn('newround', 'Yeni oyun', { cls: 'primary', small: lenChoice + ' el' });
+      } else h += btn('newround', 'Yeni el', { cls: 'primary', small: 'El ' + (gdD.played + 1) + '/' + gdD.len });
     }
     el.innerHTML = h;
   }
@@ -1634,6 +1762,7 @@ window.CORE = (function () {
       return R.state.transaction(function (cur) {
         reason = '';
         if (cur && cur.players && cur.seed) { reason = 'Kartlar zaten dağıtıldı.'; return; }
+        if (!(cur && cur.game && !cur.game.over)) { reason = 'Önce oyunu başlatın.'; return; }
         var no = (cur && cur.no) || 1, bank = bankOf(cur), list = [];
         Object.keys(seats).forEach(function (id) {
           var x = seats[id];
@@ -1661,7 +1790,7 @@ window.CORE = (function () {
     };
   }
 
-  function newRound() {
+  function newRound(len) {
     var expectNo = V.st.no, reason = '';
     return write(function () {
       return R.state.transaction(function (cur) {
@@ -1671,25 +1800,53 @@ window.CORE = (function () {
         var st2 = { no: cur.no || 1, seed: cur.seed, players: cur.players, skipPlay: cur.skipPlay || {}, skipBuy: cur.skipBuy || {} };
         var res = RP.simulate(st2, localDecs());
         if (res.phase !== 'done') { reason = 'El henüz bitmedi.'; return; }
-        var bank = bankOf(cur), net = clone(bank.net || {});
-        if ((bank.applied || 0) < st2.no) res.players.forEach(function (p) { net[p.id] = (net[p.id] || 0) + p.net; });
-        return clone({ no: st2.no + 1, bank: { applied: Math.max(bank.applied || 0, st2.no), net: net, rebuyBase: bank.rebuyBase || {} }, prev: summarize(res) });
+        var bank = bankOf(cur), net = clone(bank.net || {}), rebuyBase = clone(bank.rebuyBase || {});
+        var game = clone(cur.game) || null, archive = clone(cur.lastGames) || [];
+        if ((bank.applied || 0) < st2.no) {
+          var d = {};
+          res.players.forEach(function (p) { net[p.id] = (net[p.id] || 0) + p.net; d[p.id] = p.net; });
+          if (game && !game.over) game = CORE.applyHand(game, d, st2.no);
+        }
+        if (len) {
+          if (game && !game.over) { reason = 'Oyun devam ediyor.'; return; }
+          if (game && game.over) archive = CORE.archive(archive, game, false);
+          game = CORE.newGame(len, nextGameNo(cur));
+          net = {}; rebuyBase = currentRebuys();
+        } else if (!game || game.over) { reason = 'Önce kaç ellik oyun oynanacağını seç.'; return; }
+        return clone({ no: st2.no + 1, bank: { applied: Math.max(bank.applied || 0, st2.no), net: net, rebuyBase: rebuyBase }, prev: summarize(res), game: game, lastGames: archive });
       }).then(function (r) { if (!r.committed && reason) toast(reason); });
     });
   }
 
-  function resetChips() {
+  function beginGame(len) {
     var reason = '';
     return write(function () {
       return R.state.transaction(function (cur) {
         reason = '';
-        if (cur && cur.players && cur.seed) { reason = 'Sıfırlama sadece eller arasında yapılabilir.'; return; }
-        var next = clone(cur) || {}, base = {};
-        Object.keys(seats).forEach(function (id) { base[id] = seats[id].rebuys || 0; });
-        next.bank = { applied: bankOf(cur).applied || 0, net: {}, rebuyBase: base };
+        var c = cur || {};
+        if (c.players && c.seed) { reason = 'Önce bu eli bitirin.'; return; }
+        if (c.game && !c.game.over) { reason = 'Oyun zaten sürüyor.'; return; }
+        var next = clone(c);
+        if (c.game && c.game.over) next.lastGames = CORE.archive(c.lastGames, c.game, false);
+        next.game = CORE.newGame(len, nextGameNo(c));
+        next.bank = { applied: bankOf(c).applied || 0, net: {}, rebuyBase: currentRebuys() };
+        next.no = c.no || 1;
+        return clone(next);
+      }).then(function (r) { if (!r.committed && reason) toast(reason); });
+    });
+  }
+
+  function cancelGame() {
+    var reason = '';
+    return write(function () {
+      return R.state.transaction(function (cur) {
+        reason = '';
+        if (cur && cur.players && cur.seed) { reason = 'Önce eli bitirin.'; return; }
+        var next = clone(cur) || {};
+        delete next.game;
         return clone(next);
       }).then(function (r) {
-        if (r.committed) { closeSheet(); toast('Herkesin fişi ' + fmt(START) + '\'e döndü.'); }
+        if (r.committed) { closeSheet(); toast('Oyun iptal edildi.'); }
         else if (reason) toast(reason);
       });
     });
@@ -1712,6 +1869,7 @@ window.CORE = (function () {
       '<li>Herkes karar verince krupiye kartlarını açar. Oyunu olması için en az <b>As-Papaz</b> gerekir.</li></ol>' +
       '<h4>Krupiyenin oyunu yoksa</h4><p>Bet iade edilir, ante 1:1 ödenir. İstersen 1× ante ödeyip krupiyeye <b>oyun satın alırsın</b>: krupiye en yüksek kartını atıp yeni kart çeker. Oyunu çıkarsa elin karşılaştırılır; çıkmazsa ante yine 1:1 ödenir. Oyun satın alma ücreti geri verilmez.</p>' +
       '<h4>Krupiyenin oyunu varsa</h4><p>Elin büyükse bet aşağıdaki oranla ödenir. İlk elinle oynadıysan ante de 1:1 ödenir; kart değiştirdiysen ya da 6. kart aldıysan ante sadece iade edilir ve ödediğin ücret gider. Beraberlikte bet ve ante iade edilir. Krupiye büyükse hepsi gider.</p>' +
+      '<h4>Oyun</h4><p>Oyun başlarken 3, 5, 7 ya da 11 el seçilir. Her oyunda herkes ' + fmt(START) + ' fişle başlar ve el el kâr ya da zarar yazılır. El sayısı dolunca en çok kâr eden oyunu kazanır. Fişi biten yükleme yapabilir; yüklemeler kâra sayılmaz.</p>' +
       '<h4>Ödeme tablosu</h4>' + tbl(single) +
       '<h4>İki kombinasyon</h4><p>Elinde birbirinden farklı iki kombinasyon varsa (örneğin Per ve As-Papaz) ikisi birden ödenir. En yüksek olan sayılır.</p>' + tbl(dbl) +
       '<h4>Süre</h4><p>Bir oyuncu 1 dakika içinde karar vermezse masadakiler onu pas sayabilir. Bu sürümde sigorta yok.</p>' +
@@ -1733,12 +1891,18 @@ window.CORE = (function () {
         '<td class="n">' + fmt(c) + '</td><td class="n"><span class="amt ' + cls(profit) + '">' + sfmt(profit) + '</span></td></tr>';
     }).join('');
     var h = '<div class="panel-head"><h3>Fiş tablosu</h3><button class="ghost" type="button" data-act="close">Kapat</button></div>';
+    var gdB = gameDisp(v);
+    if (gdB) {
+      h += '<p style="color:var(--muted);font-size:13px">Oyun ' + gdB.n + ' · ' + gdB.played + '/' + gdB.len + ' el oynandı. Tablo el el kâr ve zararı gösterir; en çok kâr eden kazanır.</p>';
+      if (gdB.over) h += CORE.gameOverHTML(gdB, gOpts());
+      h += CORE.scoreTable(gdB, gOpts()) + '<h4>Fişler</h4>';
+    }
     h += ids.length ? '<table><thead><tr><th>Oyuncu</th><th class="n">Fiş</th><th class="n">Kâr</th></tr></thead><tbody>' + rows + '</tbody></table>'
       : '<p>Henüz masaya oturan yok.</p>';
     h += '<p style="color:var(--muted);font-size:13px">Kâr, başlangıç fişi ve yüklemeler düşülerek hesaplanır. Yeşil nokta şu an masada olanları gösterir.</p>';
     if (isOwner()) {
-      h += '<h4>Masa sahibi</h4><p>Yeni bir oyun gecesine başlarken herkesin fişini ' + fmt(START) + '\'e döndürebilirsin.</p>' +
-        btn('askreset', 'Herkesin fişini sıfırla', { cls: 'danger', disabled: !!v.sim, small: v.sim ? 'Sadece eller arasında yapılabilir' : '' });
+      h += CORE.lastGamesHTML((stateDoc || {}).lastGames, gOpts());
+      if (gdB && !gdB.over) h += '<h4>Masa sahibi</h4>' + btn('askreset', 'Oyunu iptal et', { cls: 'danger', disabled: !!v.sim, small: v.sim ? 'Sadece eller arasında yapılabilir' : 'Kazanan ilan edilmez' });
     }
     return h;
   }
@@ -1762,7 +1926,10 @@ window.CORE = (function () {
       case 'close': closeSheet(); break;
       case 'join': openSheet(joinHTML()); setTimeout(function () { var i = $('nameInput'); if (i) i.focus(); }, 50); break;
       case 'chip': anteChoice = +t.getAttribute('data-v'); render(); break;
+      case 'p-len': lenChoice = +t.getAttribute('data-len'); render(); break;
+      case 'begingame': beginGame(lenChoice); break;
       case 'ante':
+        var gdX = gameDisp(v); if (!gdX || gdX.over) { toast('Önce oyunu başlatın.'); break; }
         if (chipsOf(pid, v) < 5 * anteChoice) { toast('Bu ante için yeterli fişin yok.'); break; }
         write(function () { return saveSeat({ anteRound: v.st.no, ante: anteChoice, anteAt: Date.now() }); }); break;
       case 'unante': write(function () { return saveSeat({ anteRound: 0 }); }); break;
@@ -1789,11 +1956,11 @@ window.CORE = (function () {
         var w = (v.sim && v.sim.waitingBuy) || [], o2 = {};
         w.forEach(function (x) { o2[x] = true; });
         if (w.length) write(function () { return R.state.child('skipBuy').update(o2); }); break;
-      case 'newround': newRound(); break;
+      case 'newround': var gdN = gameDisp(v); newRound(!gdN || gdN.over ? lenChoice : 0); break;
       case 'askreset':
-        openSheet('<h3>Fişler sıfırlansın mı?</h3><p>Masadaki herkesin fişi ' + fmt(START) + '\'e döner ve yükleme sayıları sıfırlanır. Bu geri alınamaz.</p>' +
-          '<div class="row2">' + btn('close', 'Vazgeç') + btn('reset', 'Sıfırla', { cls: 'danger' }) + '</div>'); break;
-      case 'reset': if (isOwner()) resetChips(); break;
+        openSheet('<h3>Oyun iptal edilsin mi?</h3><p>Bu oyunun puanları silinir, kazanan ilan edilmez. Yeni oyun başlatınca herkesin fişi ' + fmt(START) + '\'e döner.</p>' +
+          '<div class="row2">' + btn('close', 'Vazgeç') + btn('reset', 'Oyunu iptal et', { cls: 'danger' }) + '</div>'); break;
+      case 'reset': if (isOwner()) cancelGame(); break;
     }
   });
   document.addEventListener('submit', function (e) {
@@ -1844,13 +2011,13 @@ window.CORE = (function () {
   'use strict';
   var OKE = window.OK, CORE = window.CORE;
   var pid = CORE.pid, R = {}, st = null, seats = {}, loaded = { st: false, seats: false };
-  var busy = false, sel = null, V = null, turnSeen = {}, autoShownKey = '';
+  var busy = false, sel = null, V = null, turnSeen = {}, autoShownKey = '', lenChoice = 5;
   var AUTO_AFTER = 90000, MAX = 4;
   var CC = ['y', 'b', 'k', 'r'];
 
   function $(id) { return document.getElementById(id); }
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
-  function fmt(n) { return Number(n || 0).toLocaleString('tr-TR'); }
+  function fmt(n) { n = Number(n || 0); return (n < 0 ? '−' : '') + Math.abs(n).toLocaleString('tr-TR'); }
   function clone(o) { return o == null ? o : JSON.parse(JSON.stringify(o)); }
   function nameOf(id) { var s = seats[id]; return (s && s.name) || 'Oyuncu'; }
   function joined() { return !!(seats[pid] && seats[pid].name); }
@@ -1869,13 +2036,14 @@ window.CORE = (function () {
     var me = r ? s.players.indexOf(pid) : -1;
     return { s: s, r: r, me: me };
   }
-  function totalOf(id, v) {
-    var t = ((v.s.score || {})[id]) || 0;
-    if (v.r && v.r.end && (v.s.applied || 0) < v.s.no) {
-      var i = v.s.players.indexOf(id); if (i >= 0) t += v.r.penalties[i].pen;
-    }
-    return t;
+  function pendingDeltas(v) {
+    if (!(v.r && v.r.end && (v.s.applied || 0) < v.s.no)) return null;
+    var d = {}; v.s.players.forEach(function (id, i) { d[id] = v.r.penalties[i].pen; });
+    return d;
   }
+  function gameDisp(v) { return CORE.gameDisplay(v.s.game, pendingDeltas(v), v.s.no); }
+  function totalOf(id, v) { var g = gameDisp(v); return g ? ((g.scores || {})[id] || 0) : 0; }
+  function gOpts() { return { lowerBetter: true, fmt: fmt, esc: esc, nameOf: nameOf, me: pid, scoreWord: 'Toplam ceza' }; }
 
   // ---------- taş çizimi ----------
   function tileHTML(id, g, o) {
@@ -1974,7 +2142,7 @@ window.CORE = (function () {
   function render() {
     V = view();
     var v = V, s = v.s, r = v.r;
-    $('okRound').textContent = s.no ? 'Renk · El #' + s.no : 'Renk';
+    $('okRound').textContent = CORE.gameLabel(gameDisp(v), !!(r && !r.end));
     var bt = CORE.bannerText(loaded.st);
     $('okBanner').innerHTML = bt ? '<div class="banner">' + esc(bt) + '</div>' : '';
     renderCenter(v); renderOpps(v); renderMine(v); renderActions(v);
@@ -2010,7 +2178,9 @@ window.CORE = (function () {
   function renderOpps(v) {
     var r = v.r, el = $('okOpps'), s = v.s, out = '';
     if (!r) {
-      var list = seated();
+      var list = seated(), gd0 = gameDisp(v);
+      if (gd0 && gd0.over) out += CORE.gameOverHTML(gd0, gOpts());
+      if (gd0) out += '<div class="section-head"><h2>Oyun ' + gd0.n + ' puanları</h2><span>' + gd0.played + ' / ' + gd0.len + ' el</span></div>' + CORE.scoreTable(gd0, Object.assign(gOpts(), { extra: list }));
       out += '<div class="section-head"><h2>Masada oturanlar</h2><span>' + list.length + ' / ' + MAX + '</span></div>';
       if (!list.length) out += '<div class="empty-note">Henüz kimse oturmadı. 2–4 kişi oturunca el başlatılabilir.</div>';
       list.forEach(function (id, i) {
@@ -2039,7 +2209,8 @@ window.CORE = (function () {
   }
 
   function resultsHTML(v) {
-    var r = v.r, s = v.s, e = r.end, out = '<div class="ok-result">';
+    var r = v.r, s = v.s, e = r.end, out = '<div class="ok-result">', gd = gameDisp(v);
+    if (gd && gd.over) out += CORE.gameOverHTML(gd, gOpts()) + CORE.scoreTable(gd, gOpts());
     if (e.draw) out += '<div class="res-title">Ortada taş kalmadı · el berabere</div><div class="hint">Kimseye ceza yazılmadı.</div>';
     else {
       var tags = [e.kind === 'cift' ? 'Çiftle bitti ×2' : 'Seriyle bitti'];
@@ -2051,9 +2222,9 @@ window.CORE = (function () {
       var hand = r.hands[i], p = r.penalties[i], isW = !e.draw && i === e.winner, tilesHtml;
       if (isW && e.kind === 'cift') tilesHtml = groupsHTML(pairGroups(hand, r.g), [], r.g);
       else { var a = OKE.arrange(hand, r.g); tilesHtml = groupsHTML(a.groups, a.left, r.g); }
-      var line = isW ? 'Bitiren' : e.draw ? 'Ceza yok' : 'Kalan ' + p.base + ' × ' + p.factor + ' = <b>' + fmt(p.pen) + '</b>';
+      var line = isW ? 'Bitiren · <b class="pos">' + fmt(p.pen) + '</b>' : e.draw ? 'Ceza yok' : p.noPer ? 'Per yok · ' + r.g.mult + ' × 100' + (p.factor > r.g.mult * 100 ? ' × ' + (p.factor / (r.g.mult * 100)) : '') + ' = <b>' + fmt(p.pen) + '</b>' : 'Kalan ' + p.base + ' × ' + p.factor + ' = <b>' + fmt(p.pen) + '</b>';
       out += '<div class="res-row' + (id === pid ? ' mine' : '') + '"><div class="res-head"><span class="who">' + esc(nameOf(id)) + (id === pid ? ' · sen' : '') + '</span>' +
-        '<span class="res-pen' + (p.pen ? ' neg' : '') + '">' + line + '</span></div><div class="res-tiles">' + tilesHtml + '</div></div>';
+        '<span class="res-pen' + (p.pen > 0 ? ' neg' : '') + '">' + line + '</span></div><div class="res-tiles">' + tilesHtml + '</div></div>';
     });
     return out + '</div>';
   }
@@ -2082,7 +2253,7 @@ window.CORE = (function () {
       if (id == null) return '<button type="button" class="slot" data-act="ok-slot" data-slot="' + i + '" aria-label="Boş yer"></button>';
       return tileHTML(id, g, { sel: sel === id, isNew: newId === id, act: 'data-act="ok-tile" data-id="' + id + '"' });
     }).join('');
-    var opts = myTurn && r.phase === 'discard' ? OKE.finishOptions(r.hands[v.me], g) : [];
+    var opts = myTurn && r.phase === 'discard' ? OKE.finishOptions(r.hands[v.me], g).filter(function (o) { return o.tile !== r.locked; }) : [];
     el.innerHTML =
       '<div class="ok-near">' +
         '<div class="near-cell"><span class="label">Soldan gelen</span>' + (prevTop != null ? tileHTML(prevTop, g, {}) : '<span class="tile empty"></span>') + '</div>' +
@@ -2108,10 +2279,16 @@ window.CORE = (function () {
     if (!joined()) { el.innerHTML = '<div class="msg">Oynamak için masaya otur.</div>' + btn('ok-join', 'Masaya otur', { cls: 'primary' }); return; }
     var list = seated(), iSit = !!seats[pid].sit;
     if (!r || r.end) {
-      if (r && r.end) h += '<div class="msg">' + (v.me >= 0 && !r.end.draw ? (r.end.winner === v.me ? '<b>Bitirdin!</b> Rakiplerine ceza yazıldı.' : 'Bu elden cezan: <b>' + fmt(r.penalties[v.me].pen) + '</b>') : 'El bitti.') + '</div>';
+      var gd = gameDisp(v), needGame = !gd || gd.over;
+      if (r && r.end) {
+        var myPen = v.me >= 0 && !r.end.draw ? r.penalties[v.me].pen : null;
+        h += '<div class="msg">' + (myPen == null ? 'El bitti.' : r.end.winner === v.me ? '<b>Bitirdin!</b> ' + fmt(-myPen) + ' puan sildin.' : 'Bu elden cezan: <b>' + fmt(myPen) + '</b>') + '</div>';
+      }
       var canStart = iSit && list.length >= 2;
+      if (needGame) h += '<div class="lenpick-label">' + (gd ? 'Yeni oyun' : 'Oyun') + ' kaç el sürsün?</div>' + CORE.lenPicker('ok-len', lenChoice);
       h += '<div class="row2">' + (iSit ? btn('ok-stand', 'Masadan kalk', { small: 'İzlemeye geç' }) : btn('ok-sit', 'Masaya otur', { disabled: list.length >= MAX, small: list.length >= MAX ? 'Masa dolu' : list.length + ' / ' + MAX })) +
-        btn('ok-start', r && r.end ? 'Yeni el' : 'Eli başlat', { cls: 'primary', disabled: !canStart, small: list.length < 2 ? 'En az 2 kişi gerekli' : list.length + ' oyuncu' }) + '</div>';
+        btn('ok-start', needGame ? (gd ? 'Yeni oyun' : 'Oyunu başlat') : 'Yeni el', { cls: 'primary', disabled: !canStart,
+          small: list.length < 2 ? 'En az 2 kişi gerekli' : needGame ? lenChoice + ' el · ' + list.length + ' oyuncu' : 'El ' + (gd.played + 1) + '/' + gd.len }) + '</div>';
       el.innerHTML = h; return;
     }
     var ms = elapsed(v), k = timerKey(v), late = ms >= AUTO_AFTER;
@@ -2120,11 +2297,13 @@ window.CORE = (function () {
     if (myTurn && r.phase === 'draw') {
       var prev = (v.me - 1 + r.n) % r.n, has = r.discards[prev].length > 0;
       h += '<div class="msg">Sıra sende: <b>taş çek</b>.</div>';
-      h += '<div class="row2">' + btn('ok-draw-c', 'Ortadan çek', { cls: 'primary', small: r.centerCount + ' taş var' }) + btn('ok-draw-p', 'Soldakini al', { disabled: !has }) + '</div>';
+      h += '<div class="row2">' + btn('ok-draw-c', 'Ortadan çek', { cls: 'primary', small: r.centerCount + ' taş var' }) + btn('ok-draw-p', 'Soldakini al', { disabled: !has || r.noLeft, small: r.noLeft ? 'Geri bıraktın' : '' }) + '</div>';
     } else if (myTurn && r.phase === 'discard') {
-      var opts = OKE.finishOptions(r.hands[v.me], r.g);
-      h += '<div class="row2">' + btn('ok-discard', sel != null ? 'Seçili taşı at' : 'Atacağın taşı seç', { cls: 'primary', disabled: sel == null }) +
+      var locked = r.locked, opts = OKE.finishOptions(r.hands[v.me], r.g).filter(function (o) { return o.tile !== locked; });
+      var selLocked = sel != null && sel === locked;
+      h += '<div class="row2">' + btn('ok-discard', sel == null ? 'Atacağın taşı seç' : selLocked ? 'Bu taşı atamazsın' : 'Seçili taşı at', { cls: 'primary', disabled: sel == null || selLocked, small: selLocked ? 'Soldan aldığını aynı tur atamazsın' : '' }) +
         btn('ok-finish', 'Bitir', { cls: opts.length ? 'primary' : '', disabled: !opts.length, small: opts.length ? finishHint(opts) : 'Elin henüz per değil' }) + '</div>';
+      if (locked != null) h += btn('ok-undo', 'Soldan aldığımı geri bırak', { small: 'Sonra ortadan çekersin' });
       h += '<div class="row2">' + btn('ok-seri', 'Seri diz') + btn('ok-cift', 'Çift diz') + '</div>';
     } else {
       var cur = v.s.players[r.turn];
@@ -2138,12 +2317,14 @@ window.CORE = (function () {
   function finishHint(opts) {
     var best = bestFinish(opts);
     var parts = [];
-    if (best.kind === 'cift') parts.push('çiftle ×2');
-    if (best.okey) parts.push('okeyle ×2');
-    return parts.length ? parts.join(', ') : 'seriyle';
+    var m = V && V.r ? V.r.g.mult : 0;
+    if (best.kind === 'cift') parts.push('çiftle');
+    if (best.okey) parts.push('okeyle');
+    var ded = m * (best.okey ? 100 : 10) * (best.kind === 'cift' ? 2 : 1);
+    return (parts.length ? parts.join(' + ') : 'seriyle') + (m ? ' · −' + fmt(ded) : '');
   }
   function bestFinish(opts) {
-    var score = function (o) { return (o.kind === 'cift' ? 2 : 1) * (o.okey ? 2 : 1); };
+    var score = function (o) { return (o.kind === 'cift' ? 2 : 1) * (o.okey ? 10 : 1); };
     var b = opts[0];
     opts.forEach(function (o) { if (score(o) > score(b)) b = o; });
     if (sel != null) { var s2 = opts.filter(function (o) { return o.tile === sel; })[0]; if (s2 && score(s2) >= score(b)) b = s2; }
@@ -2196,7 +2377,7 @@ window.CORE = (function () {
       pens: c.players.map(function (id, i) { return { id: id, pen: rr.penalties[i].pen }; })
     };
   }
-  function startHand() {
+  function startHand(len) {
     var why = '';
     return write(function () {
       return R.st.transaction(function (cur) {
@@ -2205,13 +2386,19 @@ window.CORE = (function () {
         if (active) { rr = OKE.replay(norm(c)); if (!rr.end) { why = 'El devam ediyor.'; return; } }
         var players = seated().slice(0, MAX);
         if (players.length < 2) { why = 'Eli başlatmak için en az 2 kişi oturmalı.'; return; }
-        var score = clone(c.score || {}), applied = c.applied || 0, prev = c.prev || null;
+        var game = clone(c.game) || null, archive = clone(c.lastGames) || [], applied = c.applied || 0, prev = c.prev || null;
         if (active && applied < c.no) {
-          rr.penalties.forEach(function (p, i) { var id = c.players[i]; score[id] = (score[id] || 0) + p.pen; });
+          var d = {}; rr.penalties.forEach(function (p, i) { d[c.players[i]] = p.pen; });
+          if (game && !game.over) game = CORE.applyHand(game, d, c.no);
           applied = c.no; prev = summarize(c, rr);
         }
+        if (len) {
+          if (game && !game.over) { why = 'Oyun devam ediyor.'; return; }
+          if (game && game.over) archive = CORE.archive(archive, game, true);
+          game = CORE.newGame(len, (game ? game.n : (c.lastGames && c.lastGames.length ? c.lastGames[c.lastGames.length - 1].n : 0)) + 1);
+        } else if (!game || game.over) { why = 'Önce oyunun kaç el süreceğini seç.'; return; }
         var no = (c.no || 0) + 1;
-        return clone({ no: no, seed: CORE.rnd(), players: players, starter: (no - 1) % players.length, score: score, applied: applied, prev: prev, startedAt: Date.now() });
+        return clone({ no: no, seed: CORE.rnd(), players: players, starter: (no - 1) % players.length, applied: applied, prev: prev, game: game, lastGames: archive, startedAt: Date.now() });
       }).then(function (res) { if (!res.committed && why) toast(why); });
     });
   }
@@ -2224,18 +2411,17 @@ window.CORE = (function () {
       }).then(function (res) { if (res.committed) { closeSheet(); toast('El iptal edildi, ceza yazılmadı.'); } });
     });
   }
-  function resetScores() {
+  function cancelGame() {
     var why = '';
     return write(function () {
       return R.st.transaction(function (cur) {
         why = '';
         var c = cur || {};
-        if (c.players && c.seed && !OKE.replay(norm(c)).end) { why = 'Puanlar sadece eller arasında sıfırlanabilir.'; return; }
-        var next = clone(c); next.score = {};
+        if (c.players && c.seed && !OKE.replay(norm(c)).end) { why = 'Önce devam eden eli iptal et.'; return; }
+        var next = clone(c); delete next.game;
         if (c.players && c.seed) next.applied = c.no || 0;
-        delete next.prev;
         return clone(next);
-      }).then(function (res) { if (res.committed) { closeSheet(); toast('Puanlar sıfırlandı.'); } else if (why) toast(why); });
+      }).then(function (res) { if (res.committed) { closeSheet(); toast('Oyun iptal edildi.'); } else if (why) toast(why); });
     });
   }
 
@@ -2247,32 +2433,35 @@ window.CORE = (function () {
       '<p>106 taş: 4 renk (sarı, mavi, siyah, kırmızı), 1–13 arası, her taştan iki tane ve iki sahte okey. 2–4 kişi oynanır.</p>' +
       '<h4>Gösterge ve okey</h4><p>Elin başında bir gösterge açılır. Okey, göstergeyle aynı renkte bir üst sayıdır (13\'ün üstü 1). Okey her taşın yerine geçer. Sahte okey (★) o eldeki okey taşının yerine geçen sıradan bir taştır.</p>' +
       '<h4>Oynanış</h4><ol><li>Başlayan 15, diğerleri 14 taşla başlar. Başlayan direkt bir taş atar.</li>' +
-      '<li>Sıran gelince ortadan çek ya da soldakinin attığı taşı al, sonra bir taş at.</li>' +
+      '<li>Sıran gelince ortadan çek ya da soldakinin attığı taşı al, sonra bir taş at. Soldan aldığın taşı aynı tur atamazsın; istersen geri bırakıp ortadan çekersin.</li>' +
       '<li>Per: aynı renkte en az 3 ardışık taş (12-13-1 olur, 13-1-2 olmaz) ya da aynı sayının farklı renklerinden 3–4 taş. Ya da 7 çift.</li>' +
       '<li>14 taşın hepsi per ya da 7 çift olunca 15. taşı atıp bitirirsin. Uygulama elini kontrol eder, Bitir düğmesi açılır.</li></ol>' +
       '<h4>Ceza (Renk)</h4><p>Biri bitince diğerlerinin per olmayan taşları toplanır ve göstergenin rengiyle çarpılır. Taşlar en az ceza çıkacak şekilde otomatik dizilir.</p>' +
       '<table><thead><tr><th>Gösterge</th><th class="n">Çarpan</th></tr></thead><tbody>' +
       '<tr><td>Mavi</td><td class="n">×10</td></tr><tr><td>Siyah</td><td class="n">×5</td></tr><tr><td>Kırmızı</td><td class="n">×4</td></tr><tr><td>Sarı</td><td class="n">×3</td></tr><tr><td>Sahte okey (diğer sahte okey o elde okey olur)</td><td class="n">×20</td></tr></tbody></table>' +
-      '<p>Çiftle biterse ceza 2 katı, okeyi atarak biterse 2 katı, ikisi birden 4 katı olur. Elde kalan okey ceza yazmaz; sahte okey okeyin sayısı kadar yazar. Ortada taş kalmazsa el berabere biter.</p>' +
+      '<p><b>Hiç peri olmayan</b> çarpan × 100 ceza yer (Mavi\'de 1.000).</p>' +
+      '<p>Çiftle biterse cezalar 2 katı, okeyi atarak biterse 2 katı, ikisi birden 4 katı olur. Elde kalan okey ceza yazmaz; sahte okey okeyin sayısı kadar yazar. Ortada taş kalmazsa el berabere biter.</p>' +
+      '<h4>Biten</h4><p>Biten oyuncu gösterge çarpanı × 10 puan siler: Mavi −100, Siyah −50, Kırmızı −40, Sarı −30, sahte okey −200. Çiftle biterse 2 katı siler. <b>Okeyle biterse</b> çarpan × 100 siler (Mavi\'de −1.000).</p>' +
       '<h4>Süre</h4><p>Sırası gelen 1,5 dakika oynamazsa masadakiler onun yerine otomatik oynatabilir: ortadan çekip çektiği taşı atar.</p>' +
-      '<h4>Puan</h4><p>Cezalar el el toplanır. Toplam cezası en az olan önde.</p>';
+      '<h4>Puan ve oyun</h4><p>Oyun başlarken 3, 5, 7 ya da 11 el seçilir. Cezalar ve silinen puanlar el el yazılır; el sayısı dolunca toplam cezası en az olan oyunu kazanır.</p>';
   }
   function rulesSplit() {
     var full = rulesHTML().replace(/^<div class="panel-head">[\s\S]*?<\/div>/, '');
-    var i = full.indexOf('<h4>Ceza (Renk)</h4>'), j = full.indexOf('<h4>Süre</h4>'), k = full.indexOf('<h4>Puan</h4>');
+    var i = full.indexOf('<h4>Ceza (Renk)</h4>'), j = full.indexOf('<h4>Süre</h4>'), k = full.indexOf('<h4>Puan ve oyun</h4>');
     return { play: full.slice(0, i) + full.slice(j, k), pay: full.slice(i, j) + full.slice(k) };
   }
   function boardHTML() {
-    var v = V || view();
-    var ids = Object.keys(seats).filter(function (id) { return seats[id] && seats[id].name; });
-    ids.sort(function (a, b) { return totalOf(a, v) - totalOf(b, v); });
+    var v = V || view(), gd = gameDisp(v);
     var h = '<div class="panel-head"><h3>Okey puanları</h3><button class="ghost" type="button" data-act="close">Kapat</button></div>';
-    h += ids.length ? '<table><thead><tr><th>Oyuncu</th><th class="n">Toplam ceza</th></tr></thead><tbody>' + ids.map(function (id, i) {
-      return '<tr><td>' + (i + 1) + '. ' + dot(id) + esc(nameOf(id)) + (id === pid ? ' <span class="tag gold">sen</span>' : '') + '</td><td class="n">' + fmt(totalOf(id, v)) + '</td></tr>';
-    }).join('') + '</tbody></table>' : '<p>Henüz masaya oturan yok.</p>';
+    if (gd) {
+      h += '<p style="color:var(--muted);font-size:13px">Oyun ' + gd.n + ' · ' + gd.played + '/' + gd.len + ' el oynandı. Eksi puan bitip silinen puandır; toplam cezası en az olan kazanır.</p>';
+      if (gd.over) h += CORE.gameOverHTML(gd, gOpts());
+      h += CORE.scoreTable(gd, Object.assign(gOpts(), { extra: seated() }));
+    } else h += '<p>Henüz oyun başlamadı. Masaya oturup kaç el oynanacağını seçerek başlatın.</p>';
+    h += CORE.lastGamesHTML(v.s.lastGames, gOpts());
     if (CORE.isOwner()) {
       var active = v.r && !v.r.end;
-      h += '<h4>Masa sahibi</h4>' + (active ? btn('ok-askcancel', 'Bu eli iptal et', { cls: 'danger', small: 'Ceza yazılmaz' }) : btn('ok-askreset', 'Puanları sıfırla', { cls: 'danger' }));
+      h += '<h4>Masa sahibi</h4>' + (active ? btn('ok-askcancel', 'Bu eli iptal et', { cls: 'danger', small: 'Ceza yazılmaz' }) : gd && !gd.over ? btn('ok-askreset', 'Oyunu iptal et', { cls: 'danger', small: 'Kazanan ilan edilmez' }) : '');
     }
     return h;
   }
@@ -2298,7 +2487,9 @@ window.CORE = (function () {
         if (seated().length >= MAX) { toast('Masa dolu.'); break; }
         write(function () { return saveSeat({ sit: true, sitAt: Date.now() }); }); break;
       case 'ok-stand': write(function () { return saveSeat({ sit: false }); }); break;
-      case 'ok-start': startHand(); break;
+      case 'ok-start': var gdS = gameDisp(v); startHand(!gdS || gdS.over ? lenChoice : 0); break;
+      case 'ok-len': lenChoice = +t.getAttribute('data-len'); render(); break;
+      case 'ok-undo': pushAction({ p: v.me, t: 'u' }, function (rr) { return rr.phase === 'discard' && rr.locked != null; }); break;
       case 'ok-tile':
         var id = +t.getAttribute('data-id');
         if (sel == null) sel = id;
@@ -2325,7 +2516,7 @@ window.CORE = (function () {
           .then(function () { if (sel === tile) sel = null; render(); });
         break;
       case 'ok-finish':
-        var opts = OKE.finishOptions(r.hands[v.me], r.g);
+        var opts = OKE.finishOptions(r.hands[v.me], r.g).filter(function (o) { return o.tile !== r.locked; });
         if (!opts.length) { toast('Elin henüz per değil.'); break; }
         var f = bestFinish(opts);
         pushAction({ p: v.me, t: 'f', tile: f.tile }, function (rr) {
@@ -2337,8 +2528,8 @@ window.CORE = (function () {
         openSheet('<h3>Bu el iptal edilsin mi?</h3><p>El hiç oynanmamış sayılır, kimseye ceza yazılmaz.</p><div class="row2">' + btn('close', 'Vazgeç') + btn('ok-cancel', 'İptal et', { cls: 'danger' }) + '</div>'); break;
       case 'ok-cancel': if (CORE.isOwner()) cancelHand(); break;
       case 'ok-askreset':
-        openSheet('<h3>Okey puanları sıfırlansın mı?</h3><p>Herkesin toplam cezası sıfırlanır. Bu geri alınamaz.</p><div class="row2">' + btn('close', 'Vazgeç') + btn('ok-reset', 'Sıfırla', { cls: 'danger' }) + '</div>'); break;
-      case 'ok-reset': if (CORE.isOwner()) resetScores(); break;
+        openSheet('<h3>Oyun iptal edilsin mi?</h3><p>Bu oyunun puanları silinir, kazanan ilan edilmez. Sonra yeni oyun başlatabilirsiniz.</p><div class="row2">' + btn('close', 'Vazgeç') + btn('ok-reset', 'Oyunu iptal et', { cls: 'danger' }) + '</div>'); break;
+      case 'ok-reset': if (CORE.isOwner()) cancelGame(); break;
     }
   });
   document.addEventListener('submit', function (e) {
@@ -2389,7 +2580,7 @@ window.CORE = (function () {
   'use strict';
   var HE = window.HE, RP = window.RP, CORE = window.CORE;
   var pid = CORE.pid, R = {}, st = null, seats = {}, loaded = { st: false, seats: false };
-  var busy = false, V = null, turnSeen = {}, autoShownKey = '', raiseTo = 0, raiseKey = '';
+  var busy = false, V = null, turnSeen = {}, autoShownKey = '', raiseTo = 0, raiseKey = '', lenChoice = 5;
   var START = 1000, SB = 10, BB = 20, MAX = 8, AUTO_AFTER = 60000;
   var SUITS = ['♠', '♥', '♦', '♣'];
   var STREETS = ['Preflop', 'Flop', 'Turn', 'River', 'Showdown'];
@@ -2424,6 +2615,14 @@ window.CORE = (function () {
     }
     return (stacks[id] != null ? stacks[id] : START) + pending;
   }
+  function pendingDeltas(v) {
+    if (!(v.r && v.r.end && (v.s.applied || 0) < v.s.no)) return null;
+    var d = {}; v.r.P.forEach(function (p) { d[p.id] = p.net; });
+    return d;
+  }
+  function gameDisp(v) { return CORE.gameDisplay(v.s.game, pendingDeltas(v), v.s.no); }
+  function gOpts() { return { lowerBetter: false, fmt: sfmt, esc: esc, nameOf: nameOf, me: pid, scoreWord: 'Kâr' }; }
+  function nextGameNo(c) { return (c.game ? c.game.n : (c.lastGames && c.lastGames.length ? c.lastGames[c.lastGames.length - 1].n : 0)) + 1; }
   function rebuysOf(id, v) { var seat = seats[id] || {}; return (seat.rebuys || 0) - ((v.s.rbBase || {})[id] || 0); }
 
   function cardHTML(c, extra) {
@@ -2439,7 +2638,8 @@ window.CORE = (function () {
   function render() {
     V = view();
     var v = V, s = v.s, r = v.r;
-    $('heRound').textContent = s.no ? 'El #' + s.no : 'Masa';
+    var gdH = gameDisp(v);
+    $('heRound').textContent = gdH ? CORE.gameLabel(gdH, !!(r && !r.end)) : 'Oyun yok';
     $('heChipsVal').textContent = joined() ? fmt(chipsOf(pid, v)) : '—';
     var bt = CORE.bannerText(loaded.st);
     $('heBanner').innerHTML = bt ? '<div class="banner">' + esc(bt) + '</div>' : '';
@@ -2471,7 +2671,9 @@ window.CORE = (function () {
   function renderSeats(v) {
     var r = v.r, s = v.s, out = '';
     if (!r) {
-      var list = seated();
+      var list = seated(), gdS = gameDisp(v);
+      if (gdS && gdS.over) out += CORE.gameOverHTML(gdS, gOpts());
+      if (gdS && gdS.played) out += '<div class="section-head"><h2>Oyun ' + gdS.n + ' kârları</h2><span>' + gdS.played + ' / ' + gdS.len + ' el</span></div>' + CORE.scoreTable(gdS, gOpts());
       $('heSeatsTitle').textContent = 'Masada oturanlar';
       $('heSeatsCount').textContent = list.length + ' / ' + MAX;
       if (!list.length) out += '<div class="empty-note">Henüz kimse oturmadı. Fişi olan en az 2 kişi oturunca el başlatılabilir.</div>';
@@ -2485,7 +2687,8 @@ window.CORE = (function () {
     }
     $('heSeatsTitle').textContent = r.end ? 'El sonucu' : 'Bu el';
     $('heSeatsCount').textContent = r.n + ' oyuncu';
-    var showCards = r.end && r.end.showdown;
+    var showCards = r.end && r.end.showdown, gdE = r.end ? gameDisp(v) : null;
+    if (gdE && gdE.over) out += CORE.gameOverHTML(gdE, gOpts()) + CORE.scoreTable(gdE, gOpts());
     r.P.forEach(function (p, i) {
       var mine = i === v.me, turn = !r.end && r.turn === i, tags = [], amt, amtCls = 'zero', cards = '';
       if (turn) tags.push('<span class="tag gold">Sırası · <span data-hetimer>0:00</span></span>');
@@ -2558,12 +2761,17 @@ window.CORE = (function () {
     if (!r || r.end) {
       if (r && r.end && v.me >= 0) h += '<div class="result"><div class="big ' + cls(r.P[v.me].net) + '">' + sfmt(r.P[v.me].net) + '</div></div>';
       var able = list.filter(function (id) { return chipsOf(id, v) > 0; }).length;
-      if (iSit && chips <= 0) {
+      var gdA = gameDisp(v), needGame = !gdA || gdA.over;
+      if (needGame) {
+        h += '<div class="lenpick-label">' + (gdA ? 'Yeni oyun' : 'Oyun') + ' kaç el sürsün? Herkes ' + fmt(START) + ' fişle başlar.</div>' + CORE.lenPicker('he-len', lenChoice);
+        h += '<div class="row2">' + (iSit ? btn('he-stand', 'Masadan kalk', { small: 'İzlemeye geç' }) : btn('he-sit', 'Masaya otur', { disabled: list.length >= MAX, small: list.length >= MAX ? 'Masa dolu' : list.length + ' / ' + MAX })) +
+          btn('he-start', gdA ? 'Yeni oyun' : 'Oyunu başlat', { cls: 'primary', disabled: !iSit || list.length < 2, small: list.length < 2 ? 'En az 2 kişi gerekli' : lenChoice + ' el · ' + list.length + ' oyuncu' }) + '</div>';
+      } else if (iSit && chips <= 0) {
         h += '<div class="msg">Fişin bitti. Yeniden ' + fmt(START) + ' fiş yükleyebilirsin; tabloda yükleme sayın görünür.</div>';
         h += '<div class="row2">' + btn('he-stand', 'Masadan kalk') + btn('he-rebuy', fmt(START) + ' fiş yükle', { cls: 'primary' }) + '</div>';
       } else {
         h += '<div class="row2">' + (iSit ? btn('he-stand', 'Masadan kalk', { small: 'İzlemeye geç' }) : btn('he-sit', 'Masaya otur', { disabled: list.length >= MAX, small: list.length >= MAX ? 'Masa dolu' : list.length + ' / ' + MAX })) +
-          btn('he-start', r && r.end ? 'Yeni el' : 'Eli başlat', { cls: 'primary', disabled: !iSit || able < 2, small: able < 2 ? 'Fişi olan en az 2 kişi gerekli' : able + ' oyuncu' }) + '</div>';
+          btn('he-start', 'Yeni el', { cls: 'primary', disabled: !iSit || able < 2, small: able < 2 ? 'Fişi olan en az 2 kişi gerekli' : 'El ' + (gdA.played + 1) + '/' + gdA.len }) + '</div>';
       }
       el.innerHTML = h; return;
     }
@@ -2643,18 +2851,31 @@ window.CORE = (function () {
     return { no: c.no, uncontested: !!rr.end.uncontested,
       nets: rr.P.map(function (p) { return { id: p.id, net: p.net, name: sd && !p.folded ? p.name : '' }; }) };
   }
-  function startHand() {
+  function startHand(len) {
     var why = '';
     return write(function () {
       return R.st.transaction(function (cur) {
         why = '';
         var c = cur || {}, active = !!(c.players && c.seed), rr = null;
         if (active) { rr = HE.replay(norm(c)); if (!rr.end) { why = 'El devam ediyor.'; return; } }
-        var stacks = clone(c.stacks || {}), rbA = clone(c.rbApplied || {}), applied = c.applied || 0, prev = c.prev || null;
-        if (active && applied < c.no) { rr.P.forEach(function (p) { stacks[p.id] = p.final; }); applied = c.no; prev = summarize(c, rr); }
+        var stacks = clone(c.stacks || {}), rbA = clone(c.rbApplied || {}), rbBase = clone(c.rbBase || {}), applied = c.applied || 0, prev = c.prev || null;
+        var game = clone(c.game) || null, archive = clone(c.lastGames) || [];
+        if (active && applied < c.no) {
+          var d = {};
+          rr.P.forEach(function (p) { stacks[p.id] = p.final; d[p.id] = p.net; });
+          if (game && !game.over) game = CORE.applyHand(game, d, c.no);
+          applied = c.no; prev = summarize(c, rr);
+        }
+        if (len) {
+          if (game && !game.over) { why = 'Oyun devam ediyor.'; return; }
+          if (game && game.over) archive = CORE.archive(archive, game, false);
+          game = CORE.newGame(len, nextGameNo(c));
+          var rb = {}; Object.keys(seats).forEach(function (id) { rb[id] = (seats[id] && seats[id].rebuys) || 0; });
+          stacks = {}; rbA = clone(rb); rbBase = clone(rb);
+        } else if (!game || game.over) { why = 'Önce oyunun kaç el süreceğini seç.'; return; }
         Object.keys(seats).forEach(function (id) {
-          var rb = (seats[id] && seats[id].rebuys) || 0, ap = rbA[id] || 0;
-          if (rb > ap) { stacks[id] = (stacks[id] == null ? START : stacks[id]) + START * (rb - ap); rbA[id] = rb; }
+          var rb2 = (seats[id] && seats[id].rebuys) || 0, ap = rbA[id] || 0;
+          if (rb2 > ap) { stacks[id] = (stacks[id] == null ? START : stacks[id]) + START * (rb2 - ap); rbA[id] = rb2; }
         });
         var order = seated();
         var players = order.filter(function (id) { return (stacks[id] == null ? START : stacks[id]) > 0; }).slice(0, MAX);
@@ -2665,24 +2886,21 @@ window.CORE = (function () {
           for (var k = 1; k <= order.length; k++) { var cand = order[(pi + k + order.length) % order.length]; if (players.indexOf(cand) >= 0) { di = players.indexOf(cand); break; } }
         }
         return clone({ no: (c.no || 0) + 1, seed: CORE.rnd(), players: players.map(function (id) { return { id: id, stack: stacks[id] }; }),
-          dealer: di, button: players[di], sb: SB, bb: BB, stacks: stacks, rbApplied: rbA, rbBase: c.rbBase || {}, applied: applied, prev: prev, startedAt: Date.now() });
+          dealer: di, button: players[di], sb: SB, bb: BB, stacks: stacks, rbApplied: rbA, rbBase: rbBase, applied: applied, prev: prev,
+          game: game, lastGames: archive, startedAt: Date.now() });
       }).then(function (res) { if (!res.committed && why) toast(why); });
     });
   }
-  function resetChips() {
+  function cancelGame() {
     var why = '';
     return write(function () {
       return R.st.transaction(function (cur) {
         why = '';
         var c = cur || {};
-        if (c.players && c.seed && !HE.replay(norm(c)).end) { why = 'Sıfırlama sadece eller arasında yapılabilir.'; return; }
-        var next = clone(c), rb = {};
-        Object.keys(seats).forEach(function (id) { rb[id] = (seats[id] && seats[id].rebuys) || 0; });
-        next.stacks = {}; next.rbApplied = rb; next.rbBase = rb;
-        if (c.players && c.seed) next.applied = c.no || 0;
-        delete next.prev;
+        if (c.players && c.seed && !HE.replay(norm(c)).end) { why = 'Önce devam eden eli iptal et.'; return; }
+        var next = clone(c); delete next.game;
         return clone(next);
-      }).then(function (res) { if (res.committed) { closeSheet(); toast('Herkesin fişi ' + fmt(START) + '\'e döndü.'); } else if (why) toast(why); });
+      }).then(function (res) { if (res.committed) { closeSheet(); toast('Oyun iptal edildi.'); } else if (why) toast(why); });
     });
   }
   function cancelHand() {
@@ -2707,6 +2925,7 @@ window.CORE = (function () {
       '<li>Son turdan sonra kalanlar kartlarını açar. Elindeki 2 kart ve ortadaki 5 karttan en iyi 5\'lisi kazanır. Eşitlikte pot bölünür.</li></ol>' +
       '<h4>Raise</h4><p>En az bir önceki artırma kadar (ilk turda en az büyük blind kadar) artırman gerekir. Fişin yetmiyorsa all-in olursun.</p>' +
       '<h4>All-in ve yan pot</h4><p>All-in olan oyuncu sadece koyabildiği kadarlık potu kazanabilir. Fazlası yan pota gider ve onu kalanlar arasında en iyi el alır. Uygulama yan potları kendisi hesaplar.</p>' +
+      '<h4>Oyun</h4><p>Oyun başlarken 3, 5, 7 ya da 11 el seçilir. Her oyunda herkes ' + fmt(START) + ' fişle başlar; el el kâr ya da zarar yazılır. El sayısı dolunca en çok kâr eden oyunu kazanır. Yüklemeler kâra sayılmaz.</p>' +
       '<h4>Süre ve fiş</h4><p>Sırası gelen 1 dakika oynamazsa masadakiler onun yerine otomatik oynatabilir (bet yoksa check, varsa pas). Fişi biten ' + fmt(START) + ' fiş yükleyebilir; yüklemeler fiş tablosunda görünür.</p>';
   }
   function rulesRank() {
@@ -2725,6 +2944,12 @@ window.CORE = (function () {
     var ids = Object.keys(seats).filter(function (id) { return seats[id] && seats[id].name; });
     ids.sort(function (a, b) { return chipsOf(b, v) - chipsOf(a, v); });
     var h = '<div class="panel-head"><h3>Hold\'em fişleri</h3><button class="ghost" type="button" data-act="close">Kapat</button></div>';
+    var gdB = gameDisp(v);
+    if (gdB) {
+      h += '<p style="color:var(--muted);font-size:13px">Oyun ' + gdB.n + ' · ' + gdB.played + '/' + gdB.len + ' el oynandı. Tablo el el kâr ve zararı gösterir; en çok kâr eden kazanır.</p>';
+      if (gdB.over) h += CORE.gameOverHTML(gdB, gOpts());
+      h += CORE.scoreTable(gdB, gOpts()) + '<h4>Fişler</h4>';
+    }
     h += ids.length ? '<table><thead><tr><th>Oyuncu</th><th class="n">Fiş</th><th class="n">Kâr</th></tr></thead><tbody>' + ids.map(function (id, i) {
       var rb = rebuysOf(id, v), c = chipsOf(id, v), profit = c - START * (1 + rb);
       return '<tr><td>' + (i + 1) + '. ' + dot(id) + esc(nameOf(id)) + (id === pid ? ' <span class="tag gold">sen</span>' : '') + (rb ? ' <span class="tag">+' + rb + ' yükleme</span>' : '') + '</td>' +
@@ -2733,7 +2958,8 @@ window.CORE = (function () {
     h += '<p style="color:var(--muted);font-size:13px">Kâr, başlangıç fişi ve yüklemeler düşülerek hesaplanır.</p>';
     if (CORE.isOwner()) {
       var active = v.r && !v.r.end;
-      h += '<h4>Masa sahibi</h4>' + (active ? btn('he-askcancel', 'Bu eli iptal et', { cls: 'danger', small: 'Fişler el başındaki gibi kalır' }) : btn('he-askreset', 'Herkesin fişini sıfırla', { cls: 'danger' }));
+      h += CORE.lastGamesHTML(v.s.lastGames, gOpts());
+      h += '<h4>Masa sahibi</h4>' + (active ? btn('he-askcancel', 'Bu eli iptal et', { cls: 'danger', small: 'Fişler el başındaki gibi kalır' }) : gdB && !gdB.over ? btn('he-askreset', 'Oyunu iptal et', { cls: 'danger', small: 'Kazanan ilan edilmez' }) : '');
     }
     return h;
   }
@@ -2760,7 +2986,8 @@ window.CORE = (function () {
         write(function () { return saveSeat({ sit: true, sitAt: Date.now() }); }); break;
       case 'he-stand': write(function () { return saveSeat({ sit: false }); }); break;
       case 'he-rebuy': write(function () { return saveSeat({ rebuys: ((seats[pid] && seats[pid].rebuys) || 0) + 1 }); }); break;
-      case 'he-start': startHand(); break;
+      case 'he-start': var gdS2 = gameDisp(v); startHand(!gdS2 || gdS2.over ? lenChoice : 0); break;
+      case 'he-len': lenChoice = +t.getAttribute('data-len'); render(); break;
       case 'he-fold': if (op) pushAction({ p: v.me, t: 'fold' }); break;
       case 'he-check': if (op) pushAction({ p: v.me, t: 'check' }); break;
       case 'he-call': if (op) pushAction({ p: v.me, t: 'call' }); break;
@@ -2777,8 +3004,8 @@ window.CORE = (function () {
         openSheet('<h3>Bu el iptal edilsin mi?</h3><p>El hiç oynanmamış sayılır; herkesin fişi el başındaki gibi kalır.</p><div class="row2">' + btn('close', 'Vazgeç') + btn('he-cancel', 'İptal et', { cls: 'danger' }) + '</div>'); break;
       case 'he-cancel': if (CORE.isOwner()) cancelHand(); break;
       case 'he-askreset':
-        openSheet('<h3>Hold\'em fişleri sıfırlansın mı?</h3><p>Masadaki herkesin fişi ' + fmt(START) + '\'e döner ve yükleme sayıları sıfırlanır. Bu geri alınamaz.</p><div class="row2">' + btn('close', 'Vazgeç') + btn('he-reset', 'Sıfırla', { cls: 'danger' }) + '</div>'); break;
-      case 'he-reset': if (CORE.isOwner()) resetChips(); break;
+        openSheet('<h3>Oyun iptal edilsin mi?</h3><p>Bu oyunun kârları silinir, kazanan ilan edilmez. Yeni oyun başlatınca herkesin fişi ' + fmt(START) + '\'e döner.</p><div class="row2">' + btn('close', 'Vazgeç') + btn('he-reset', 'Oyunu iptal et', { cls: 'danger' }) + '</div>'); break;
+      case 'he-reset': if (CORE.isOwner()) cancelGame(); break;
     }
   });
   document.addEventListener('submit', function (e) {
