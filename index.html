@@ -425,6 +425,115 @@ body.sl-lock { overflow: hidden; overscroll-behavior: none; }
 .sl-art span { width: 20px; height: 20px; border-radius: 50%; margin-left: -6px; border: 2px solid rgba(0,0,0,.35); }
 .sl-art span:first-child { width: 26px; height: 26px; margin-left: 0; background: #f2c14e; position: relative; z-index: 2; }
 
+/* tombala */
+#tmBall { display: grid; justify-items: center; gap: 8px; padding: 6px 0 2px; }
+.tm-ball { width: 104px; height: 104px; border-radius: 50%; display: grid; place-items: center; font-family: var(--display); font-size: 50px; font-weight: 700; color: #1b1405;
+  background: radial-gradient(circle at 35% 30%, #fff6d8, #f2c14e 55%, #b98a1c); box-shadow: 0 10px 30px rgba(0,0,0,.4), inset 0 -6px 12px rgba(0,0,0,.18); }
+.tm-ball.idle { background: radial-gradient(circle at 35% 30%, #4a5b52, #26352d); color: #e8e2d0; font-size: 40px; }
+.tm-ball.done { background: radial-gradient(circle at 35% 30%, #d7ffe0, #8fdc9a 55%, #3c8c4c); }
+.tm-recent { display: flex; gap: 6px; }
+.tm-recent span { width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; font-weight: 800; font-size: 13px; background: rgba(243,234,215,.12); color: var(--ink); }
+.tm-card { border-radius: 12px; background: #f7f1e1; color: #1d1d1d; padding: 8px; display: grid; gap: 6px; box-shadow: 0 6px 18px rgba(0,0,0,.3); }
+.tm-card-head { display: flex; justify-content: space-between; font-size: 12.5px; color: #5d4e2e; font-weight: 700; }
+.tm-grid { display: grid; grid-template-columns: repeat(9, 1fr); gap: 3px; }
+.tm-cell { aspect-ratio: 1 / 1.05; display: grid; place-items: center; border-radius: 6px; background: #fffaf0; border: 1px solid #e3d6b5; font-weight: 800; font-size: clamp(12px, 3.6vw, 17px); font-variant-numeric: tabular-nums; }
+.tm-cell.empty { background: repeating-linear-gradient(45deg, #e9dcc0, #e9dcc0 4px, #f1e6cd 4px, #f1e6cd 8px); border-color: transparent; }
+.tm-cell.hit { background: #c0392b; color: #fff; border-color: #a02d22; }
+.tm-cell.last { box-shadow: 0 0 0 3px #f2c14e; }
+.tm-board-wrap summary { cursor: pointer; color: var(--muted); font-weight: 700; font-size: 13px; padding: 6px 0; }
+.tm-board { display: grid; grid-template-columns: repeat(10, 1fr); gap: 3px; }
+.tm-board span { text-align: center; font-size: 12px; padding: 4px 0; border-radius: 5px; background: rgba(0,0,0,.2); color: var(--muted); font-variant-numeric: tabular-nums; }
+.tm-board span.hit { background: rgba(217,180,91,.3); color: var(--ink); font-weight: 800; }
+.tm-board span.last { background: var(--gold); color: #1b1405; }
+#tmMain { display: grid; gap: 12px; }
+/* emlak */
+.em-board { display: grid; grid-template-columns: 1.45fr repeat(9, 1fr) 1.45fr; grid-template-rows: 1.45fr repeat(9, 1fr) 1.45fr; gap: 2px; width: 100%; aspect-ratio: 1; background: #0b1f17; padding: 2px; border-radius: 10px; }
+.em-cell { position: relative; min-width: 0; min-height: 0; overflow: hidden; border: 0; border-radius: 3px; background: #e9f1e4; color: #1d2a22; padding: 1px; display: flex; flex-direction: column; align-items: center; justify-content: center; font: inherit; cursor: pointer; }
+.em-cell.corner { background: #d6e6d0; }
+.em-cell.mort { opacity: .55; }
+.em-strip { position: absolute; top: 0; left: 0; right: 0; height: 22%; }
+.em-strip.big { position: static; height: 10px; border-radius: 4px; }
+.em-own { position: absolute; bottom: 0; left: 0; right: 0; height: 3px; }
+.em-n { font-size: clamp(5px, 1.5vw, 9.5px); font-weight: 800; line-height: 1.05; text-align: center; margin-top: 18%; overflow-wrap: anywhere; }
+.em-cell.corner .em-n { margin-top: 0; font-size: clamp(6.5px, 1.9vw, 11px); }
+.em-p { font-size: clamp(5px, 1.5vw, 8.5px); color: #556b5c; }
+.em-h { font-size: clamp(6px, 1.7vw, 9px); color: #2c7a3f; letter-spacing: -1px; line-height: 1; }
+.em-tok { position: absolute; inset: auto 1px 4px 1px; display: flex; flex-wrap: wrap; justify-content: center; gap: 1px; }
+.em-tok i { width: clamp(6px, 2vw, 11px); height: clamp(6px, 2vw, 11px); border-radius: 50%; border: 1px solid rgba(0,0,0,.6); }
+.em-tok i.cur { box-shadow: 0 0 0 2px #fff; }
+.em-center { grid-row: 2 / 11; grid-column: 2 / 11; display: grid; align-content: center; justify-items: center; gap: 4px; padding: 6px; text-align: center; background: radial-gradient(circle, #164534, #0d2a20); border-radius: 6px; overflow: hidden; }
+.em-dice { display: flex; gap: 6px; }
+.em-dice span { width: clamp(24px, 8vw, 40px); height: clamp(24px, 8vw, 40px); border-radius: 8px; background: #fbf8f1; color: #1d1d1d; display: grid; place-items: center; font-weight: 900; font-size: clamp(13px, 4vw, 21px); }
+.em-turn { font-weight: 800; font-size: clamp(11px, 3.4vw, 16px); }
+.em-round { font-size: 11px; color: var(--muted); }
+.em-log { display: grid; gap: 2px; font-size: clamp(8.5px, 2.5vw, 12px); color: #dfe6dc; max-width: 100%; }
+.em-log div:first-child { color: #fff; font-weight: 700; }
+.em-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; vertical-align: middle; border: 1px solid rgba(0,0,0,.5); }
+#emPlayers { display: grid; gap: 10px; }
+#emlakView .game-col { max-width: 640px; }
+
+/* futbol */
+.fb-tabs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.fb-tabs .lenbtn { min-height: 40px; }
+#fbMain { display: grid; gap: 12px; }
+.fb-card { display: grid; gap: 10px; padding: 14px; border-radius: 14px; background: var(--panel); border: 1px solid var(--line); }
+.fb-badge { display: inline-block; width: 12px; height: 12px; border-radius: 50%; border: 2px solid #fff; margin-right: 6px; vertical-align: -1px; }
+.fb-tbl td:nth-child(2) { white-space: nowrap; }
+.fb-fix { display: grid; gap: 6px; }
+.fb-row { display: grid; grid-template-columns: 1fr auto 1fr; grid-template-areas: "h s a" "x x x"; gap: 4px 8px; align-items: center; padding: 8px 10px; border-radius: 10px; background: rgba(0,0,0,.2); font-size: 13.5px; }
+.fb-row.mine { box-shadow: inset 3px 0 0 var(--gold); }
+.fb-t { grid-area: h; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 700; }
+.fb-t.r { grid-area: a; text-align: right; }
+.fb-s { grid-area: s; font-variant-numeric: tabular-nums; min-width: 44px; text-align: center; }
+.fb-a { grid-area: x; display: flex; justify-content: center; }
+.fb-a .btn { min-height: 34px; }
+.fb-week summary { cursor: pointer; font-weight: 800; padding: 6px 0; color: var(--gold); }
+.fb-team-head { display: flex; gap: 10px; align-items: center; }
+.fb-team-head .fb-badge { width: 30px; height: 30px; border-width: 4px; }
+.fb-pool { display: grid; gap: 4px; }
+.fb-pool-bar { height: 10px; border-radius: 6px; background: rgba(0,0,0,.35); overflow: hidden; }
+.fb-pool-bar span { display: block; height: 100%; }
+.fb-players { display: grid; gap: 6px; }
+.fb-pl { display: grid; grid-template-columns: 34px 1fr; gap: 2px 10px; align-items: center; text-align: left; padding: 9px 10px; border-radius: 10px; border: 1px solid var(--line); background: rgba(0,0,0,.2); color: var(--ink); font: inherit; cursor: pointer; }
+.fb-no { grid-row: span 2; width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; background: rgba(243,234,215,.12); font-weight: 900; }
+.fb-pn { display: grid; } .fb-pn .muted { font-size: 12px; }
+.fb-chips { display: flex; flex-wrap: wrap; gap: 4px; }
+.fb-pform { display: grid; grid-template-columns: minmax(0, 1fr) 96px; gap: 10px; }
+.fb-pform > *, .fb-pform input { min-width: 0; width: 100%; }
+#sheetPanel .lenpick .lenbtn { min-width: 0; padding: 0 4px; font-size: 13px; }
+.fb-left { font-size: 13.5px; color: var(--muted); } .fb-left .neg { color: var(--loss); }
+.fb-stats { display: grid; gap: 8px; }
+.fb-st { display: grid; grid-template-columns: minmax(0, 1fr) 44px; min-width: 0; grid-template-areas: "l o" "r r"; gap: 2px 8px; }
+.fb-st span { grid-area: l; display: grid; } .fb-st em { font-style: normal; font-size: 11.5px; color: var(--muted); }
+.fb-st input { grid-area: r; width: 100%; min-width: 0; accent-color: var(--gold); }
+.fb-st output { grid-area: o; text-align: right; font-weight: 900; font-size: 18px; font-variant-numeric: tabular-nums; color: var(--gold); }
+.fb-forms, .fb-seg { display: flex; flex-wrap: wrap; gap: 6px; }
+.fb-forms .lenbtn, .fb-seg .lenbtn { flex: 1 1 auto; min-width: 64px; }
+.fb-mini { position: relative; height: 300px; border-radius: 12px; background: repeating-linear-gradient(0deg, #1f6b3a 0 30px, #226f3e 30px 60px); border: 2px solid rgba(255,255,255,.6); overflow: hidden; }
+.fb-dot { position: absolute; transform: translate(-50%, 50%); display: grid; justify-items: center; gap: 1px; }
+.fb-dot i { width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; font-style: normal; font-weight: 900; font-size: 11px; color: #fff; border: 2px solid #fff; }
+.fb-dot b { font-size: 10px; color: #fff; text-shadow: 0 1px 2px #000; white-space: nowrap; max-width: 70px; overflow: hidden; text-overflow: ellipsis; }
+.fb-dot.bad i { border-color: var(--loss); }
+.fb-slots { display: grid; gap: 6px; }
+.fb-slot { display: grid; grid-template-columns: 42px 1fr; gap: 8px; align-items: center; }
+.fb-slot select { min-height: 38px; border-radius: 8px; border: 1px solid var(--line); background: rgba(0,0,0,.3); color: var(--ink); font: inherit; font-size: 14px; padding: 0 8px; }
+.fb-stage { position: fixed; inset: 0; z-index: 40; background: #071c10; display: grid; grid-template-rows: auto min(46vh, 74vw) auto 1fr; }
+.fb-top { display: flex; gap: 8px; align-items: center; justify-content: space-between; padding: calc(8px + env(safe-area-inset-top)) 10px 8px; }
+.fb-score { display: flex; gap: 10px; align-items: center; font-weight: 900; font-size: 15px; }
+.fb-score b { font-size: 24px; font-variant-numeric: tabular-nums; padding: 2px 10px; border-radius: 8px; background: rgba(0,0,0,.45); }
+.fb-stage canvas { width: 100%; height: 100%; display: block; }
+.fb-ctl { display: flex; flex-wrap: wrap; gap: 6px; padding: 8px 10px 0; justify-content: center; }
+.fb-ctl .lenbtn { min-height: 34px; padding: 0 12px; flex: 0 0 auto; }
+.fb-stats2 { width: 100%; display: grid; grid-template-columns: 1fr auto; gap: 2px 10px; font-size: 13px; padding: 6px 4px; }
+.fb-feed { overflow-y: auto; padding: 8px 12px calc(12px + env(safe-area-inset-bottom)); display: grid; align-content: start; gap: 4px; font-size: 13.5px; }
+.fb-ev { padding: 5px 8px; border-radius: 8px; background: rgba(255,255,255,.04); }
+.fb-ev b { color: var(--muted); margin-right: 4px; }
+.fb-ev.t-goal { background: rgba(217,180,91,.25); font-weight: 800; }
+.fb-ev.t-red { background: rgba(241,148,130,.25); }
+.fb-ev.t-yellow { background: rgba(242,210,78,.14); }
+.fb-ev.t-mad { color: #ffd38a; }
+@media (min-width: 900px) { .fb-stage { grid-template-columns: 1fr 380px; grid-template-rows: auto auto 1fr; } .fb-stage canvas { grid-row: 2 / 4; } .fb-top { grid-column: 1 / -1; } .fb-ctl { grid-column: 2; } .fb-feed { grid-column: 2; } }
+
 </style>
 </head>
 <body>
@@ -506,6 +615,24 @@ body.sl-lock { overflow: hidden; overscroll-behavior: none; }
       <div class="gc-title">Slither</div>
       <div class="gc-sub">Yılan büyütme · en az 2 kişi, sınırsız · giriş çipi, son kalan potu alır</div>
       <div class="tbls" id="tbls-slither"></div>
+    </div>
+    <div class="game-card">
+      <div class="gc-art"><div class="tm-ball" style="width:44px;height:44px;font-size:20px">42</div><div class="tm-ball" style="width:44px;height:44px;font-size:20px">7</div><div class="tm-ball idle" style="width:44px;height:44px;font-size:20px">?</div></div>
+      <div class="gc-title">Tombala</div>
+      <div class="gc-sub">2+ kişi · kart başına giriş · çinko %20, %30, tombala %50</div>
+      <div class="tbls" id="tbls-tombala"></div>
+    </div>
+    <div class="game-card">
+      <div class="gc-art"><span class="em-dice" style="display:flex;gap:6px"><span style="width:38px;height:38px">5</span><span style="width:38px;height:38px">2</span></span></div>
+      <div class="gc-title">Emlak</div>
+      <div class="gc-sub">2–6 kişi · şehir al, ev-otel kur, rakibi iflas ettir · giriş çipi</div>
+      <div class="tbls" id="tbls-emlak"></div>
+    </div>
+    <div class="game-card">
+      <div class="gc-art" style="font-size:40px;line-height:48px">⚽</div>
+      <div class="gc-title">Futbol Ligi</div>
+      <div class="gc-sub">Kendi takımını ve absürt oyuncularını yarat · lig giriş çipi, şampiyon alır</div>
+      <div class="tbls" id="tbls-futbol"></div>
     </div>
   </div>
   <div id="lobbyBoard"></div>
@@ -699,6 +826,68 @@ body.sl-lock { overflow: hidden; overscroll-behavior: none; }
   </main>
   <aside class="rules-side panel" id="slRulesR" aria-label="Kim kazanır"></aside>
 </div>
+<div class="view game-view" id="tombalaView" hidden>
+  <aside class="rules-side panel" id="tmRulesL" aria-label="Tombala kuralları"></aside>
+  <main class="game-col">
+  <header class="top">
+    <a class="ghost back" href="#" aria-label="Lobiye dön">‹</a>
+    <div class="brand">Tombala<small id="tmRound">Masa</small></div>
+    <div class="spacer"></div>
+    <span class="pill" title="Çipin"><span class="dot"></span><span id="tmChipsVal">—</span></span>
+    <button class="ghost" type="button" data-act="tm-board">Çipler</button>
+    <button class="ghost rules-btn" type="button" data-act="tm-rules">Kurallar</button>
+  </header>
+  <div id="tmBanner"></div>
+  <section class="dealer" id="tmBall" aria-label="Çekilen sayı"></section>
+  <section id="tmMain" aria-label="Kartlar"></section>
+  <footer class="actions" id="tmActions" aria-live="polite"></footer>
+  </main>
+  <aside class="rules-side panel" id="tmRulesR"></aside>
+</div>
+
+<div class="view game-view" id="emlakView" hidden>
+  <aside class="rules-side panel" id="emRulesL" aria-label="Emlak kuralları"></aside>
+  <main class="game-col">
+  <header class="top">
+    <a class="ghost back" href="#" aria-label="Lobiye dön">‹</a>
+    <div class="brand">Emlak<small id="emRound">Masa</small></div>
+    <div class="spacer"></div>
+    <span class="pill" title="Çipin"><span class="dot"></span><span id="emChipsVal">—</span></span>
+    <button class="ghost" type="button" data-act="em-board">Çipler</button>
+    <button class="ghost rules-btn" type="button" data-act="em-rules">Kurallar</button>
+  </header>
+  <div id="emBanner"></div>
+  <section id="emBoard" aria-label="Tahta"></section>
+  <section id="emPlayers" aria-label="Oyuncular"></section>
+  <footer class="actions" id="emActions" aria-live="polite"></footer>
+  </main>
+  <aside class="rules-side panel" id="emRulesR"></aside>
+</div>
+
+<div class="view game-view" id="futbolView" hidden>
+  <aside class="rules-side panel" id="fbRulesL" aria-label="Futbol ligi kuralları"></aside>
+  <main class="game-col">
+  <header class="top">
+    <a class="ghost back" href="#" aria-label="Lobiye dön">‹</a>
+    <div class="brand">Futbol Ligi<small id="fbRound">Lig</small></div>
+    <div class="spacer"></div>
+    <span class="pill" title="Çipin"><span class="dot"></span><span id="fbChipsVal">—</span></span>
+    <button class="ghost" type="button" data-act="fb-board">Çipler</button>
+    <button class="ghost rules-btn" type="button" data-act="fb-rules">Kurallar</button>
+  </header>
+  <div id="fbBanner"></div>
+  <div class="fb-tabs" role="tablist"><button type="button" class="lenbtn on" data-act="fb-tab" data-t="lig">Lig</button><button type="button" class="lenbtn" data-act="fb-tab" data-t="takim">Takımım</button><button type="button" class="lenbtn" data-act="fb-tab" data-t="kadro">Kadro &amp; Taktik</button></div>
+  <section id="fbMain" aria-live="polite"></section>
+  </main>
+  <aside class="rules-side panel" id="fbRulesR"></aside>
+</div>
+<div class="fb-stage" id="fbStage" hidden>
+  <div class="fb-top" id="fbTop"></div>
+  <canvas id="fbCanvas" aria-label="Maç"></canvas>
+  <div class="fb-ctl" id="fbCtl"></div>
+  <div class="fb-feed" id="fbFeed" aria-live="polite"></div>
+</div>
+
 <div class="sl-stage" id="slStage" hidden>
   <canvas id="slCanvas" aria-label="Oyun alanı"></canvas>
   <div class="sl-top">
@@ -1671,16 +1860,790 @@ var FB_CONFIG = { apiKey: "AIzaSyBsP1VNPJpt1Y6MN0FwDCmvuHeZxaDoTGU", authDomain:
 
 </script>
 <script>
+/* Tombala — oyun motoru (saf fonksiyonlar, deterministik).
+   Kart: 3 satır × 9 sütun, her satırda 5 sayı (toplam 15). 1. sütun 1–9, 2. sütun 10–19 … 9. sütun 80–90. */
+(function (root) {
+  'use strict';
+  var RP = (typeof module !== 'undefined' && module.exports) ? require('./engine.js') : root.RP;
+  var SHARE = { c1: 0.2, c2: 0.3, t: 0.5 };
+
+  function colRange(c) { return c === 0 ? [1, 9] : c === 8 ? [80, 90] : [c * 10, c * 10 + 9]; }
+  // rows[r][c] = sayı ya da 0 (boş)
+  function makeCard(seed, uid, k) {
+    var rng = RP.makeRng('tmb:' + seed + ':' + uid + ':' + k);
+    for (var tries = 0; tries < 500; tries++) {
+      var layout = [], cnt = [0, 0, 0, 0, 0, 0, 0, 0, 0];
+      for (var r = 0; r < 3; r++) {
+        var cols = RP.shuffle([0, 1, 2, 3, 4, 5, 6, 7, 8], rng).slice(0, 5);
+        layout.push(cols); cols.forEach(function (c) { cnt[c]++; });
+      }
+      if (cnt.some(function (x) { return x === 0; })) continue;
+      var rows = [[0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0]];
+      for (var c = 0; c < 9; c++) {
+        if (!cnt[c]) continue;
+        var rg = colRange(c), pool = [];
+        for (var n = rg[0]; n <= rg[1]; n++) pool.push(n);
+        var pick = RP.shuffle(pool, rng).slice(0, cnt[c]).sort(function (a, b) { return a - b; }), j = 0;
+        for (var rr = 0; rr < 3; rr++) if (layout[rr].indexOf(c) >= 0) rows[rr][c] = pick[j++];
+      }
+      return rows;
+    }
+    throw new Error('kart üretilemedi');
+  }
+  function drawOrder(seed) {
+    var a = []; for (var i = 1; i <= 90; i++) a.push(i);
+    return RP.shuffle(a, RP.makeRng('tmb:draw:' + seed));
+  }
+  // st: {seed, players:[{id, cards}], stake}
+  function evaluate(st) {
+    var cards = [];
+    st.players.forEach(function (p) { for (var k = 0; k < (p.cards || 1); k++) cards.push({ owner: p.id, k: k, rows: makeCard(st.seed, p.id, k) }); });
+    var order = drawOrder(st.seed), pos = {};
+    order.forEach(function (n, i) { pos[n] = i; });
+    // her kartın her satırının tamamlandığı çekiliş sırası
+    cards.forEach(function (cd) {
+      cd.rowDone = cd.rows.map(function (row) { return Math.max.apply(null, row.filter(Boolean).map(function (n) { return pos[n]; })); }).sort(function (a, b) { return a - b; });
+    });
+    function first(idx) {
+      var best = Infinity; cards.forEach(function (cd) { best = Math.min(best, cd.rowDone[idx]); });
+      return { at: best, cards: cards.map(function (cd, i) { return cd.rowDone[idx] === best ? i : -1; }).filter(function (i) { return i >= 0; }) };
+    }
+    var ev = { c1: first(0), c2: first(1), t: first(2) };
+    var pot = st.stake * cards.length, pay = {}, left = pot;
+    ['c1', 'c2', 't'].forEach(function (k) {
+      var amt = k === 't' ? left : Math.floor(pot * SHARE[k]), w = ev[k].cards, each = Math.floor(amt / w.length);
+      w.forEach(function (ci, j) { var o = cards[ci].owner, a = each + (j === 0 ? amt - each * w.length : 0); pay[o] = (pay[o] || 0) + a; });
+      ev[k].amount = amt; left -= amt;
+    });
+    return { cards: cards, order: order, ev: ev, end: ev.t.at, pot: pot, pay: pay };
+  }
+  var api = { makeCard: makeCard, drawOrder: drawOrder, evaluate: evaluate, SHARE: SHARE };
+  if (typeof module !== 'undefined' && module.exports) module.exports = api;
+  else root.TMB = api;
+})(this);
+
+</script>
+<script>
+/* Emlak (mülk alım-satım tahta oyunu) — oyun motoru (saf fonksiyonlar, deterministik).
+   st: {seed, players:[ids], start, limit (tur sınırı, 0 = sınırsız), actions:[{p, t, sq?}]} */
+(function (root) {
+  'use strict';
+  var RP = (typeof module !== 'undefined' && module.exports) ? require('./engine.js') : root.RP;
+  // tür: go, prop, chest, tax, station, chance, jail, util, park, gojail
+  var GROUPS = {
+    kahve: { color: '#8b5a3c', house: 50 }, acikmavi: { color: '#7cc6e8', house: 50 }, pembe: { color: '#d95fa8', house: 100 }, turuncu: { color: '#f2913d', house: 100 },
+    kirmizi: { color: '#e04848', house: 150 }, sari: { color: '#f2d24e', house: 150 }, yesil: { color: '#3fae5a', house: 200 }, lacivert: { color: '#2f56b5', house: 200 }
+  };
+  var B = [
+    { t: 'go', n: 'Başlangıç' }, { t: 'prop', n: 'Kars', g: 'kahve', p: 60 }, { t: 'chest', n: 'Kamu Fonu' }, { t: 'prop', n: 'Ardahan', g: 'kahve', p: 60 }, { t: 'tax', n: 'Gelir Vergisi', a: 200 },
+    { t: 'station', n: 'Haydarpaşa Garı', p: 200 }, { t: 'prop', n: 'Sinop', g: 'acikmavi', p: 100 }, { t: 'chance', n: 'Şans' }, { t: 'prop', n: 'Amasya', g: 'acikmavi', p: 100 }, { t: 'prop', n: 'Tokat', g: 'acikmavi', p: 120 },
+    { t: 'jail', n: 'Hapis' }, { t: 'prop', n: 'Eskişehir', g: 'pembe', p: 140 }, { t: 'util', n: 'Elektrik İdaresi', p: 150 }, { t: 'prop', n: 'Kütahya', g: 'pembe', p: 140 }, { t: 'prop', n: 'Afyon', g: 'pembe', p: 160 },
+    { t: 'station', n: 'Sirkeci Garı', p: 200 }, { t: 'prop', n: 'Trabzon', g: 'turuncu', p: 180 }, { t: 'chest', n: 'Kamu Fonu' }, { t: 'prop', n: 'Rize', g: 'turuncu', p: 180 }, { t: 'prop', n: 'Samsun', g: 'turuncu', p: 200 },
+    { t: 'park', n: 'Otopark' }, { t: 'prop', n: 'Gaziantep', g: 'kirmizi', p: 220 }, { t: 'chance', n: 'Şans' }, { t: 'prop', n: 'Adana', g: 'kirmizi', p: 220 }, { t: 'prop', n: 'Mersin', g: 'kirmizi', p: 240 },
+    { t: 'station', n: 'Ankara Garı', p: 200 }, { t: 'prop', n: 'Bursa', g: 'sari', p: 260 }, { t: 'prop', n: 'Kocaeli', g: 'sari', p: 260 }, { t: 'util', n: 'Su İdaresi', p: 150 }, { t: 'prop', n: 'Konya', g: 'sari', p: 280 },
+    { t: 'gojail', n: 'Hapse Gir' }, { t: 'prop', n: 'Antalya', g: 'yesil', p: 300 }, { t: 'prop', n: 'Muğla', g: 'yesil', p: 300 }, { t: 'chest', n: 'Kamu Fonu' }, { t: 'prop', n: 'İzmir', g: 'yesil', p: 320 },
+    { t: 'station', n: 'Alsancak Garı', p: 200 }, { t: 'chance', n: 'Şans' }, { t: 'prop', n: 'Denizli', g: 'lacivert', p: 350 }, { t: 'tax', n: 'Lüks Vergisi', a: 100 }, { t: 'prop', n: 'İstanbul', g: 'lacivert', p: 400 }
+  ];
+  var MULT = [1, 5, 15, 40, 55, 70];
+  B.forEach(function (sq, i) {
+    sq.i = i;
+    if (sq.t === 'prop') { var base = Math.max(2, Math.round(sq.p * 0.06 / 2) * 2); sq.rent = MULT.map(function (m) { return base * m; }); sq.hc = GROUPS[sq.g].house; }
+  });
+  var GROUP_SQ = {}; B.forEach(function (sq) { if (sq.g) (GROUP_SQ[sq.g] = GROUP_SQ[sq.g] || []).push(sq.i); });
+  var CHANCE = [
+    { m: 'Başlangıç\'a ilerle', go: 0 }, { m: 'İstanbul\'a git', go: 39 }, { m: 'En yakın gara git', near: 'station' }, { m: '3 kare geri git', back: 3 },
+    { m: 'Hapse gir', jail: true }, { m: 'Banka sana 50 ödüyor', a: 50 }, { m: 'Hız cezası: 15 öde', a: -15 }, { m: 'Belediye başkanı seçildin: herkese 50 öde', each: -50 },
+    { m: 'Bina bakımı: her ev için 25, her otel için 100 öde', rep: [25, 100] }, { m: 'Hapisten çıkış kartı', card: true }, { m: 'Gaziantep\'e git', go: 21 }, { m: 'Kredin onaylandı: 150 al', a: 150 }
+  ];
+  var CHEST = [
+    { m: 'Başlangıç\'a ilerle', go: 0 }, { m: 'Banka hatası lehine: 200 al', a: 200 }, { m: 'Doktor ücreti: 50 öde', a: -50 }, { m: 'Hisse satışı: 50 al', a: 50 },
+    { m: 'Hapisten çıkış kartı', card: true }, { m: 'Hapse gir', jail: true }, { m: 'Doğum günün: herkesten 10 al', each: 10 }, { m: 'Vergi iadesi: 20 al', a: 20 },
+    { m: 'Hastane masrafı: 100 öde', a: -100 }, { m: 'Okul taksiti: 50 öde', a: -50 }, { m: 'Miras kaldı: 100 al', a: 100 }, { m: 'Sokak tamiri: her ev 40, her otel 115 öde', rep: [40, 115] }
+  ];
+
+  function replay(st) {
+    var rngDeck = RP.makeRng('emlak:' + st.seed + ':deck');
+    var G = {
+      P: st.players.map(function (id) { return { id: id, pos: 0, cash: st.start || 1500, jail: 0, jcards: 0, out: false, dbl: 0 }; }),
+      props: {}, turn: 0, phase: 'pre', again: false, rolls: 0, round: 1, limit: st.limit || 0, log: [], last: null, over: null, actionCount: 0,
+      chance: RP.shuffle(CHANCE.map(function (_, i) { return i; }), rngDeck), chest: RP.shuffle(CHEST.map(function (_, i) { return i; }), rngDeck), ci: 0, hi: 0
+    };
+    function log(o) { o.k = G.log.length; G.log.push(o); }
+    function owner(sq) { var p = G.props[sq]; return p ? p.o : -1; }
+    function groupOwned(g, o) { return GROUP_SQ[g].every(function (s) { return owner(s) === o; }); }
+    function count(t, o) { return B.filter(function (sq) { return sq.t === t && owner(sq.i) === o; }).length; }
+    function alive() { return G.P.filter(function (p) { return !p.out; }); }
+    function liquidate(pi, need) {
+      var p = G.P[pi];
+      // önce evleri yarı fiyatına sat, sonra ucuzdan pahalıya ipotek et
+      var mine = Object.keys(G.props).map(Number).filter(function (s) { return G.props[s].o === pi; });
+      mine.sort(function (a, b) { return (B[b].hc || 0) - (B[a].hc || 0); });
+      while (p.cash < need) {
+        var h = mine.filter(function (s) { return G.props[s].h > 0; });
+        if (!h.length) break;
+        var best = h.sort(function (a, b) { return G.props[b].h - G.props[a].h; })[0];
+        G.props[best].h--; p.cash += B[best].hc / 2;
+        log({ t: 'sellh', p: pi, sq: best, auto: true });
+      }
+      mine.sort(function (a, b) { return B[a].p - B[b].p; });
+      for (var i = 0; i < mine.length && p.cash < need; i++) {
+        var pr = G.props[mine[i]];
+        if (!pr.m && !pr.h) { pr.m = true; p.cash += B[mine[i]].p / 2; log({ t: 'mort', p: pi, sq: mine[i], auto: true }); }
+      }
+    }
+    // pi oyuncusu amount öder; to = alacaklı oyuncu ya da -1 (banka)
+    function pay(pi, amount, to) {
+      var p = G.P[pi];
+      if (amount <= 0) return true;
+      if (p.cash < amount) liquidate(pi, amount);
+      if (p.cash >= amount) { p.cash -= amount; if (to >= 0) G.P[to].cash += amount; return true; }
+      // iflas
+      if (to >= 0) G.P[to].cash += p.cash;
+      Object.keys(G.props).forEach(function (s) {
+        if (G.props[s].o !== pi) return;
+        if (to >= 0) { G.props[s].o = to; G.props[s].h = 0; } else delete G.props[s];
+      });
+      if (to >= 0) G.P[to].jcards += p.jcards;
+      log({ t: 'bankrupt', p: pi, to: to });
+      p.cash = 0; p.out = true; p.jcards = 0;
+      var al = alive();
+      if (al.length <= 1) G.over = { winners: al.map(function (x) { return x.id; }), why: 'last' };
+      return false;
+    }
+    function gain(pi, amount) { G.P[pi].cash += amount; }
+    function sendJail(pi) { var p = G.P[pi]; p.pos = 10; p.jail = 1; p.dbl = 0; G.again = false; log({ t: 'jail', p: pi }); }
+    function moveTo(pi, to, collectGo) {
+      var p = G.P[pi];
+      if (collectGo && to < p.pos) { gain(pi, 200); log({ t: 'go', p: pi }); }
+      p.pos = to;
+    }
+    function rentOf(sq, dice) {
+      var s = B[sq], pr = G.props[sq];
+      if (s.t === 'station') return 25 * Math.pow(2, count('station', pr.o) - 1);
+      if (s.t === 'util') return dice * (count('util', pr.o) === 2 ? 10 : 4);
+      if (pr.h) return s.rent[pr.h];
+      return s.rent[0] * (groupOwned(s.g, pr.o) ? 2 : 1);
+    }
+    function land(pi, dice) {
+      var p = G.P[pi], sq = B[p.pos];
+      if (sq.t === 'prop' || sq.t === 'station' || sq.t === 'util') {
+        var o = owner(sq.i);
+        if (o < 0) { G.phase = 'buy'; return; }
+        if (o !== pi && !G.props[sq.i].m && !G.P[o].out) {
+          var r = rentOf(sq.i, dice);
+          log({ t: 'rent', p: pi, to: o, sq: sq.i, a: r });
+          pay(pi, r, o);
+        }
+      } else if (sq.t === 'tax') { log({ t: 'tax', p: pi, sq: sq.i, a: sq.a }); pay(pi, sq.a, -1); }
+      else if (sq.t === 'gojail') sendJail(pi);
+      else if (sq.t === 'chance' || sq.t === 'chest') {
+        var deck = sq.t === 'chance' ? CHANCE : CHEST, order = sq.t === 'chance' ? G.chance : G.chest;
+        var idx = sq.t === 'chance' ? G.ci++ : G.hi++, c = deck[order[idx % order.length]];
+        log({ t: 'card', p: pi, deck: sq.t, m: c.m });
+        if (c.go != null) { moveTo(pi, c.go, true); return land(pi, dice); }
+        if (c.near) { var j = p.pos; do { j = (j + 1) % 40; } while (B[j].t !== c.near); moveTo(pi, j, true); return land(pi, dice); }
+        if (c.back) { p.pos = (p.pos + 40 - c.back) % 40; return land(pi, dice); }
+        if (c.jail) return sendJail(pi);
+        if (c.card) { p.jcards++; return; }
+        if (c.a > 0) gain(pi, c.a); else if (c.a < 0) pay(pi, -c.a, -1);
+        if (c.each) G.P.forEach(function (q, qi) {
+          if (qi === pi || q.out || G.P[pi].out) return;
+          if (c.each < 0) pay(pi, -c.each, qi); else pay(qi, c.each, pi);
+        });
+        if (c.rep) {
+          var cost = 0; Object.keys(G.props).forEach(function (s) { var pr = G.props[s]; if (pr.o === pi) cost += pr.h === 5 ? c.rep[1] : pr.h * c.rep[0]; });
+          if (cost) pay(pi, cost, -1);
+        }
+      }
+    }
+    function nextTurn() {
+      var n = G.P.length, i = G.turn;
+      do { i = (i + 1) % n; if (i === 0) G.round++; } while (G.P[i].out);
+      G.turn = i; G.phase = 'pre'; G.again = false; G.P[i].dbl = 0;
+      if (G.limit && G.round > G.limit && !G.over) finishByWorth();
+    }
+    function worth(pi) {
+      var p = G.P[pi], w = p.cash;
+      Object.keys(G.props).forEach(function (s) { var pr = G.props[s]; if (pr.o !== pi) return; w += pr.m ? B[s].p / 2 : B[s].p; w += (pr.h || 0) * (B[s].hc || 0); });
+      return w;
+    }
+    function finishByWorth() {
+      var best = -1, w = [];
+      G.P.forEach(function (p, i) { if (p.out) return; var x = worth(i); if (x > best) { best = x; w = [p.id]; } else if (x === best) w.push(p.id); });
+      G.over = { winners: w, why: 'limit' };
+    }
+    function canBuild(pi, sq) {
+      var s = B[sq], pr = G.props[sq];
+      if (!s || s.t !== 'prop' || !pr || pr.o !== pi || pr.h >= 5 || !groupOwned(s.g, pi)) return false;
+      if (GROUP_SQ[s.g].some(function (x) { return G.props[x].m; })) return false;
+      var min = Math.min.apply(null, GROUP_SQ[s.g].map(function (x) { return G.props[x].h || 0; }));
+      return (pr.h || 0) <= min && G.P[pi].cash >= s.hc;
+    }
+    function canSell(pi, sq) {
+      var s = B[sq], pr = G.props[sq];
+      if (!s || s.t !== 'prop' || !pr || pr.o !== pi || !pr.h) return false;
+      var max = Math.max.apply(null, GROUP_SQ[s.g].map(function (x) { return G.props[x].h || 0; }));
+      return pr.h >= max;
+    }
+    function canMort(pi, sq) {
+      var s = B[sq], pr = G.props[sq];
+      if (!s || !pr || pr.o !== pi || pr.m) return false;
+      return !(s.g && GROUP_SQ[s.g].some(function (x) { return G.props[x] && G.props[x].h; }));
+    }
+    function canUnmort(pi, sq) { var pr = G.props[sq]; return !!(pr && pr.o === pi && pr.m && G.P[pi].cash >= Math.ceil(B[sq].p * 0.55)); }
+    function roll(pi) {
+      var rng = RP.makeRng('emlak:' + st.seed + ':roll:' + G.rolls++), d1 = 1 + Math.floor(rng() * 6), d2 = 1 + Math.floor(rng() * 6), dbl = d1 === d2, p = G.P[pi];
+      G.last = { d1: d1, d2: d2, p: pi };
+      log({ t: 'roll', p: pi, d1: d1, d2: d2 });
+      if (p.jail) {
+        if (dbl) { p.jail = 0; log({ t: 'free', p: pi, why: 'çift' }); }
+        else if (p.jail >= 3) { log({ t: 'jailpay', p: pi }); if (!pay(pi, 50, -1)) return; p.jail = 0; }
+        else { p.jail++; G.phase = 'post'; return; }
+        G.again = false;
+      } else if (dbl) {
+        p.dbl++;
+        if (p.dbl >= 3) { log({ t: 'speed', p: pi }); sendJail(pi); G.phase = 'post'; return; }
+        G.again = true;
+      } else G.again = false;
+      var to = (p.pos + d1 + d2) % 40;
+      moveTo(pi, to, true);
+      log({ t: 'move', p: pi, sq: to });
+      G.phase = 'post';
+      land(pi, d1 + d2);
+      if (p.out) { G.again = false; if (!G.over) nextTurn(); return; }
+      if (G.phase === 'post' && G.again && !p.jail) G.phase = 'pre';
+    }
+    function afterBuy(pi) { G.phase = G.again && !G.P[pi].jail ? 'pre' : 'post'; }
+
+    var acts = st.actions || [];
+    for (var ai = 0; ai < acts.length && !G.over; ai++) {
+      var a = acts[ai], pi = G.turn, p = G.P[pi];
+      if (!a || a.p !== pi) continue;
+      var t = a.t, ok = false;
+      if (t === 'auto') {
+        if (G.phase === 'pre') { if (p.jail && p.jcards) { p.jcards--; p.jail = 0; } t = 'roll'; }
+        else if (G.phase === 'buy') t = p.cash - B[p.pos].p >= 200 ? 'buy' : 'pass';
+        else t = 'end';
+      }
+      if (t === 'roll' && G.phase === 'pre') { roll(pi); ok = true; }
+      else if (t === 'payjail' && G.phase === 'pre' && p.jail && p.cash >= 50) { p.cash -= 50; p.jail = 0; log({ t: 'free', p: pi, why: '50 ödedi' }); ok = true; }
+      else if (t === 'usecard' && G.phase === 'pre' && p.jail && p.jcards) { p.jcards--; p.jail = 0; log({ t: 'free', p: pi, why: 'kart' }); ok = true; }
+      else if (t === 'buy' && G.phase === 'buy' && p.cash >= B[p.pos].p) { p.cash -= B[p.pos].p; G.props[p.pos] = { o: pi, h: 0, m: false }; log({ t: 'buy', p: pi, sq: p.pos }); afterBuy(pi); ok = true; }
+      else if (t === 'pass' && G.phase === 'buy') { log({ t: 'pass', p: pi, sq: p.pos }); afterBuy(pi); ok = true; }
+      else if (t === 'build' && G.phase !== 'buy' && canBuild(pi, a.sq)) { G.props[a.sq].h = (G.props[a.sq].h || 0) + 1; p.cash -= B[a.sq].hc; log({ t: 'build', p: pi, sq: a.sq }); ok = true; }
+      else if (t === 'sell' && G.phase !== 'buy' && canSell(pi, a.sq)) { G.props[a.sq].h--; p.cash += B[a.sq].hc / 2; log({ t: 'sellh', p: pi, sq: a.sq }); ok = true; }
+      else if (t === 'mort' && G.phase !== 'buy' && canMort(pi, a.sq)) { G.props[a.sq].m = true; p.cash += B[a.sq].p / 2; log({ t: 'mort', p: pi, sq: a.sq }); ok = true; }
+      else if (t === 'unmort' && G.phase !== 'buy' && canUnmort(pi, a.sq)) { G.props[a.sq].m = false; p.cash -= Math.ceil(B[a.sq].p * 0.55); log({ t: 'unmort', p: pi, sq: a.sq }); ok = true; }
+      else if (t === 'end' && G.phase === 'post') { nextTurn(); ok = true; }
+      else if (t === 'resign') { log({ t: 'resign', p: pi }); pay(pi, p.cash + 1e9, -1); if (!G.over) nextTurn(); ok = true; }
+      if (ok) G.actionCount = ai + 1;
+    }
+    G.worth = G.P.map(function (_, i) { return worth(i); });
+    G.canBuild = function (sq) { return canBuild(G.turn, sq); };
+    G.canSell = function (sq) { return canSell(G.turn, sq); };
+    G.canMort = function (sq) { return canMort(G.turn, sq); };
+    G.canUnmort = function (sq) { return canUnmort(G.turn, sq); };
+    G.rentOf = function (sq) { return G.props[sq] ? rentOf(sq, 7) : 0; };
+    return G;
+  }
+  var api = { BOARD: B, GROUPS: GROUPS, GROUP_SQ: GROUP_SQ, CHANCE: CHANCE, CHEST: CHEST, replay: replay };
+  if (typeof module !== 'undefined' && module.exports) module.exports = api;
+  else root.EML = api;
+})(this);
+
+</script>
+<script>
+/* Futbol ligi — maç motoru (saf fonksiyonlar, deterministik).
+   Bütün telefonlarda aynı maçı üretmek için yalnızca + − × ÷ ve karekök kullanılır (sin/cos/pow yok). */
+(function (root) {
+  'use strict';
+  var RP = (typeof module !== 'undefined' && module.exports) ? require('./engine.js') : root.RP;
+
+  var STATS = [
+    { k: 'hiz', n: 'Hız', d: 'Koşu ve sprint hızı' },
+    { k: 'day', n: 'Dayanıklılık', d: 'Ne kadar geç yorulur' },
+    { k: 'guc', n: 'Güç', d: 'İkili mücadele, top saklama' },
+    { k: 'agr', n: 'Agresiflik', d: 'Sık top kapmaya girer; faul ve kart da getirir' },
+    { k: 'pas', n: 'Pas', d: 'Pasın isabeti' },
+    { k: 'viz', n: 'Pas vizyonu', d: 'Uzun pas, ara pası görme' },
+    { k: 'sut', n: 'Şut', d: 'Şut gücü ve isabeti' },
+    { k: 'cal', n: 'Çalım', d: 'Adam geçme' },
+    { k: 'tek', n: 'Top kontrolü', d: 'Topu ayağında tutma, ilk dokunuş' },
+    { k: 'sav', n: 'Savunma', d: 'Top kapma, markaj' },
+    { k: 'kaf', n: 'Kafa', d: 'Kafa topları' },
+    { k: 'iq', n: 'Oyun zekası', d: 'Doğru karar verme; düşükse saçma işler yapar' },
+    { k: 'sog', n: 'Soğukkanlılık', d: 'Baskı altında bitiricilik, penaltı' },
+    { k: 'kal', n: 'Kalecilik', d: 'Kalede kurtarış' },
+    { k: 'sans', n: 'Şans', d: 'Her şeye biraz şans katar' }
+  ];
+  var POOL = 9900, MIN_SQUAD = 11, MAX_SQUAD = 18;
+  var POS = { KL: 'Kaleci', DF: 'Defans', OS: 'Orta saha', FV: 'Forvet' };
+  // dizilişler: [ileri (0 kendi kalesi – 1 rakip kale), yan (0 – 1), rol]
+  var FORMS = {
+    '4-4-2': [[.04, .5, 'KL'], [.2, .14, 'DF'], [.17, .38, 'DF'], [.17, .62, 'DF'], [.2, .86, 'DF'], [.45, .14, 'OS'], [.41, .38, 'OS'], [.41, .62, 'OS'], [.45, .86, 'OS'], [.68, .4, 'FV'], [.68, .6, 'FV']],
+    '4-3-3': [[.04, .5, 'KL'], [.2, .14, 'DF'], [.17, .38, 'DF'], [.17, .62, 'DF'], [.2, .86, 'DF'], [.4, .3, 'OS'], [.37, .5, 'OS'], [.4, .7, 'OS'], [.68, .16, 'FV'], [.72, .5, 'FV'], [.68, .84, 'FV']],
+    '4-2-3-1': [[.04, .5, 'KL'], [.2, .14, 'DF'], [.17, .38, 'DF'], [.17, .62, 'DF'], [.2, .86, 'DF'], [.33, .38, 'OS'], [.33, .62, 'OS'], [.55, .16, 'OS'], [.53, .5, 'OS'], [.55, .84, 'OS'], [.72, .5, 'FV']],
+    '3-5-2': [[.04, .5, 'KL'], [.18, .25, 'DF'], [.16, .5, 'DF'], [.18, .75, 'DF'], [.46, .08, 'OS'], [.4, .32, 'OS'], [.37, .5, 'OS'], [.4, .68, 'OS'], [.46, .92, 'OS'], [.68, .4, 'FV'], [.68, .6, 'FV']],
+    '5-3-2': [[.04, .5, 'KL'], [.25, .08, 'DF'], [.17, .3, 'DF'], [.15, .5, 'DF'], [.17, .7, 'DF'], [.25, .92, 'DF'], [.42, .3, 'OS'], [.4, .5, 'OS'], [.42, .7, 'OS'], [.66, .4, 'FV'], [.66, .6, 'FV']],
+    '4-5-1': [[.04, .5, 'KL'], [.2, .14, 'DF'], [.17, .38, 'DF'], [.17, .62, 'DF'], [.2, .86, 'DF'], [.46, .12, 'OS'], [.4, .32, 'OS'], [.37, .5, 'OS'], [.4, .68, 'OS'], [.46, .88, 'OS'], [.7, .5, 'FV']],
+    '3-4-3': [[.04, .5, 'KL'], [.18, .25, 'DF'], [.16, .5, 'DF'], [.18, .75, 'DF'], [.42, .14, 'OS'], [.39, .4, 'OS'], [.39, .6, 'OS'], [.42, .86, 'OS'], [.68, .18, 'FV'], [.72, .5, 'FV'], [.68, .82, 'FV']],
+    '2-3-5': [[.04, .5, 'KL'], [.2, .35, 'DF'], [.2, .65, 'DF'], [.4, .25, 'OS'], [.38, .5, 'OS'], [.4, .75, 'OS'], [.66, .08, 'FV'], [.7, .3, 'FV'], [.73, .5, 'FV'], [.7, .7, 'FV'], [.66, .92, 'FV']]
+  };
+  var TACTICS = [
+    { k: 'ment', n: 'Oyun anlayışı', o: ['Otobüs', 'Defansif', 'Dengeli', 'Hücum', 'Tam hücum'], def: 2 },
+    { k: 'press', n: 'Pres', o: ['Bekle', 'Orta', 'Yüksek'], def: 1 },
+    { k: 'pstyle', n: 'Pas stili', o: ['Kısa pas', 'Karışık', 'Uzun top'], def: 1 },
+    { k: 'tempo', n: 'Tempo', o: ['Yavaş', 'Normal', 'Hızlı'], def: 1 },
+    { k: 'width', n: 'Genişlik', o: ['Dar', 'Normal', 'Geniş'], def: 1 },
+    { k: 'line', n: 'Defans hattı', o: ['Derin', 'Normal', 'Yüksek'], def: 1 },
+    { k: 'hard', n: 'Sertlik', o: ['Temiz', 'Normal', 'Sert'], def: 1 }
+  ];
+  function stat(p, k) { var v = p && p.s ? Number(p.s[k]) : 0; return v >= 1 && v <= 99 ? Math.floor(v) : (v > 99 ? 99 : 1); }
+  function pointsOf(p) { var t = 0; STATS.forEach(function (s) { t += stat(p, s.k); }); return t; }
+  function validateTeam(team) {
+    var errs = [], ids = Object.keys((team && team.players) || {}), used = 0;
+    ids.forEach(function (id) { used += pointsOf(team.players[id]); });
+    if (!team || !team.name) errs.push('Takım adı yok');
+    if (ids.length < MIN_SQUAD) errs.push('En az ' + MIN_SQUAD + ' oyuncu gerekli (' + ids.length + ' var)');
+    if (ids.length > MAX_SQUAD) errs.push('En fazla ' + MAX_SQUAD + ' oyuncu olabilir');
+    if (used > POOL) errs.push('Puan havuzu aşıldı: ' + used + ' / ' + POOL);
+    return { ok: !errs.length, errs: errs, used: used, count: ids.length };
+  }
+  // ilk 11 + yedekler: kayıtlı diziliş, eksikse en uygun oyuncularla tamamlanır; oynayamayanlar çıkarılır
+  function lineupOf(team, unavailable) {
+    unavailable = unavailable || {};
+    var form = FORMS[(team.tactic || {}).form] ? team.tactic.form : '4-4-2', slots = FORMS[form];
+    var all = Object.keys(team.players || {}).filter(function (id) { return !unavailable[id]; });
+    var chosen = [], used = {};
+    var saved = (team.lineup || []).slice(0, 11);
+    slots.forEach(function (sl, i) { var id = saved[i]; if (id && all.indexOf(id) >= 0 && !used[id]) { chosen[i] = id; used[id] = 1; } });
+    function fit(id, role) {
+      var p = team.players[id], sc = 0;
+      if (role === 'KL') sc = stat(p, 'kal') * 3; else if (role === 'DF') sc = stat(p, 'sav') * 2 + stat(p, 'guc') + stat(p, 'kaf');
+      else if (role === 'OS') sc = stat(p, 'pas') * 2 + stat(p, 'viz') + stat(p, 'tek'); else sc = stat(p, 'sut') * 2 + stat(p, 'cal') + stat(p, 'hiz');
+      return sc + (p.pos === role ? 200 : 0);
+    }
+    slots.forEach(function (sl, i) {
+      if (chosen[i]) return;
+      var best = null, bs = -1;
+      all.forEach(function (id) { if (used[id]) return; var f = fit(id, sl[2]); if (f > bs || (f === bs && id < best)) { bs = f; best = id; } });
+      if (best) { chosen[i] = best; used[best] = 1; }
+    });
+    var subs = (team.subs || []).filter(function (id) { return all.indexOf(id) >= 0 && !used[id]; });
+    all.slice().sort().forEach(function (id) { if (!used[id] && subs.indexOf(id) < 0) subs.push(id); });
+    return { form: form, xi: chosen, subs: subs };
+  }
+
+  function clamp(v, a, b) { return v < a ? a : v > b ? b : v; }
+  function simulate(m) {
+    var rng = RP.makeRng('fb:' + m.seed);
+    function R() { return rng(); }
+    var LEN = 105, WID = 68, T = 5400, NE = 22;
+    var frames = new Float32Array((T + 1) * (NE * 2 + 2));
+    var ev = [], score = [0, 0], st = { shots: [0, 0], onT: [0, 0], poss: [0, 0], fouls: [0, 0], corners: [0, 0], yellow: [0, 0], red: [0, 0], offs: [0, 0] };
+    var ref = R() * 0.08; // hakemin sertliği
+    var teams = [m.H, m.A], E = [], subsLeft = [5, 5], benches = [], slotHist = [], forms = [];
+    var res = { scorers: [], cards: {}, inj: {}, played: {} };
+    teams.forEach(function (tm, side) {
+      var lu = lineupOf(tm, tm.unavailable), tac = tm.tactic || {};
+      forms[side] = FORMS[lu.form];
+      benches[side] = lu.subs.slice(0, 9);
+      for (var i = 0; i < 11; i++) {
+        var id = lu.xi[i], p = id ? tm.players[id] : null;
+        E.push({ side: side, slot: i, id: id || null, p: p, role: forms[side][i][2], x: 0, y: 0, stam: 100, yel: 0, out: !id, wander: 0, wy: 0, tac: tac });
+        slotHist.push([{ t: 0, id: id || null }]);
+        if (id) res.played[id] = side;
+      }
+    });
+    function S(e, k) {
+      var v = stat(e.p, k), pen = 1;
+      if (k !== 'kal' && k !== 'sans' && k !== 'agr' && e.role === 'KL' && e.p && e.p.pos !== 'KL') pen = 1;
+      if (e.p && e.p.pos && e.p.pos !== e.role) pen = e.role === 'KL' || e.p.pos === 'KL' ? 0.7 : 0.88; // mevki dışı
+      if (k === 'kal' && e.role !== 'KL') return v;
+      var fat = k === 'agr' || k === 'sans' || k === 'iq' ? 1 : 0.55 + 0.45 * e.stam / 100;
+      return v * pen * fat;
+    }
+    function tac(side, k, d) { var v = teams[side].tactic ? teams[side].tactic[k] : undefined; return v == null ? d : v; }
+    function luck(e) { return (stat(e.p, 'sans') - 50) / 700 + (e.side === 0 ? 0.015 : 0); }
+    function nm(e) { return (e.p && e.p.n) || 'Oyuncu'; }
+    function fx(side, f) { return side === 0 ? f * LEN : LEN - f * LEN; }
+    function fOf(side, x) { return side === 0 ? x / LEN : (LEN - x) / LEN; }
+    function dist(ax, ay, bx, by) { var dx = ax - bx, dy = ay - by; return Math.sqrt(dx * dx + dy * dy); }
+    var t = 0, half = 1;
+    function minute() { return Math.floor(t / 60) + 1; }
+    function say(type, side, e, txt, extra) {
+      var o = { t: t, m: Math.min(90, minute()), type: type, side: side, id: e ? e.id : null, txt: txt, sc: [score[0], score[1]] };
+      if (extra) Object.keys(extra).forEach(function (k) { o[k] = extra[k]; });
+      ev.push(o);
+    }
+    // ---------- top ----------
+    var ball = { x: LEN / 2, y: WID / 2, owner: -1, fly: null, last: 0, hold: 0, restart: null };
+    function alive(e) { return !e.out; }
+    function kickoff(side) {
+      E.forEach(function (e) {
+        var f = forms[e.side][e.slot]; e.x = fx(e.side, f[0] * 0.48); e.y = f[1] * WID;
+      });
+      ball.x = LEN / 2; ball.y = WID / 2; ball.fly = null;
+      var best = -1, bd = 1e9;
+      E.forEach(function (e, i) { if (e.side === side && alive(e) && e.role !== 'KL') { var d = dist(e.x, e.y, ball.x, ball.y); if (d < bd) { bd = d; best = i; } } });
+      if (best >= 0) { E[best].x = ball.x - (side === 0 ? 0.5 : -0.5); E[best].y = ball.y; }
+      ball.owner = best; ball.last = side; ball.hold = 1;
+    }
+    function nearest(side, x, y, exclude) {
+      var best = -1, bd = 1e9;
+      for (var i = 0; i < NE; i++) { var e = E[i]; if (e.out || (side >= 0 && e.side !== side) || i === exclude) continue; var d = dist(e.x, e.y, x, y); if (d < bd) { bd = d; best = i; } }
+      return best;
+    }
+    function pressure(i) { var e = E[i], o = nearest(1 - e.side, e.x, e.y); return o < 0 ? 0 : clamp(1 - dist(E[o].x, E[o].y, e.x, e.y) / 8, 0, 1); }
+    function inBox(side, x, y) { var f = fOf(side, x); return f > 1 - 16.5 / LEN && y > 13.85 && y < 54.15; }
+    function setRestart(side, x, y, kind) {
+      ball.owner = -1; ball.fly = null; ball.x = clamp(x, 0, LEN); ball.y = clamp(y, 0, WID);
+      var taker = kind === 'gk' ? E.findIndex(function (e) { return e.side === side && e.role === 'KL' && !e.out; }) : nearest(side, ball.x, ball.y);
+      if (taker < 0) taker = nearest(side, ball.x, ball.y);
+      ball.restart = { side: side, kind: kind, taker: taker, wait: kind === 'pen' ? 4 : 2 };
+    }
+    // ---------- olaylar ----------
+    function goal(side, e, how) {
+      score[side]++;
+      res.scorers.push({ id: e.id, side: side, m: Math.min(90, minute()) });
+      say('goal', side, e, 'GOL! ' + nm(e) + ' ' + how + ' · ' + score[0] + '-' + score[1]);
+      kickoff(1 - side);
+    }
+    function card(e, red) {
+      var side = e.side;
+      if (red || e.yel) {
+        e.out = true; e.x = -50; e.y = -50; st.red[side]++;
+        res.cards[e.id] = 'r';
+        say('red', side, e, (red ? 'KIRMIZI KART! ' : 'İkinci sarıdan kırmızı! ') + nm(e) + ' oyundan atıldı');
+      } else { e.yel = 1; st.yellow[side]++; res.cards[e.id] = res.cards[e.id] || 'y'; say('yellow', side, e, 'Sarı kart: ' + nm(e)); }
+    }
+    function substitute(i, why) {
+      var e = E[i], side = e.side;
+      if (!subsLeft[side] || !benches[side].length) return false;
+      var tm = teams[side], best = 0, bs = -1;
+      benches[side].forEach(function (id, k) {
+        var p = tm.players[id], f = (p.pos === e.role ? 300 : 0) + stat(p, e.role === 'KL' ? 'kal' : e.role === 'DF' ? 'sav' : e.role === 'OS' ? 'pas' : 'sut');
+        if (f > bs) { bs = f; best = k; }
+      });
+      var id = benches[side].splice(best, 1)[0], old = e.id;
+      subsLeft[side]--;
+      e.id = id; e.p = tm.players[id]; e.stam = 100; e.yel = 0; e.out = false;
+      res.played[id] = side;
+      slotHist[i].push({ t: t, id: id });
+      say('sub', side, e, 'Değişiklik: ' + (tm.players[old] ? tm.players[old].n : '') + ' çıktı, ' + nm(e) + ' girdi' + (why ? ' (' + why + ')' : ''));
+      return true;
+    }
+    function injure(i) {
+      var e = E[i];
+      res.inj[e.id] = 1 + Math.floor(R() * 3);
+      say('inj', e.side, e, 'Sakatlık! ' + nm(e) + ' devam edemiyor (' + res.inj[e.id] + ' maç yok)');
+      if (!substitute(i, 'sakatlık')) { e.out = true; e.x = -50; e.y = -50; }
+    }
+    function foul(def, att, x, y) {
+      var D = E[def], A = E[att];
+      // ceza sahasında hakem her teması penaltı saymaz
+      if (inBox(A.side, x, y) && R() > 0.14) { say('play', D.side, D, nm(D) + ' ceza sahasında müdahale etti, hakem devam dedi'); ball.owner = def; ball.last = D.side; ball.hold = 0; return false; }
+      st.fouls[D.side]++;
+      var hard = tac(D.side, 'hard', 1), agr = stat(D.p, 'agr');
+      var red = R() < Math.max(0, (agr - 70) / 2300) + hard * 0.003 + (agr > 90 ? 0.02 : 0);
+      var yel = !red && R() < (0.03 + agr / 480 + hard * 0.04 + ref * 0.5) * (D.yel ? 0.45 : 1);
+      say('foul', D.side, D, 'Faul: ' + nm(D) + ', ' + nm(A) + '\'yı yere indirdi');
+      if (red || yel) card(D, red);
+      if (R() < 0.012 * (1.4 - stat(A.p, 'day') / 120) + agr / 9000) injure(att);
+      if (inBox(A.side, x, y)) { say('pen', A.side, A, 'PENALTI! ' + teams[A.side].name + ' penaltı kazandı'); setRestart(A.side, fx(A.side, 1 - 11 / LEN), WID / 2, 'pen'); }
+      else setRestart(A.side, x, y, 'fk');
+      return true;
+    }
+    // şut: kim, mesafe, tür ('ayak', 'kafa', 'frikik', 'penaltı')
+    function shoot(i, kind) {
+      var e = E[i], side = e.side, gx = fx(side, 1), d = dist(e.x, e.y, gx, WID / 2), pr = kind === 'penaltı' ? 0 : pressure(i);
+      var gk = E.find(function (k) { return k.side !== side && k.role === 'KL' && !k.out; });
+      var q = kind === 'kafa' ? (S(e, 'kaf') * 0.75 + S(e, 'guc') * 0.25) / 100 : (S(e, 'sut') * 0.6 + S(e, 'sog') * 0.25 + S(e, 'tek') * 0.15) / 100;
+      if (kind === 'penaltı') q = (S(e, 'sog') * 0.55 + S(e, 'sut') * 0.45) / 100;
+      st.shots[side]++;
+      // önünde savunmacı varsa şut barajdan dönebilir
+      if (kind === 'ayak' || kind === 'frikik') {
+        var blk = E.find(function (o) { return o.side !== side && !o.out && o.role !== 'KL' && dist(o.x, o.y, e.x, e.y) < 3.5 && fOf(side, o.x) > fOf(side, e.x); });
+        if (blk && R() < 0.3 + S(blk, 'sav') / 400) { say('block', 1 - side, blk, nm(e) + ' vurdu, ' + nm(blk) + ' önünü kesti'); loose(e.x + (side === 0 ? -8 : 8), e.y + (R() - 0.5) * 10); return; }
+      }
+      var onT = clamp(0.36 + q * 0.5 - d / 85 - pr * 0.15 + luck(e) + (kind === 'penaltı' ? 0.35 : 0), 0.04, 0.95);
+      var kal = gk ? S(gk, 'kal') : 0;
+      var where = kind === 'kafa' ? 'kafayla' : kind === 'frikik' ? 'frikikten' : kind === 'penaltı' ? 'penaltıdan' : d > 28 ? 'uzaktan' : 'şık bir vuruşla';
+      if (R() >= onT) {
+        say('miss', side, e, nm(e) + ' ' + (d > 35 ? (kind === 'ayak' ? 'kendi yarı sahasından şut çekti, top auta' : 'vurdu, top dışarıda') : kind === 'kafa' ? 'kafayı vurdu ama top dışarıda' : 'vurdu, top yandan auta'));
+        if (R() < 0.1) { st.corners[side]++; say('corner', side, e, 'Korner'); setRestart(side, fx(side, 0.995), R() < 0.5 ? 0.5 : WID - 0.5, 'corner'); }
+        else setRestart(1 - side, fx(1 - side, 0.05), WID / 2, 'gk');
+        return;
+      }
+      st.onT[side]++;
+      var gp = clamp(0.45 + q * 0.35 - kal / 250 - d / 100 + luck(e) - (gk ? luck(gk) : 0) + (kind === 'penaltı' ? 0.3 : 0), 0.03, 0.92);
+      if (R() < gp) { goal(side, e, where); return; }
+      say('save', 1 - side, gk, 'Kurtarış! ' + (gk ? nm(gk) : 'Kaleci') + ', ' + nm(e) + '\'in ' + (kind === 'kafa' ? 'kafasını' : 'şutunu') + ' çıkardı');
+      if (R() < 0.38) { st.corners[side]++; say('corner', side, e, 'Korner'); setRestart(side, fx(side, 0.995), R() < 0.5 ? 0.5 : WID - 0.5, 'corner'); }
+      else if (gk) { ball.owner = E.indexOf(gk); ball.x = gk.x; ball.y = gk.y; ball.last = 1 - side; ball.hold = 2; }
+    }
+    function cross(i, fromCorner) {
+      var e = E[i], side = e.side, tx = fx(side, 0.92), ty = WID / 2 + (R() - 0.5) * 12;
+      var acc = clamp(0.35 + S(e, 'pas') / 220 + S(e, 'viz') / 400 + luck(e), 0.1, 0.9);
+      if (R() > acc) { say('cross', side, e, nm(e) + ' ortaladı, top kimseye ulaşmadı'); setRestart(1 - side, fx(1 - side, 0.05), WID / 2, 'gk'); return; }
+      var att = -1, ab = -1, def = -1, db = -1;
+      E.forEach(function (o, k) {
+        if (o.out || o.role === 'KL' || dist(o.x, o.y, tx, ty) > 18) return;
+        var h = S(o, 'kaf') + S(o, 'guc') * 0.5 + R() * 40;
+        if (o.side === side && k !== i) { if (h > ab) { ab = h; att = k; } } else if (o.side !== side) { if (h > db) { db = h; def = k; } }
+      });
+      if (att < 0) { say('cross', side, e, nm(e) + ' ortaladı, ceza sahasında kimse yok'); setRestart(1 - side, fx(1 - side, 0.05), WID / 2, 'gk'); return; }
+      E[att].x = tx; E[att].y = ty;
+      if (def >= 0 && db > ab) { say('clear', 1 - side, E[def], nm(E[def]) + ' kafayla uzaklaştırdı'); loose(tx + (side === 0 ? -15 : 15), ty + (R() - 0.5) * 20); return; }
+      say('cross', side, e, nm(e) + (fromCorner ? ' kornerden' : '') + ' ortaladı, ' + nm(E[att]) + ' yükseldi');
+      shoot(att, 'kafa');
+    }
+    function loose(x, y) {
+      ball.owner = -1; ball.fly = null; ball.x = x; ball.y = y;
+      if (y < 0 || y > WID) { var s = 1 - ball.last; say('throw', s, null, 'Taç'); setRestart(s, clamp(x, 1, LEN - 1), y < 0 ? 0 : WID, 'throw'); return; }
+      if (x < 0 || x > LEN) {
+        var defSide = x > LEN ? 1 : 0; // o kalenin sahibi
+        if (ball.last === defSide) { st.corners[1 - defSide]++; say('corner', 1 - defSide, null, 'Korner'); setRestart(1 - defSide, x > LEN ? LEN - 0.5 : 0.5, y < WID / 2 ? 0.5 : WID - 0.5, 'corner'); }
+        else setRestart(defSide, fx(defSide, 0.05), WID / 2, 'gk');
+      }
+    }
+    function offsideAt(side, rx, px) {
+      var opp = E.filter(function (o) { return o.side !== side && !o.out; }).map(function (o) { return fOf(side, o.x); }).sort(function (a, b) { return b - a; });
+      var lineF = opp.length > 1 ? opp[1] : 0.5, rf = fOf(side, rx);
+      return rf > 0.5 && rf > lineF + 0.004 && rf > fOf(side, px);
+    }
+    // pas: i'den j'ye; through = koşu yoluna
+    function pass(i, j, long) {
+      var e = E[i], r = E[j], side = e.side, tx = r.x, ty = r.y;
+      if (long) { tx += side === 0 ? 6 : -6; }
+      var d = dist(e.x, e.y, tx, ty), pr = pressure(i);
+      // ofsayt: alıcı, rakibin sondan ikinci oyuncusundan ve toptan ileride mi
+      if (offsideAt(side, r.x, e.x)) {
+        st.offs[side]++; say('offside', side, r, 'Ofsayt: ' + nm(r)); setRestart(1 - side, tx, ty, 'fk'); return;
+      }
+      var p = 0.62 + S(e, 'pas') / 230 + S(r, 'tek') / 600 - d / (110 + S(e, 'viz') * 1.2) - pr * 0.12 + luck(e) + (long ? S(e, 'viz') / 500 - 0.05 : 0);
+      p = clamp(p, 0.1, 0.97);
+      ball.owner = -1; ball.last = side;
+      if (R() < p) { ball.fly = { tx: tx, ty: ty, to: j, steps: Math.max(1, Math.round(d / 22)), side: side }; return; }
+      // isabetsiz: yolda kesen var mı
+      var best = -1, bd = 1e9;
+      E.forEach(function (o, k) {
+        if (o.side === side || o.out) return;
+        var mx = (e.x + tx) / 2, my = (e.y + ty) / 2, dd = dist(o.x, o.y, mx, my);
+        if (dd < bd) { bd = dd; best = k; }
+      });
+      if (best >= 0 && bd < 9 + d / 6) { ball.fly = { tx: E[best].x, ty: E[best].y, to: best, steps: 1, side: side, cut: true }; return; }
+      ball.fly = { tx: tx + (R() - 0.5) * 18, ty: ty + (R() - 0.5) * 18, to: -1, steps: Math.max(1, Math.round(d / 22)), side: side };
+    }
+    // ---------- topa sahip oyuncunun kararı ----------
+    function decide(i) {
+      var e = E[i], side = e.side, f = fOf(side, e.x), gx = fx(side, 1), dg = dist(e.x, e.y, gx, WID / 2), iq = stat(e.p, 'iq');
+      var noise = (100 - iq) / 100 * 0.9, pr = pressure(i), pst = tac(side, 'pstyle', 1), tempo = tac(side, 'tempo', 1);
+      // akılsızca işler
+      if (iq < 30 && R() < (30 - iq) / 300) {
+        var what = R();
+        if (what < 0.45 && S(e, 'hiz') > 40) { e.mad = { dy: e.y < WID / 2 ? -1 : 1, steps: 6 }; say('mad', side, e, nm(e) + ' topu aldı, dümdüz taca doğru koşuyor!'); return; }
+        if (what < 0.75 && e.role !== 'KL') { say('mad', side, e, nm(e) + ' hiç düşünmeden şut çekti!'); shoot(i, 'ayak'); return; }
+        var gk = E.findIndex(function (k) { return k.side === side && k.role === 'KL' && !k.out; });
+        if (gk >= 0 && gk !== i) { say('mad', side, e, nm(e) + ' topu geri, kendi kalecisine yolladı'); pass(i, gk, false); return; }
+      }
+      var opts = [];
+      // şut: mesafe, açı, baskı ve şut yeteneğine göre bir ihtimal
+      var shootP = 0, ang = 1 - Math.abs(e.y - WID / 2) / 40;
+      if (dg < 25) shootP = (25 - dg) / 25 * (0.12 + S(e, 'sut') / 450) * (1 - pr * 0.4) * ang;
+      if (S(e, 'sut') > 85 && dg < 36) shootP = Math.max(shootP, 0.06);
+      if (dg < 9) shootP += 0.3;
+      if (e.role !== 'KL' && R() < shootP) { shoot(i, 'ayak'); return; }
+      // orta
+      if (f > 0.78 && (e.y < 16 || e.y > WID - 16)) opts.push({ k: 'cross', s: 0.45 + S(e, 'pas') / 300 });
+      // pas
+      E.forEach(function (r, j) {
+        if (j === i || r.side !== side || r.out) return;
+        var d = dist(e.x, e.y, r.x, r.y); if (d < 4 || d > 70) return;
+        var prog = (fOf(side, r.x) - f) * LEN, o = nearest(1 - side, r.x, r.y), open = o < 0 ? 15 : Math.min(15, dist(E[o].x, E[o].y, r.x, r.y));
+        var long = d > 28, sc = prog * 0.022 + open * 0.045 - d * (0.012 - S(e, 'viz') / 12000) + (long ? (pst - 1) * 0.18 : (1 - pst) * 0.08);
+        if (r.role === 'KL') sc -= 0.4;
+        if (offsideAt(side, r.x, e.x)) sc -= iq / 100 * 1.6;
+        opts.push({ k: 'pass', j: j, long: long, s: sc });
+      });
+      // çalım/sürme
+      var ahead = nearest(1 - side, e.x + (side === 0 ? 6 : -6), e.y), space = ahead < 0 ? 15 : Math.min(15, dist(E[ahead].x, E[ahead].y, e.x, e.y));
+      opts.push({ k: 'run', s: space * 0.035 + (S(e, 'cal') + S(e, 'hiz') * 0.5) / 380 + (1 - tempo) * 0.15 - pr * 0.25 });
+      // uzaklaştır
+      if (f < 0.25 && pr > 0.5) opts.push({ k: 'clear', s: 0.3 + (100 - S(e, 'tek')) / 200 });
+      var best = null, bs = -1e9;
+      opts.forEach(function (o) { var v = o.s + (R() - 0.5) * noise; if (v > bs) { bs = v; best = o; } });
+      if (!best) return;
+      if (best.k === 'cross') cross(i, false);
+      else if (best.k === 'pass') pass(i, best.j, best.long);
+      else if (best.k === 'clear') { say('clear', side, e, nm(e) + ' topu uzaklaştırdı'); ball.last = side; ball.owner = -1; ball.fly = { tx: fx(side, 0.55 + R() * 0.2), ty: R() * WID, to: -1, steps: 2, side: side }; }
+      else { e.run = 1 + Math.floor(R() * 2); }
+    }
+    // ---------- maç döngüsü ----------
+    kickoff(0);
+    say('start', 0, null, 'Maç başladı: ' + m.H.name + ' - ' + m.A.name);
+    var FR = NE * 2 + 2;
+    function record() {
+      var o = t * FR;
+      for (var i = 0; i < NE; i++) { frames[o + i * 2] = E[i].out ? -50 : E[i].x; frames[o + i * 2 + 1] = E[i].out ? -50 : E[i].y; }
+      frames[o + NE * 2] = ball.x; frames[o + NE * 2 + 1] = ball.y;
+    }
+    record();
+    for (t = 1; t <= T; t++) {
+      if (t === 2700) { say('half', 0, null, 'İlk yarı bitti: ' + score[0] + '-' + score[1]); kickoff(1); half = 2; }
+      if (t === 3600 || t === 4200 || t === 4800) {
+        [0, 1].forEach(function (side) {
+          var worst = -1, ws = 52;
+          E.forEach(function (e, k) { if (e.side === side && !e.out && e.role !== 'KL' && e.stam < ws) { ws = e.stam; worst = k; } });
+          if (worst >= 0) substitute(worst, 'yorgunluk');
+        });
+      }
+      var bf = [fOf(0, ball.x), fOf(1, ball.x)], possSide = ball.owner >= 0 ? E[ball.owner].side : (ball.fly ? ball.fly.side : ball.last);
+      st.poss[possSide]++;
+      // hedef konumlar ve hareket
+      for (var i = 0; i < NE; i++) {
+        var e = E[i]; if (e.out) continue;
+        var side = e.side, fo = forms[side][e.slot], has = possSide === side;
+        if (t % 10 === 0) { var amp = (100 - stat(e.p, 'iq')) / 100; e.wander = (R() - 0.5) * 0.16 * amp; e.wy = (R() - 0.5) * 0.25 * amp; }
+        var ment = (tac(side, 'ment', 2) - 2) * 0.05, wid = [0.78, 1, 1.15][tac(side, 'width', 1)] || 1;
+        var tf = fo[0] + (has ? 0.07 + ment : -0.06 + ment) + (bf[side] - 0.5) * 0.26 + e.wander;
+        if (e.role === 'DF') tf += (tac(side, 'line', 1) - 1) * 0.05;
+        if (has && e.role !== 'KL') tf = Math.min(tf, 0.86);
+        if (e.role === 'FV' && has && stat(e.p, 'iq') < 40) tf += (40 - stat(e.p, 'iq')) / 40 * 0.09;
+        if (e.role === 'KL') tf = clamp(0.02 + (bf[side] - 0.5) * 0.06, 0.01, 0.1);
+        else if (!has) tf = Math.max(tf, e.role === 'DF' ? 0.07 : e.role === 'OS' ? 0.16 : 0.3);
+        tf = clamp(tf, 0.01, 0.97);
+        var tx = fx(side, tf), ty = clamp((0.5 + (fo[1] - 0.5) * wid + e.wy) * WID + (ball.y - WID / 2) * 0.28, 1, WID - 1);
+        var sprint = false;
+        // adam adama: savunmadayken bölgesindeki rakibi kale tarafından tutar (zeki oyuncu daha iyi tutar)
+        if (!has && e.role !== 'KL') {
+          var mk = -1, md = 14;
+          for (var q = 0; q < NE; q++) { var o2 = E[q]; if (o2.side === side || o2.out || q === ball.owner) continue; var dq = dist(o2.x, o2.y, tx, ty); if (dq < md) { md = dq; mk = q; } }
+          if (mk >= 0) { var w = 0.35 + stat(e.p, 'iq') / 250; tx = tx * (1 - w) + (E[mk].x + (side === 0 ? -1.5 : 1.5)) * w; ty = ty * (1 - w) + E[mk].y * w; }
+        }
+        // pres: rakip topun sahibine en yakın 1-3 oyuncu koşar
+        if (!has && ball.owner >= 0 && e.role !== 'KL') {
+          var press = tac(side, 'press', 1), rank = 0, myd = dist(e.x, e.y, ball.x, ball.y);
+          for (var k = 0; k < NE; k++) if (k !== i && E[k].side === side && !E[k].out && E[k].role !== 'KL' && dist(E[k].x, E[k].y, ball.x, ball.y) < myd) rank++;
+          if (rank < press + 1) { tx = ball.x; ty = ball.y; sprint = true; e.stam -= 0.004 * press; }
+        }
+        if (ball.owner < 0 && !ball.restart && e.role !== 'KL' && nearest(side, ball.fly ? ball.fly.tx : ball.x, ball.fly ? ball.fly.ty : ball.y) === i) { tx = ball.fly ? ball.fly.tx : ball.x; ty = ball.fly ? ball.fly.ty : ball.y; sprint = true; }
+        if (ball.owner === i) {
+          if (e.mad) { tx = e.x + (side === 0 ? 2 : -2); ty = e.y + e.mad.dy * 8; sprint = true; }
+          else if (e.run) { tx = fx(side, clamp(fOf(side, e.x) + 0.08, 0, 1)); ty = e.y + (WID / 2 - e.y) * 0.2; sprint = true; }
+          else { tx = e.x; ty = e.y; }
+        }
+        if (ball.restart && ball.restart.taker === i) { tx = ball.x; ty = ball.y; sprint = true; }
+        var sp = (3 + S(e, 'hiz') / 99 * 5.2) * (sprint ? 1 : 0.62);
+        if (ball.owner === i) sp *= 0.85 + S(e, 'tek') / 700;
+        var dx = tx - e.x, dy = ty - e.y, dd = Math.sqrt(dx * dx + dy * dy);
+        if (dd > 0.01) { var mv = Math.min(dd, sp); e.x += dx / dd * mv; e.y += dy / dd * mv; }
+        e.stam = Math.max(0, e.stam - (0.0045 + (sprint ? 0.006 : 0.002)) * (1.65 - stat(e.p, 'day') / 100));
+        if (ball.owner === i) { ball.x = e.x; ball.y = e.y; }
+      }
+      // duran top
+      if (ball.restart) {
+        var rs = ball.restart, tk = E[rs.taker];
+        if (!tk || tk.out) { rs.taker = nearest(rs.side, ball.x, ball.y); tk = E[rs.taker]; }
+        if (--rs.wait <= 0 && tk) {
+          tk.x = ball.x; tk.y = ball.y; ball.restart = null; ball.owner = rs.taker; ball.last = rs.side; ball.hold = 1;
+          var gxd = dist(ball.x, ball.y, fx(rs.side, 1), WID / 2);
+          if (rs.kind === 'pen') {
+            var pk = teams[rs.side].pk, ti = E.findIndex(function (q) { return q.id === pk && !q.out; });
+            if (ti >= 0) { E[ti].x = ball.x; E[ti].y = ball.y; ball.owner = ti; }
+            shoot(ball.owner, 'penaltı');
+          } else if (rs.kind === 'corner') cross(ball.owner, true);
+          else if (rs.kind === 'fk' && gxd < 30) {
+            var fk = teams[rs.side].fk, fi = E.findIndex(function (q) { return q.id === fk && !q.out; });
+            if (fi >= 0) ball.owner = fi;
+            say('fk', rs.side, E[ball.owner], nm(E[ball.owner]) + ' frikiği kullanıyor');
+            shoot(ball.owner, 'frikik');
+          }
+        }
+        record(); continue;
+      }
+      // uçan top
+      if (ball.fly) {
+        var fl = ball.fly;
+        ball.x += (fl.tx - ball.x) / fl.steps; ball.y += (fl.ty - ball.y) / fl.steps; fl.steps--;
+        if (fl.steps <= 0) {
+          ball.fly = null;
+          if (fl.to >= 0 && !E[fl.to].out) {
+            var rc = E[fl.to];
+            if (fl.cut && R() < 0.12) say('int', rc.side, rc, nm(rc) + ' pası kesti');
+            else if (R() > 0.86 + S(rc, 'tek') / 700) { loose(fl.tx + (R() - 0.5) * 6, fl.ty + (R() - 0.5) * 6); if (!ball.restart && R() < 0.3) say('touch', rc.side, rc, nm(rc) + ' topu kontrol edemedi'); }
+            if (!ball.restart && ball.owner < 0 && (fl.cut || dist(rc.x, rc.y, ball.x, ball.y) < 6)) { ball.owner = fl.to; ball.last = rc.side; rc.x = ball.x; rc.y = ball.y; ball.hold = 0; }
+          } else loose(ball.x, ball.y);
+        }
+        record(); continue;
+      }
+      // sahipsiz top
+      if (ball.owner < 0) {
+        var nb = nearest(-1, ball.x, ball.y);
+        if (nb >= 0 && dist(E[nb].x, E[nb].y, ball.x, ball.y) < 2.2) { ball.owner = nb; ball.last = E[nb].side; ball.hold = 0; }
+        record(); continue;
+      }
+      // top bir oyuncuda
+      var c = ball.owner, ce = E[c];
+      if (ce.mad) {
+        ce.mad.steps--;
+        if (ball.y <= 0.5 || ball.y >= WID - 0.5 || ce.mad.steps <= 0) { var wasOut = ball.y <= 0.5 || ball.y >= WID - 0.5; ce.mad = null; if (wasOut) { say('mad', ce.side, ce, nm(ce) + ' topla birlikte taca çıktı!'); ball.last = ce.side; loose(ball.x, ball.y < WID / 2 ? -1 : WID + 1); record(); continue; } }
+      }
+      if (ce.run) ce.run--;
+      if (fOf(ce.side, ball.x) > 0.995 && !ce.mad) { ball.last = ce.side; loose(ce.side === 0 ? LEN + 1 : -1, ball.y); record(); continue; }
+      // müdahale
+      var dfd = nearest(1 - ce.side, ce.x, ce.y);
+      if (dfd >= 0 && !ce.mad || dfd >= 0 && R() < 0.5) {
+        var D = E[dfd], dd2 = dist(D.x, D.y, ce.x, ce.y);
+        if (dd2 < 2.4 && D.role !== 'KL' && !(D.cool > t)) {
+          var hard = tac(D.side, 'hard', 1);
+          if (R() < 0.06 + stat(D.p, 'agr') / 600 + hard * 0.03) {
+            D.cool = t + 3;
+            var win = clamp(0.42 + (S(D, 'sav') + S(D, 'guc') * 0.3 + S(D, 'hiz') * 0.15) / 260 - (S(ce, 'cal') + S(ce, 'tek') * 0.3 + S(ce, 'hiz') * 0.15 + S(ce, 'guc') * 0.15) / 260 + luck(D) - luck(ce), 0.06, 0.93);
+            var foulP = 0.02 + stat(D.p, 'agr') / 520 + hard * 0.025 - S(D, 'sav') / 1000;
+            if (R() < win) {
+              if (R() < foulP * 0.35) { foul(dfd, c, ce.x, ce.y); record(); continue; }
+              ce.mad = null; ce.run = 0;
+              ball.owner = dfd; ball.last = D.side; ball.hold = 0;
+              if (R() < 0.12) say('tackle', D.side, D, nm(D) + ' topu kaptı');
+              record(); continue;
+            } else if (R() < foulP) { foul(dfd, c, ce.x, ce.y); record(); continue; }
+            else if (R() < 0.15) say('dribble', ce.side, ce, nm(ce) + ' ' + nm(D) + '\'yı çalımladı');
+          }
+        }
+      }
+      if (ce.mad) { record(); continue; }
+      ball.hold++;
+      var tempo2 = tac(ce.side, 'tempo', 1), wait = ce.run ? 99 : (tempo2 === 2 ? 2 : tempo2 === 0 ? 4 : 3);
+      if (ball.hold >= wait) { ball.hold = 0; decide(c); }
+      record();
+    }
+    say('end', 0, null, 'Maç bitti: ' + m.H.name + ' ' + score[0] + '-' + score[1] + ' ' + m.A.name);
+    var possTot = st.poss[0] + st.poss[1] || 1;
+    st.poss = [Math.round(st.poss[0] / possTot * 100), 100 - Math.round(st.poss[0] / possTot * 100)];
+    return { frames: frames, FR: FR, T: T, ev: ev, score: score, stats: st, slotHist: slotHist, res: res, lineups: E.map(function (e, i) { return slotHist[i][0].id; }) };
+  }
+  // maç kaydına yazılacak kısa özet
+  function summary(sim) {
+    return { hg: sim.score[0], ag: sim.score[1], sc: sim.res.scorers, cards: sim.res.cards, inj: sim.res.inj, st: sim.stats };
+  }
+  var api = { STATS: STATS, POOL: POOL, MIN_SQUAD: MIN_SQUAD, MAX_SQUAD: MAX_SQUAD, POS: POS, FORMS: FORMS, TACTICS: TACTICS, stat: stat, pointsOf: pointsOf, validateTeam: validateTeam, lineupOf: lineupOf, simulate: simulate, summary: summary };
+  if (typeof module !== 'undefined' && module.exports) module.exports = api;
+  else root.FB = api;
+})(this);
+
+</script>
+<script>
 /* Ortak bağlantı: Firebase, hesaplar, admin, çevrimiçi durumu, ses, lobi yönlendirme */
 window.CORE = (function () {
   'use strict';
-  var VIEWS = ['lobby', 'poker', 'okey', 'holdem', 'pisti', 'esli', 'bj', 'slither', 'kayit', 'admin'];
-  var GAMES = ['poker', 'okey', 'holdem', 'pisti', 'esli', 'bj', 'slither'];
-  var TITLES = { poker: 'Rus Pokeri', okey: 'Okey', holdem: 'Texas Hold\'em', pisti: 'Pişti', esli: 'Eşli Pişti', bj: 'Blackjack', slither: 'Slither', kayit: 'Kayıtlar', admin: 'Admin paneli' };
+  var VIEWS = ['lobby', 'poker', 'okey', 'holdem', 'pisti', 'esli', 'bj', 'slither', 'tombala', 'emlak', 'futbol', 'kayit', 'admin'];
+  var GAMES = ['poker', 'okey', 'holdem', 'pisti', 'esli', 'bj', 'slither', 'tombala', 'emlak', 'futbol'];
+  var TITLES = { poker: 'Rus Pokeri', okey: 'Okey', holdem: 'Texas Hold\'em', pisti: 'Pişti', esli: 'Eşli Pişti', bj: 'Blackjack', slither: 'Slither', tombala: 'Tombala', emlak: 'Emlak', futbol: 'Futbol Ligi', kayit: 'Kayıtlar', admin: 'Admin paneli' };
   var core = { db: null, auth: null, user: null, me: null, pid: null, connected: false, online: {}, ownerId: null, error: null,
     view: 'lobby', table: 1, TABLES: 3, bootAt: Date.now(), ready: false, authKnown: false,
-    ledger: {}, users: {}, requests: {}, bans: {}, deleted: {}, weekly: {}, weeklyLoaded: false, ledgerLoaded: false, START_CHIPS: 1000, GAMES: ['poker', 'okey', 'holdem', 'pisti', 'esli', 'bj', 'slither'] };
-  core.GAME_NAMES = { poker: 'Rus Pokeri', okey: 'Okey', holdem: 'Hold\'em', pisti: 'Pişti', esli: 'Eşli Pişti', bj: 'Blackjack', slither: 'Slither', admin: 'Admin', start: 'Başlangıç', prize: 'Haftalık ödül' };
+    ledger: {}, users: {}, requests: {}, bans: {}, deleted: {}, weekly: {}, weeklyLoaded: false, ledgerLoaded: false, START_CHIPS: 1000, GAMES: ['poker', 'okey', 'holdem', 'pisti', 'esli', 'bj', 'slither', 'tombala', 'emlak', 'futbol'] };
+  core.GAME_NAMES = { poker: 'Rus Pokeri', okey: 'Okey', holdem: 'Hold\'em', pisti: 'Pişti', esli: 'Eşli Pişti', bj: 'Blackjack', slither: 'Slither', tombala: 'Tombala', emlak: 'Emlak', futbol: 'Futbol Ligi', admin: 'Admin', start: 'Başlangıç', prize: 'Haftalık ödül' };
   var subs = [], readyFns = [];
   core.onChange = function (fn) { subs.push(fn); };
   core.emit = function () { subs.forEach(function (f) { try { f(); } catch (e) { console.error(e); } }); };
@@ -2229,7 +3192,7 @@ window.CORE = (function () {
     if (!t) return '—';
     try { return new Date(t).toLocaleString('tr-TR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }); } catch (e) { return '—'; }
   }
-  var GAMES = ['poker', 'okey', 'holdem', 'pisti', 'esli', 'bj', 'slither'];
+  var GAMES = ['poker', 'okey', 'holdem', 'pisti', 'esli', 'bj', 'slither', 'tombala', 'emlak', 'futbol'];
   var GDESC = {
     poker: 'Krupiyeye karşı · 1–6 kişi · kart değiştir, 6. kart al',
     okey: '2–4 kişi · giriş çipi, kazanan potu alır',
@@ -2387,7 +3350,7 @@ window.CORE = (function () {
   function groupEntries(uid) {
     var l = CORE.ledger[uid] || {}, groups = {};
     Object.keys(l).forEach(function (k) {
-      var e = l[k], i = k.lastIndexOf('-'), grp = /^(poker|okey|holdem|pisti|esli|bj|slither)-/.test(k) && i > 0 ? k.slice(0, i) : k, suf = k.slice(i + 1);
+      var e = l[k], i = k.lastIndexOf('-'), grp = /^(poker|okey|holdem|pisti|esli|bj|slither|tombala|emlak|futbol)-/.test(k) && i > 0 ? k.slice(0, i) : k, suf = k.slice(i + 1);
       var g = groups[grp] = groups[grp] || { d: 0, at: 0, g: e.g, tb: e.tb, notes: [], open: false, closed: false };
       g.d += Number(e.d) || 0; g.at = Math.max(g.at, e.at || 0);
       if (e.n && g.notes.indexOf(e.n) < 0) g.notes.push(e.n);
@@ -5490,6 +6453,1281 @@ window.CORE = (function () {
     CORE.onChange(function () { if (tb) render(); });
     CORE.onTable('slither', attach);
     requestAnimationFrame(frame);
+  });
+})();
+
+</script>
+<script>
+/* Tombala masası: herkes kart başına giriş çipi koyar; sayılar sunucu saatine göre çekilir (yazma gerekmez).
+   1. çinko %20, 2. çinko %30, tombala %50 */
+(function () {
+  'use strict';
+  var TMB = window.TMB, CORE = window.CORE;
+  var pid = null, tb = 0, R = {}, st = null, seats = {}, loaded = { st: false, seats: false };
+  var busy = false, stakeChoice = 100, speedChoice = 4000, lastSaid = '', evalCache = { key: '', ev: null }, autoOpenKey = '';
+  var SPEEDS = [[2500, 'Hızlı'], [4000, 'Normal'], [6000, 'Yavaş']], COUNT = 5000;
+
+  function $(id) { return document.getElementById(id); }
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  function fmt(n) { n = Number(n || 0); return (n < 0 ? '−' : '') + Math.abs(n).toLocaleString('tr-TR'); }
+  function sfmt(n) { n = Number(n || 0); return (n > 0 ? '+' : n < 0 ? '−' : '±') + Math.abs(n).toLocaleString('tr-TR'); }
+  function clone(o) { return o == null ? o : JSON.parse(JSON.stringify(o)); }
+  function nameOf(id) { var s = seats[id]; return (s && s.name) || CORE.userName(id); }
+  function joined() { return !!(pid && seats[pid] && seats[pid].name); }
+  function now() { return CORE.serverNow(); }
+  function seated() {
+    return Object.keys(seats).filter(function (id) { return seats[id] && seats[id].sit && !seats[id].banned && !CORE.isBanned(id) && seats[id].name; })
+      .sort(function (a, b) { return (seats[a].sitAt || 0) - (seats[b].sitAt || 0); });
+  }
+  function myCards() { var c = seats[pid] && seats[pid].cards; return c >= 1 && c <= 3 ? c : 1; }
+  function round() { var s = st || {}; return s.players && s.players.length && s.seed ? s : null; }
+  function evalOf(s) {
+    var key = s.no + ':' + s.seed;
+    if (evalCache.key !== key) evalCache = { key: key, ev: TMB.evaluate({ seed: s.seed, stake: s.stake, players: s.players }) };
+    return evalCache.ev;
+  }
+  // kaç sayı çekildi (0..90); bitiş = tombala çıktığı çekiliş
+  function drawn(s, ev) {
+    var t = now();
+    if (t < s.startAt) return 0;
+    return Math.min(ev.end + 1, Math.floor((t - s.startAt) / s.every) + 1);
+  }
+  function over(s, ev) { return drawn(s, ev) >= ev.end + 1; }
+  function syncLedger(s, ev) {
+    if (!CORE.ledgerLoaded) return;
+    var gid = 'tombala-' + tb + '-' + s.gid, list = [], fin = over(s, ev);
+    s.players.forEach(function (p) {
+      list.push({ uid: p.id, key: gid + '-s', d: -s.stake * (p.cards || 1), g: 'tombala', tb: tb, n: 'Tur ' + s.no + ' · ' + (p.cards || 1) + ' kart' });
+      if (fin) {
+        var w = ev.pay[p.id] || 0;
+        list.push(w > 0 ? { uid: p.id, key: gid + '-w', d: w, g: 'tombala', tb: tb, n: 'Tur ' + s.no + ' · kazandı' } : { uid: p.id, key: gid + '-r', d: 0, g: 'tombala', tb: tb, n: 'Tur ' + s.no + ' · kaybetti' });
+      }
+    });
+    CORE.ensureEntries(list);
+  }
+
+  // ---------- çizim ----------
+  function cardHTML(cd, set, last, label, winTags) {
+    var rows = cd.rows.map(function (row) {
+      return row.map(function (n) {
+        if (!n) return '<span class="tm-cell empty"></span>';
+        var hit = set[n];
+        return '<span class="tm-cell' + (hit ? ' hit' : '') + (n === last ? ' last' : '') + '">' + n + '</span>';
+      }).join('');
+    }).join('');
+    var left = cd.rows.reduce(function (a, row) { return a + row.filter(function (n) { return n && !set[n]; }).length; }, 0);
+    return '<div class="tm-card"><div class="tm-card-head"><b>' + esc(label) + '</b><span>' + (winTags || '') + (left ? left + ' eksik' : '<span class="tag win">TOMBALA</span>') + '</span></div><div class="tm-grid">' + rows + '</div></div>';
+  }
+  function prizeLine(s, ev, k, label, n) {
+    var e = ev.ev[k];
+    if (n <= e.at) return '<div class="row"><b>' + label + '</b><span class="muted">' + fmt(e.amount) + ' çip · bekleniyor</span></div>';
+    var who = e.cards.map(function (ci) { return esc(nameOf(ev.cards[ci].owner)); });
+    return '<div class="row"><b>' + label + '</b><span>' + who.join(', ') + ' · <span class="amt pos">+' + fmt(e.amount) + '</span></span></div>';
+  }
+  function render() {
+    var s = round();
+    $('tmRound').textContent = 'Masa ' + tb + (s ? ' · Tur ' + s.no : '');
+    $('tmChipsVal').textContent = fmt(CORE.balance(pid));
+    var bt = CORE.bannerText(loaded.st);
+    $('tmBanner').innerHTML = bt ? '<div class="banner">' + esc(bt) + '</div>' : '';
+    var ball = $('tmBall'), main = $('tmMain'), el = $('tmActions');
+    if (!s) { ball.innerHTML = '<div class="tm-ball idle">?</div><div class="dstatus">Tur başlatılınca sayılar çekilir</div>'; }
+    var ev = s ? evalOf(s) : null, n = s ? drawn(s, ev) : 0, fin = s ? over(s, ev) : false;
+    if (s) {
+      syncLedger(s, ev);
+      var set = {}; ev.order.slice(0, n).forEach(function (x) { set[x] = 1; });
+      var last = n ? ev.order[n - 1] : 0, t = now();
+      var recent = ev.order.slice(Math.max(0, n - 6), Math.max(0, n - 1)).reverse();
+      ball.innerHTML = (t < s.startAt ? '<div class="tm-ball idle">' + Math.ceil((s.startAt - t) / 1000) + '</div><div class="dstatus">Başlıyor…</div>'
+        : '<div class="tm-ball' + (fin ? ' done' : '') + '">' + last + '</div><div class="tm-recent">' + recent.map(function (x) { return '<span>' + x + '</span>'; }).join('') + '</div>' +
+          '<div class="dstatus">' + (fin ? 'Tombala çıktı · tur bitti' : n + '. sayı · ' + (90 - n) + ' sayı kaldı') + '</div>');
+      // sesli okuma ve bağırışlar
+      var sayKey = s.no + ':' + s.seed + ':' + n;
+      if (CORE.view === 'tombala' && n > 0 && lastSaid !== sayKey) {
+        var first = !lastSaid || (lastSaid.indexOf(s.no + ':' + s.seed + ':') !== 0 && n > 1);
+        lastSaid = sayKey;
+        if (!first) {
+          var hitKind = n - 1 === ev.ev.t.at ? 'Tombala!' : n - 1 === ev.ev.c2.at ? 'İkinci çinko!' : n - 1 === ev.ev.c1.at ? 'Çinko!' : '';
+          if (hitKind) CORE.shout(last + '. ' + hitKind); else CORE.say(String(last));
+        }
+      }
+      var out = '';
+      if (fin) {
+        var mine = ev.pay[pid] || 0, myCost = 0;
+        s.players.forEach(function (p) { if (p.id === pid) myCost = s.stake * (p.cards || 1); });
+        out += '<div class="gameover"><div class="label">Tur ' + s.no + ' bitti · pot ' + fmt(ev.pot) + '</div><div class="res-title">' +
+          ev.ev.t.cards.map(function (ci) { return esc(nameOf(ev.cards[ci].owner)); }).join(', ') + ' tombala yaptı</div>' +
+          (myCost ? '<div class="hint" style="text-align:left">Senin sonucun: <span class="amt ' + (mine - myCost > 0 ? 'pos' : mine - myCost < 0 ? 'neg' : 'zero') + '">' + sfmt(mine - myCost) + '</span></div>' : '') + '</div>';
+      }
+      out += '<div class="prev">' + prizeLine(s, ev, 'c1', '1. Çinko', n) + prizeLine(s, ev, 'c2', '2. Çinko', n) + prizeLine(s, ev, 't', 'Tombala', n) + '</div>';
+      var myIdx = [];
+      ev.cards.forEach(function (cd, i) { if (cd.owner === pid) myIdx.push(i); });
+      if (myIdx.length) out += '<div class="section-head"><h2>Kartların</h2><span>' + myIdx.length + ' kart</span></div>' + myIdx.map(function (ci, j) {
+        var tags = ['c1', 'c2'].filter(function (k) { return n > ev.ev[k].at && ev.ev[k].cards.indexOf(ci) >= 0; }).map(function (k) { return '<span class="tag gold">' + (k === 'c1' ? '1. çinko' : '2. çinko') + '</span> '; }).join('');
+        return cardHTML(ev.cards[ci], set, last, (j + 1) + '. kart', tags);
+      }).join('');
+      // diğer oyuncular: tombalaya kaç eksik
+      var others = s.players.filter(function (p) { return p.id !== pid; }).map(function (p) {
+        var best = 99;
+        ev.cards.forEach(function (cd) { if (cd.owner !== p.id) return; var l = cd.rows.reduce(function (a, row) { return a + row.filter(function (x) { return x && !set[x]; }).length; }, 0); best = Math.min(best, l); });
+        return { id: p.id, cards: p.cards || 1, best: best };
+      }).sort(function (a, b) { return a.best - b.best; });
+      if (others.length) out += '<div class="section-head"><h2>Diğerleri</h2><span>tombalaya en az</span></div><div class="prev">' + others.map(function (o) {
+        return '<div class="row"><b>' + (CORE.here(o.id, 'tombala') ? '<span class="on-dot"></span>' : '') + esc(nameOf(o.id)) + ' <span class="muted">' + o.cards + ' kart</span></b><span>' + (o.best ? o.best + ' eksik' : '<span class="tag win">Tombala</span>') + '</span></div>';
+      }).join('') + '</div>';
+      out += '<details class="tm-board-wrap"><summary>Çekilen sayılar (' + n + ')</summary><div class="tm-board">' + (function () { var h = ''; for (var i = 1; i <= 90; i++) h += '<span class="' + (set[i] ? 'hit' : '') + (i === last ? ' last' : '') + '">' + i + '</span>'; return h; })() + '</div></details>';
+      var openB = main.querySelector('details.tm-board-wrap[open]');
+      main.innerHTML = out;
+      if (openB) { var nb = main.querySelector('details.tm-board-wrap'); if (nb) nb.open = true; }
+    } else {
+      var list = seated(), o2 = '';
+      var prev = (st || {}).prev;
+      if (prev) o2 += '<div class="prev"><div class="label">Önceki tur · #' + prev.no + '</div><div class="row"><b>Tombala</b><span>' + prev.winners.map(function (id) { return esc(nameOf(id)); }).join(', ') + ' · pot ' + fmt(prev.pot) + '</span></div></div>';
+      o2 += '<div class="section-head"><h2>Masada oturanlar</h2><span>' + list.length + ' kişi</span></div>';
+      if (!list.length) o2 += '<div class="empty-note">Henüz kimse oturmadı. En az 2 kişi oturunca tur başlatılabilir.</div>';
+      list.forEach(function (id) {
+        var c = (seats[id].cards >= 1 && seats[id].cards <= 3) ? seats[id].cards : 1;
+        o2 += '<div class="seat' + (id === pid ? ' mine' : '') + '"><div class="who">' + (CORE.here(id, 'tombala') ? '<span class="on-dot"></span>' : '') + esc(nameOf(id)) + '</div><div class="amt zero">' + c + ' kart</div><div class="sub"><span class="tag gold">Oturuyor</span> ' + fmt(CORE.balance(id)) + ' çip</div></div>';
+      });
+      main.innerHTML = o2;
+    }
+    // düğmeler
+    if (CORE.error) { el.innerHTML = '<div class="msg">Masa şu an açılamıyor.</div>'; return; }
+    if (!(loaded.st && loaded.seats)) { el.innerHTML = '<div class="msg">Masaya bağlanılıyor…</div>'; return; }
+    if (!joined()) { el.innerHTML = '<div class="msg">' + (s && !fin ? 'Tur sürüyor; izleyebilirsin.' : 'Oynamak için masaya otur.') + '</div>' + btn('tm-join', 'Masaya otur', { cls: 'primary' }); return; }
+    if (seats[pid].banned || CORE.isBanned(pid)) { el.innerHTML = '<div class="msg">Admin seni bu masadan çıkardı.</div>'; return; }
+    if (s && !fin) { el.innerHTML = '<div class="msg">Pot <span class="pot">' + fmt(ev.pot) + '</span> · ' + ev.cards.length + ' kart · sayılar kendiliğinden işaretlenir</div>'; return; }
+    var iSit = !!seats[pid].sit, mc = myCards(), list2 = seated(), myBal = CORE.balance(pid), need = stakeChoice * mc;
+    var totalCards = list2.reduce(function (a, id) { var c = seats[id].cards; return a + (c >= 1 && c <= 3 ? c : 1); }, 0);
+    var h = '<div class="lenpick-label">Kart başına giriş çipi · 1. çinko %20, 2. çinko %30, tombala %50</div>' + CORE.stakePicker('tm-stake', stakeChoice);
+    h += '<div class="lenpick-label">Kaç kart alacaksın?</div><div class="lenpick">' + [1, 2, 3].map(function (c) {
+      return '<button type="button" class="lenbtn' + (c === mc ? ' on' : '') + '" data-act="tm-cards" data-c="' + c + '">' + c + ' kart</button>';
+    }).join('') + '<span></span></div>';
+    h += '<div class="lenpick-label">Çekiliş hızı</div><div class="lenpick">' + SPEEDS.map(function (x) {
+      return '<button type="button" class="lenbtn' + (x[0] === speedChoice ? ' on' : '') + '" data-act="tm-speed" data-v="' + x[0] + '">' + x[1] + '</button>';
+    }).join('') + '<span></span></div>';
+    h += '<div class="row2">' + (iSit ? btn('tm-stand', 'Masadan kalk', { small: 'İzlemeye geç' }) : btn('tm-sit', 'Masaya otur', { small: list2.length + ' kişi oturuyor' })) +
+      btn('tm-start', s ? 'Yeni tur' : 'Turu başlat', { cls: 'primary', disabled: !iSit || list2.length < 2 || myBal < need,
+        small: list2.length < 2 ? 'En az 2 kişi gerekli' : myBal < need ? 'Çipin yetmiyor (' + fmt(need) + ' gerekli)' : 'Pot ' + fmt(stakeChoice * totalCards) }) + '</div>';
+    el.innerHTML = h;
+  }
+  function btn(act, label, o) {
+    o = o || {};
+    return '<button type="button" class="btn ' + (o.cls || '') + '" data-act="' + act + '"' + (o.disabled || busy ? ' disabled' : '') + '>' + label + (o.small ? '<small>' + o.small + '</small>' : '') + '</button>';
+  }
+
+  // ---------- yazma ----------
+  function toast(t) { var el = $('toast'); el.textContent = t; el.hidden = false; clearTimeout(toast._t); toast._t = setTimeout(function () { el.hidden = true; }, 3200); }
+  function write(fn) {
+    if (busy) return Promise.resolve(false);
+    busy = true; render();
+    return Promise.resolve().then(fn).then(function () { return true; }, function (e) {
+      console.warn(e);
+      if (/PERMISSION/i.test(String((e && (e.code || e.message)) || ''))) { CORE.error = 'perm'; CORE.emit(); } else toast('Kaydedilemedi. Bağlantını kontrol edip tekrar dene.');
+      return false;
+    }).then(function (ok) { busy = false; render(); return ok; });
+  }
+  function saveSeat(patch) {
+    var next = clone(seats[pid] || {});
+    Object.keys(patch).forEach(function (k) { next[k] = patch[k]; });
+    return R.seats.child(pid).set(clone(next));
+  }
+  function startRound() {
+    var why = '';
+    var s0 = round(); if (s0) syncLedger(s0, evalOf(s0));
+    return write(function () {
+      return R.st.transaction(function (cur) {
+        why = '';
+        var c = cur || {};
+        if (c.players && c.seed) {
+          var e0 = TMB.evaluate({ seed: c.seed, stake: c.stake, players: c.players });
+          if (now() < c.startAt + (e0.end + 1) * c.every) { why = 'Tur sürüyor.'; return; }
+        }
+        var ids = seated();
+        if (ids.length < 2) { why = 'Turu başlatmak için en az 2 kişi oturmalı.'; return; }
+        var players = ids.map(function (id) { var k = seats[id].cards; return { id: id, cards: k >= 1 && k <= 3 ? k : 1 }; });
+        var poor = players.filter(function (p) { return CORE.balance(p.id) < stakeChoice * p.cards; });
+        if (poor.length) { why = poor.map(function (p) { return nameOf(p.id); }).join(', ') + ' için çip yetmiyor.'; return; }
+        var prev = c.players && c.seed ? (function () { var e1 = TMB.evaluate({ seed: c.seed, stake: c.stake, players: c.players }); return { no: c.no, winners: e1.ev.t.cards.map(function (ci) { return e1.cards[ci].owner; }), pot: e1.pot }; })() : (c.prev || null);
+        return clone({ no: (c.no || 0) + 1, seed: CORE.rnd(), gid: CORE.rnd().slice(0, 8), players: players, stake: stakeChoice, every: speedChoice, startAt: now() + COUNT, prev: prev });
+      }).then(function (res) { if (!res.committed && why) toast(why); });
+    });
+  }
+  function cancelRound() {
+    return write(function () {
+      return R.st.transaction(function (cur) {
+        if (cur === null) return null;
+        var next = clone(cur); delete next.players; delete next.seed; delete next.gid; return clone(next);
+      }).then(function (res) { if (res.committed) { CORE.refundOpen('tombala', tb); closeSheet(); toast('Tur iptal edildi; çipler iade edildi.'); } });
+    });
+  }
+  function openSheet(html) { $('sheetPanel').innerHTML = html; $('sheet').hidden = false; }
+  function closeSheet() { $('sheet').hidden = true; $('sheetPanel').innerHTML = ''; }
+  function rulesHTML() {
+    return '<p>Herkes kendi kartıyla oynar. 1–90 arası sayılar sırayla çekilir, kartındaki sayılar kendiliğinden işaretlenir.</p>' +
+      '<h4>Kart</h4><p>Her kartta 3 satır, her satırda 5 sayı vardır. Turda 1, 2 ya da 3 kart alabilirsin; her kart için giriş çipi ödersin. Pot = giriş çipi × bütün kartlar.</p>' +
+      '<h4>Ödüller</h4><table><tbody><tr><td>1. Çinko · bir satırı ilk tamamlayan</td><td class="n">%20</td></tr><tr><td>2. Çinko · iki satırı ilk tamamlayan</td><td class="n">%30</td></tr><tr><td>Tombala · bütün kartı ilk tamamlayan</td><td class="n">%50</td></tr></tbody></table>' +
+      '<p>Aynı sayıda birden fazla kart tamamlarsa o ödül bölüşülür. Tombala çıkınca tur biter.</p>' +
+      '<h4>Ses</h4><p>Çekilen sayı sesli okunur; çinko ve tombalada bağırılır. Sesi lobideki düğmeyle kapatabilirsin.</p>';
+  }
+  function boardHTML() {
+    var ids = Object.keys(seats).filter(function (id) { return seats[id] && seats[id].name; });
+    ids.sort(function (a, b) { return CORE.tableNet(b, 'tombala', tb) - CORE.tableNet(a, 'tombala', tb); });
+    var h = '<div class="panel-head"><h3>Tombala · Masa ' + tb + '</h3><button class="ghost" type="button" data-act="close">Kapat</button></div>';
+    h += ids.length ? '<table><thead><tr><th>Oyuncu</th><th class="n">Bu masada</th><th class="n">Çip</th></tr></thead><tbody>' + ids.map(function (id, i) {
+      var n = CORE.tableNet(id, 'tombala', tb);
+      return '<tr><td>' + (i + 1) + '. ' + esc(nameOf(id)) + '</td><td class="n"><span class="amt ' + (n > 0 ? 'pos' : n < 0 ? 'neg' : 'zero') + '">' + sfmt(n) + '</span></td><td class="n">' + fmt(CORE.balance(id)) + '</td></tr>';
+    }).join('') + '</tbody></table>' : '<p>Henüz masaya oturan yok.</p>';
+    if (CORE.isAdmin()) {
+      h += CORE.adminHTML(seats, { pre: 'tm', esc: esc, sit: true });
+      var s = round(); if (s && !over(s, evalOf(s))) h += '<h4>Admin</h4>' + btn('tm-askcancel', 'Bu turu iptal et', { cls: 'danger', small: 'Çipler iade edilir' });
+    }
+    return h;
+  }
+  document.addEventListener('click', function (e) {
+    var t = e.target.closest('[data-act]');
+    if (!t || t.disabled) return;
+    var act = t.getAttribute('data-act');
+    if (act.indexOf('tm-') !== 0) return;
+    switch (act) {
+      case 'tm-rules': openSheet('<div class="panel-head"><h3>Tombala</h3><button class="ghost" type="button" data-act="close">Kapat</button></div>' + rulesHTML()); break;
+      case 'tm-board': openSheet(boardHTML()); break;
+      case 'tm-join': write(function () { var b = seats[pid] || {}; return saveSeat({ name: CORE.me.name, sit: true, sitAt: Date.now(), cards: b.cards || 1, joinedAt: b.joinedAt || Date.now() }); }); break;
+      case 'tm-sit': write(function () { return saveSeat({ sit: true, sitAt: Date.now() }); }); break;
+      case 'tm-stand': write(function () { return saveSeat({ sit: false }); }); break;
+      case 'tm-cards': write(function () { return saveSeat({ cards: +t.getAttribute('data-c') }); }); break;
+      case 'tm-stake': stakeChoice = +t.getAttribute('data-stake'); render(); break;
+      case 'tm-speed': speedChoice = +t.getAttribute('data-v'); render(); break;
+      case 'tm-start': startRound(); break;
+      case 'tm-adm': if (CORE.isAdmin()) write(function () { return CORE.adminOp(R.seats, seats, t.getAttribute('data-op'), t.getAttribute('data-id')); }).then(function () { openSheet(boardHTML()); }); break;
+      case 'tm-askcancel': openSheet('<h3>Bu tur iptal edilsin mi?</h3><p>Giriş çipleri iade edilir.</p><div class="row2">' + btn('close', 'Vazgeç') + btn('tm-cancel', 'İptal et', { cls: 'danger' }) + '</div>'); break;
+      case 'tm-cancel': if (CORE.isAdmin()) cancelRound(); break;
+    }
+  });
+  setInterval(function () { if (tb && round() && (CORE.view === 'tombala' || !over(round(), evalOf(round())))) render(); }, 500);
+  function attach(t) {
+    if (R.st) { R.st.off(); R.seats.off(); }
+    tb = t; st = null; seats = {}; loaded = { st: false, seats: false }; lastSaid = '';
+    render();
+    if (!CORE.db) return;
+    var base = 'rp/t/tombala/' + t + '/';
+    R.st = CORE.db.ref(base + 'state'); R.seats = CORE.db.ref(base + 'seats');
+    function onErr(e) { console.warn(e); CORE.error = 'perm'; CORE.emit(); }
+    R.st.on('value', function (s) { if (tb !== t) return; st = s.val(); loaded.st = true; render(); }, onErr);
+    R.seats.on('value', function (s) { if (tb !== t) return; seats = s.val() || {}; loaded.seats = true; render(); }, onErr);
+  }
+  window.__tmDebug = function () { var s = round(); return s ? { s: s, ev: evalOf(s), n: drawn(s, evalOf(s)) } : null; };
+  CORE.whenReady(function () {
+    pid = CORE.pid;
+    $('tmRulesL').innerHTML = '<h3>Tombala nasıl oynanır</h3>' + rulesHTML();
+    CORE.onChange(function () { if (tb) render(); });
+    CORE.onTable('tombala', attach);
+  });
+})();
+
+</script>
+<script>
+/* Emlak masası (mülk alım-satım tahta oyunu): giriş çipli; son kalan ya da tur sınırında en zengin potu alır */
+(function () {
+  'use strict';
+  var EML = window.EML, CORE = window.CORE, B = EML.BOARD;
+  var pid = null, tb = 0, R = {}, st = null, seats = {}, loaded = { st: false, seats: false };
+  var busy = false, V = null, stakeChoice = 100, limitChoice = 20, turnSeen = {}, autoShown = '', detailSq = -1;
+  var MAX = 6, AUTO_AFTER = 60000, LIMITS = [[10, '10 tur'], [20, '20 tur'], [40, '40 tur'], [0, 'Sınırsız']];
+  var PCOL = ['#f2c14e', '#ef6f6c', '#5bc0eb', '#9bc53d', '#c879ff', '#ff9f1c'];
+
+  function $(id) { return document.getElementById(id); }
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  function fmt(n) { n = Number(n || 0); return (n < 0 ? '−' : '') + Math.abs(n).toLocaleString('tr-TR'); }
+  function tl(n) { return '₺' + fmt(n); }
+  function sfmt(n) { n = Number(n || 0); return (n > 0 ? '+' : n < 0 ? '−' : '±') + Math.abs(n).toLocaleString('tr-TR'); }
+  function clone(o) { return o == null ? o : JSON.parse(JSON.stringify(o)); }
+  function nameOf(id) { var s = seats[id]; return (s && s.name) || CORE.userName(id); }
+  function joined() { return !!(pid && seats[pid] && seats[pid].name); }
+  function seated() {
+    return Object.keys(seats).filter(function (id) { return seats[id] && seats[id].sit && !seats[id].banned && !CORE.isBanned(id) && seats[id].name; })
+      .sort(function (a, b) { return (seats[a].sitAt || 0) - (seats[b].sitAt || 0); });
+  }
+  function norm(c) { return { seed: c.seed, players: c.players, start: c.start || 1500, limit: c.limit || 0, actions: c.actions || [] }; }
+  function view() {
+    var s = st || {}, G = null;
+    if (s.players && s.players.length >= 2 && s.seed) { try { G = EML.replay(norm(s)); } catch (e) { console.error(e); } }
+    return { s: s, G: G, me: G ? s.players.indexOf(pid) : -1 };
+  }
+  function pseudo(s, G) {
+    var sc = {}; s.players.forEach(function (id) { sc[id] = G && G.over && G.over.winners.indexOf(id) >= 0 ? 1 : 0; });
+    return { id: s.gid, players: s.players, stake: s.stake, n: s.no, over: !!(G && G.over), scores: sc };
+  }
+  function pname(G, s, i) { return esc(nameOf(s.players[i])); }
+  function sqName(i) { return esc(B[i].n); }
+  function logText(G, s, l) {
+    var who = '<b style="color:' + PCOL[l.p % PCOL.length] + '">' + pname(G, s, l.p) + '</b>';
+    switch (l.t) {
+      case 'roll': return who + ' ' + l.d1 + ' + ' + l.d2 + ' attı' + (l.d1 === l.d2 ? ' (çift)' : '');
+      case 'move': return who + ' → ' + sqName(l.sq);
+      case 'go': return who + ' Başlangıç\'tan geçti, +₺200';
+      case 'buy': return who + ' ' + sqName(l.sq) + '\'i aldı (' + tl(B[l.sq].p) + ')';
+      case 'pass': return who + ' ' + sqName(l.sq) + '\'i almadı';
+      case 'rent': return who + ', ' + pname(G, s, l.to) + '\'e ' + tl(l.a) + ' kira ödedi (' + sqName(l.sq) + ')';
+      case 'tax': return who + ' ' + tl(l.a) + ' ' + sqName(l.sq).toLowerCase() + ' ödedi';
+      case 'card': return who + ' · ' + (l.deck === 'chance' ? 'Şans' : 'Kamu Fonu') + ': ' + esc(l.m);
+      case 'jail': return who + ' hapse girdi';
+      case 'speed': return who + ' üç kez çift attı';
+      case 'free': return who + ' hapisten çıktı (' + esc(l.why) + ')';
+      case 'jailpay': return who + ' 3. denemede ₺50 ödeyip çıktı';
+      case 'build': return who + ' ' + sqName(l.sq) + '\'a ' + ((G.props[l.sq] && G.props[l.sq].h === 5) ? 'otel' : 'ev') + ' yaptı';
+      case 'sellh': return who + ' ' + sqName(l.sq) + '\'daki bir evi sattı' + (l.auto ? ' (borç için)' : '');
+      case 'mort': return who + ' ' + sqName(l.sq) + '\'i ipotek etti' + (l.auto ? ' (borç için)' : '');
+      case 'unmort': return who + ' ' + sqName(l.sq) + '\'in ipoteğini kaldırdı';
+      case 'bankrupt': return who + ' iflas etti' + (l.to >= 0 ? '; mülkleri ' + pname(G, s, l.to) + '\'e geçti' : '');
+      case 'resign': return who + ' pes etti';
+    }
+    return '';
+  }
+
+  // ---------- tahta ----------
+  function cellPos(i) {
+    if (i <= 10) return [10, 10 - i];
+    if (i <= 20) return [10 - (i - 10), 0];
+    if (i <= 30) return [0, i - 20];
+    return [i - 30, 10];
+  }
+  var SHORT = { 'Haydarpaşa Garı': 'H.paşa G.', 'Sirkeci Garı': 'Sirkeci G.', 'Ankara Garı': 'Ankara G.', 'Alsancak Garı': 'Alsancak G.', 'Elektrik İdaresi': 'Elektrik', 'Su İdaresi': 'Su', 'Gelir Vergisi': 'Vergi', 'Lüks Vergisi': 'Lüks V.', 'Kamu Fonu': 'Kamu F.', 'Başlangıç': 'BAŞLA →', 'Hapse Gir': 'HAPSE GİR', 'Gaziantep': 'G.Antep' };
+  function boardHTML(v) {
+    var G = v.G, s = v.s, cells = '';
+    B.forEach(function (sq, i) {
+      var rc = cellPos(i), pr = G && G.props[i], cls = 'em-cell t-' + sq.t + (i % 10 === 0 ? ' corner' : '');
+      var strip = sq.g ? '<span class="em-strip" style="background:' + EML.GROUPS[sq.g].color + '"></span>' : '';
+      var own = pr ? '<span class="em-own" style="background:' + PCOL[pr.o % PCOL.length] + '"></span>' : '';
+      var houses = pr && pr.h ? '<span class="em-h">' + (pr.h === 5 ? '🏨' : new Array(pr.h + 1).join('▪')) + '</span>' : '';
+      var tok = '';
+      if (G) G.P.forEach(function (p, pi) { if (!p.out && p.pos === i) tok += '<i style="background:' + PCOL[pi % PCOL.length] + '"' + (pi === G.turn ? ' class="cur"' : '') + '></i>'; });
+      cells += '<button type="button" class="' + cls + (pr && pr.m ? ' mort' : '') + '" style="grid-row:' + (rc[0] + 1) + ';grid-column:' + (rc[1] + 1) + '" data-act="em-sq" data-sq="' + i + '" aria-label="' + esc(sq.n) + '">' +
+        strip + own + '<span class="em-n">' + esc(SHORT[sq.n] || sq.n) + '</span>' + (sq.p && !pr ? '<span class="em-p">' + sq.p + '</span>' : '') + houses + (tok ? '<span class="em-tok">' + tok + '</span>' : '') + '</button>';
+    });
+    var center = '';
+    if (G) {
+      var cur = G.P[G.turn], last = G.last;
+      center += '<div class="em-dice">' + (last ? '<span>' + last.d1 + '</span><span>' + last.d2 + '</span>' : '<span>·</span><span>·</span>') + '</div>';
+      center += '<div class="em-turn">' + (G.over ? 'Oyun bitti' : 'Sıra: <b style="color:' + PCOL[G.turn % PCOL.length] + '">' + pname(G, s, G.turn) + '</b>') + '</div>';
+      center += '<div class="em-round">' + (G.limit ? 'Tur ' + Math.min(G.round, G.limit) + ' / ' + G.limit : 'Tur ' + G.round) + '</div>';
+      center += '<div class="em-log">' + G.log.slice(-5).reverse().map(function (l) { return '<div>' + logText(G, s, l) + '</div>'; }).join('') + '</div>';
+    } else center = '<div class="em-turn">Emlak</div><div class="em-round">Oyun başlayınca tahta burada</div>';
+    return '<div class="em-board">' + cells + '<div class="em-center">' + center + '</div></div>';
+  }
+
+  // ---------- çizim ----------
+  function timerKey(v) { return v.G && !v.G.over ? v.s.no + ':' + v.s.seed + ':' + v.G.actionCount : null; }
+  function elapsed(v) { var k = timerKey(v); if (!k) return 0; if (!turnSeen[k]) turnSeen[k] = Date.now(); return Date.now() - turnSeen[k]; }
+  function mmss(ms) { var x = Math.floor(ms / 1000); return Math.floor(x / 60) + ':' + ('0' + (x % 60)).slice(-2); }
+  function btn(act, label, o) {
+    o = o || {};
+    return '<button type="button" class="btn ' + (o.cls || '') + '" data-act="' + act + '"' + (o.data || '') + (o.disabled || busy ? ' disabled' : '') + '>' + label + (o.small ? '<small>' + o.small + '</small>' : '') + '</button>';
+  }
+  function render() {
+    V = view();
+    var v = V, G = v.G, s = v.s;
+    $('emRound').textContent = 'Masa ' + tb + (G ? ' · Oyun ' + s.no : '');
+    $('emChipsVal').textContent = fmt(CORE.balance(pid));
+    var bt = CORE.bannerText(loaded.st);
+    $('emBanner').innerHTML = bt ? '<div class="banner">' + esc(bt) + '</div>' : '';
+    if (G) CORE.syncGame('emlak', tb, pseudo(s, G), false);
+    $('emBoard').innerHTML = boardHTML(v);
+    var out = '';
+    if (G) {
+      if (G.over) out += '<div class="gameover"><div class="label">Oyun ' + s.no + ' bitti · ' + (G.over.why === 'limit' ? 'tur sınırı doldu, en zengin kazandı' : 'son kalan kazandı') + '</div><div class="res-title">' +
+        G.over.winners.map(function (id) { return esc(nameOf(id)); }).join(', ') + ' kazandı</div><div class="hint" style="text-align:left">Pot ' + fmt(s.stake * s.players.length) + ' çip</div></div>';
+      out += '<div class="seats">' + G.P.map(function (p, i) {
+        var props = Object.keys(G.props).filter(function (k) { return G.props[k].o === i; }).length;
+        var tags = (p.out ? '<span class="tag loss">İflas</span>' : '') + (p.jail ? '<span class="tag">Hapiste</span>' : '') + (p.jcards ? '<span class="tag">Çıkış kartı ' + p.jcards + '</span>' : '') +
+          (!G.over && i === G.turn ? '<span class="tag gold">Sırası · <span data-emtimer>0:00</span></span>' : '');
+        return '<div class="seat' + (i === G.turn && !G.over ? ' turn' : '') + (i === v.me ? ' mine' : '') + (p.out ? ' out' : '') + '"><div class="who"><span class="em-dot" style="background:' + PCOL[i % PCOL.length] + '"></span>' + esc(nameOf(p.id)) + '</div>' +
+          '<div class="amt zero">' + tl(p.cash) + '</div><div class="sub">' + props + ' mülk · servet ' + tl(G.worth[i]) + ' ' + tags + '</div></div>';
+      }).join('') + '</div>';
+    } else {
+      var list = seated(), prev = s.prev;
+      if (prev) out += '<div class="prev"><div class="label">Önceki oyun · #' + prev.no + '</div><div class="row"><b>Kazanan</b><span>' + prev.winners.map(function (id) { return esc(nameOf(id)); }).join(', ') + ' · pot ' + fmt(prev.pot) + '</span></div></div>';
+      out += '<div class="section-head"><h2>Masada oturanlar</h2><span>' + list.length + ' / ' + MAX + '</span></div>';
+      if (!list.length) out += '<div class="empty-note">Henüz kimse oturmadı. 2–6 kişi oturunca oyun başlatılabilir.</div>';
+      list.forEach(function (id, i) {
+        out += '<div class="seat' + (id === pid ? ' mine' : '') + '"><div class="who"><span class="em-dot" style="background:' + PCOL[i % PCOL.length] + '"></span>' + esc(nameOf(id)) + '</div><div class="amt zero">' + fmt(CORE.balance(id)) + ' çip</div><div class="sub"><span class="tag gold">Oturuyor</span></div></div>';
+      });
+    }
+    $('emPlayers').innerHTML = out;
+    renderActions(v);
+    if (detailSq >= 0 && !$('sheet').hidden && $('sheetPanel').getAttribute('data-em') === '1') $('sheetPanel').innerHTML = detailHTML(detailSq);
+  }
+  function renderActions(v) {
+    var el = $('emActions'), G = v.G, s = v.s, h = '';
+    if (CORE.error) { el.innerHTML = '<div class="msg">Masa şu an açılamıyor.</div>'; return; }
+    if (!(loaded.st && loaded.seats)) { el.innerHTML = '<div class="msg">Masaya bağlanılıyor…</div>'; return; }
+    if (!joined()) { el.innerHTML = '<div class="msg">' + (G && !G.over ? 'Oyun sürüyor; izleyebilirsin.' : 'Oynamak için masaya otur.') + '</div>' + btn('em-join', 'Masaya otur', { cls: 'primary' }); return; }
+    if (seats[pid].banned || CORE.isBanned(pid)) { el.innerHTML = '<div class="msg">Admin seni bu masadan çıkardı.</div>'; return; }
+    if (!G || G.over) {
+      var list = seated(), iSit = !!seats[pid].sit, myBal = CORE.balance(pid);
+      h += '<div class="lenpick-label">Giriş çipi · son kalan ya da süre bitince en zengin olan potu alır</div>' + CORE.stakePicker('em-stake', stakeChoice);
+      h += '<div class="lenpick-label">Oyun kaç tur sürsün? (Her tur herkes bir kez oynar)</div><div class="lenpick">' + LIMITS.map(function (x) {
+        return '<button type="button" class="lenbtn' + (x[0] === limitChoice ? ' on' : '') + '" data-act="em-limit" data-v="' + x[0] + '">' + x[1] + '</button>';
+      }).join('') + '</div>';
+      h += '<div class="row2">' + (iSit ? btn('em-stand', 'Masadan kalk', { small: 'İzlemeye geç' }) : btn('em-sit', 'Masaya otur', { disabled: list.length >= MAX, small: list.length >= MAX ? 'Masa dolu' : list.length + ' / ' + MAX })) +
+        btn('em-start', G ? 'Yeni oyun' : 'Oyunu başlat', { cls: 'primary', disabled: !iSit || list.length < 2 || myBal < stakeChoice,
+          small: list.length < 2 ? 'En az 2 kişi gerekli' : myBal < stakeChoice ? 'Çipin yetmiyor' : list.length + ' kişi · pot ' + fmt(stakeChoice * Math.min(list.length, MAX)) }) + '</div>';
+      el.innerHTML = h; return;
+    }
+    var ms = elapsed(v), k = timerKey(v), late = ms >= AUTO_AFTER || CORE.isAdmin(), myTurn = v.me >= 0 && v.me === G.turn, p = G.P[G.turn];
+    if (ms >= AUTO_AFTER) autoShown = k;
+    if (myTurn) {
+      CORE.notifyTurn('emlak:' + tb + ':' + s.seed + ':' + G.round + ':' + G.turn);
+      if (G.phase === 'pre') {
+        if (p.jail) {
+          h += '<div class="msg">Hapistesin (' + p.jail + '. deneme). Çift atarsan çıkarsın; 3. denemede çıkmazsan ₺50 ödersin.</div>';
+          h += '<div class="row2">' + btn('em-payjail', '₺50 öde, çık', { disabled: p.cash < 50 }) + (p.jcards ? btn('em-usecard', 'Çıkış kartını kullan') : '') + '</div>';
+        }
+        h += '<div class="row2">' + btn('em-mine', 'Mülklerim', { small: 'Ev yap, ipotek' }) + btn('em-roll', G.again ? 'Tekrar zar at' : 'Zar at', { cls: 'primary', small: G.again ? 'Çift attın' : '' }) + '</div>';
+      } else if (G.phase === 'buy') {
+        var sq = B[p.pos];
+        h += '<div class="msg"><b>' + esc(sq.n) + '</b> boşta · ' + tl(sq.p) + (sq.rent ? ' · kira ' + tl(sq.rent[0]) + ' (set olunca 2 katı)' : '') + '</div>';
+        h += '<div class="row2">' + btn('em-pass', 'Alma') + btn('em-buy', 'Satın al', { cls: 'primary', disabled: p.cash < sq.p, small: p.cash < sq.p ? 'Paran yetmiyor' : tl(sq.p) }) + '</div>';
+      } else {
+        h += '<div class="row2">' + btn('em-mine', 'Mülklerim', { small: 'Ev yap, ipotek' }) + btn('em-end', 'Turu bitir', { cls: 'primary', small: 'Nakit ' + tl(p.cash) }) + '</div>';
+      }
+    } else {
+      h += '<div class="msg">Sıra <b>' + esc(nameOf(p.id)) + '</b>\'de · <span data-emtimer>' + mmss(ms) + '</span></div>';
+      if (v.me < 0) h += '<div class="msg" style="color:var(--muted)">Bu oyunu izliyorsun.</div>';
+      if (late) h += btn('em-auto', esc(nameOf(p.id)) + ' yerine otomatik oynat', { small: 'Zar atar, parası bolsa alır, turu bitirir' });
+    }
+    el.innerHTML = h;
+  }
+  function detailHTML(i) {
+    var v = V || view(), G = v.G, sq = B[i], pr = G && G.props[i], h = '<div class="panel-head"><h3>' + esc(sq.n) + '</h3><button class="ghost" type="button" data-act="close">Kapat</button></div>';
+    if (sq.g) h += '<div class="em-strip big" style="background:' + EML.GROUPS[sq.g].color + '"></div>';
+    if (sq.t === 'prop') {
+      h += '<table><tbody><tr><td>Fiyat</td><td class="n">' + tl(sq.p) + '</td></tr><tr><td>Kira</td><td class="n">' + tl(sq.rent[0]) + ' (set: ' + tl(sq.rent[0] * 2) + ')</td></tr>' +
+        [1, 2, 3, 4].map(function (n) { return '<tr><td>' + n + ' ev</td><td class="n">' + tl(sq.rent[n]) + '</td></tr>'; }).join('') +
+        '<tr><td>Otel</td><td class="n">' + tl(sq.rent[5]) + '</td></tr><tr><td>Ev maliyeti</td><td class="n">' + tl(sq.hc) + '</td></tr><tr><td>İpotek</td><td class="n">' + tl(sq.p / 2) + '</td></tr></tbody></table>';
+    } else if (sq.t === 'station') h += '<p>Fiyat ' + tl(sq.p) + '. Kira: 1 gar ₺25, 2 gar ₺50, 3 gar ₺100, 4 gar ₺200.</p>';
+    else if (sq.t === 'util') h += '<p>Fiyat ' + tl(sq.p) + '. Kira: zarın 4 katı; iki idare de aynı kişideyse 10 katı.</p>';
+    else if (sq.t === 'tax') h += '<p>Buraya gelen bankaya ' + tl(sq.a) + ' öder.</p>';
+    else if (sq.t === 'chance' || sq.t === 'chest') h += '<p>Buraya gelen bir kart çeker.</p>';
+    else if (sq.t === 'go') h += '<p>Buradan her geçişte ₺200 alırsın.</p>';
+    else if (sq.t === 'gojail') h += '<p>Buraya gelen doğrudan hapse girer.</p>';
+    if (pr) {
+      h += '<p>Sahibi: <b>' + esc(nameOf(v.s.players[pr.o])) + '</b>' + (pr.m ? ' · <span class="tag loss">İpotekli</span>' : '') + (pr.h ? ' · ' + (pr.h === 5 ? 'otel' : pr.h + ' ev') : '') + '</p>';
+      if (G && !G.over && v.me === G.turn && pr.o === v.me && G.phase !== 'buy') {
+        h += '<div class="row2">' + (sq.t === 'prop' ? btn('em-build', pr.h === 4 ? 'Otel yap' : 'Ev yap', { data: ' data-sq="' + i + '"', disabled: !G.canBuild(i), small: tl(sq.hc) }) : '') +
+          (sq.t === 'prop' ? btn('em-sell', 'Ev sat', { data: ' data-sq="' + i + '"', disabled: !G.canSell(i), small: '+' + tl(sq.hc / 2) }) : '') + '</div>' +
+          '<div class="row2">' + (pr.m ? btn('em-unmort', 'İpoteği kaldır', { data: ' data-sq="' + i + '"', disabled: !G.canUnmort(i), small: tl(Math.ceil(sq.p * 0.55)) }) : btn('em-mort', 'İpotek et', { data: ' data-sq="' + i + '"', disabled: !G.canMort(i), small: '+' + tl(sq.p / 2) })) + '</div>';
+      }
+    } else if (sq.p) h += '<p class="muted">Henüz kimsenin değil.</p>';
+    return h;
+  }
+  function mineHTML() {
+    var v = V || view(), G = v.G, h = '<div class="panel-head"><h3>Mülklerim</h3><button class="ghost" type="button" data-act="close">Kapat</button></div>';
+    if (!G || v.me < 0) return h + '<p>Bu oyunda değilsin.</p>';
+    var mine = Object.keys(G.props).map(Number).filter(function (i) { return G.props[i].o === v.me; });
+    if (!mine.length) return h + '<p>Henüz mülkün yok.</p>';
+    h += '<p class="muted">Ev yapmak için bir renk grubunun hepsi sende olmalı; evler grup içinde eşit dağılır. Mülke dokunarak ev yap, sat ya da ipotek et.</p>';
+    return h + '<div class="prev">' + mine.map(function (i) {
+      var pr = G.props[i], sq = B[i];
+      return '<div class="row"><b>' + (sq.g ? '<span class="em-dot" style="background:' + EML.GROUPS[sq.g].color + '"></span>' : '') + esc(sq.n) + '</b><span>' + (pr.m ? 'ipotekli · ' : '') + (pr.h ? (pr.h === 5 ? 'otel · ' : pr.h + ' ev · ') : '') + 'kira ' + tl(G.rentOf(i)) +
+        ' <button type="button" class="btn sm" data-act="em-sq" data-sq="' + i + '">Aç</button></span></div>';
+    }).join('') + '</div>';
+  }
+  function rulesHTML() {
+    return '<p>2–6 kişi. Herkes ₺1.500 ile başlar (oyun parası; çiplerin değil). Amaç rakipleri iflas ettirmek.</p>' +
+      '<h4>Sıra</h4><ol><li>Zar at, o kadar ilerle. Başlangıç\'tan geçince ₺200 alırsın.</li><li>Boş bir şehre, gara ya da idareye gelirsen satın alabilirsin.</li>' +
+      '<li>Başkasının mülküne gelirsen kira ödersin. Bir renk grubunun hepsi aynı kişideyse kira 2 katıdır; evler ve otel kirayı çok artırır.</li>' +
+      '<li>Çift atarsan bir daha atarsın; üç kez üst üste çift atarsan hapse girersin.</li><li>Şans ve Kamu Fonu karelerinde kart çekilir.</li></ol>' +
+      '<h4>Ev ve otel</h4><p>Bir renk grubunun hepsi sendeyse, kendi sıranda o gruba ev yapabilirsin (eşit dağıtarak). 4 evden sonra otel gelir. Evler yarı fiyatına bankaya satılır.</p>' +
+      '<h4>İpotek</h4><p>Evi olmayan mülkü ipotek edip fiyatının yarısını alırsın; ipotekli mülkten kira alınmaz. İpoteği kaldırmak %10 fazlasına mal olur.</p>' +
+      '<h4>Hapis</h4><p>Çift atarak, ₺50 ödeyerek ya da çıkış kartıyla çıkarsın. 3. denemede çıkamazsan ₺50 ödeyip çıkarsın.</p>' +
+      '<h4>Borç ve iflas</h4><p>Paran yetmezse önce evlerin, sonra mülklerin kendiliğinden satılır/ipotek edilir. Yine yetmezse iflas edersin; mülklerin alacaklıya geçer.</p>' +
+      '<h4>Kazanan</h4><p>Son kalan ya da tur sınırı dolunca serveti (nakit + mülkler + evler) en çok olan bütün potu alır. Sırası gelen 1 dakika oynamazsa masadakiler onun yerine otomatik oynatabilir.</p>';
+  }
+  function boardSheet() {
+    var ids = Object.keys(seats).filter(function (id) { return seats[id] && seats[id].name; });
+    ids.sort(function (a, b) { return CORE.tableNet(b, 'emlak', tb) - CORE.tableNet(a, 'emlak', tb); });
+    var h = '<div class="panel-head"><h3>Emlak · Masa ' + tb + '</h3><button class="ghost" type="button" data-act="close">Kapat</button></div>';
+    h += ids.length ? '<table><thead><tr><th>Oyuncu</th><th class="n">Bu masada</th><th class="n">Çip</th></tr></thead><tbody>' + ids.map(function (id, i) {
+      var n = CORE.tableNet(id, 'emlak', tb);
+      return '<tr><td>' + (i + 1) + '. ' + esc(nameOf(id)) + '</td><td class="n"><span class="amt ' + (n > 0 ? 'pos' : n < 0 ? 'neg' : 'zero') + '">' + sfmt(n) + '</span></td><td class="n">' + fmt(CORE.balance(id)) + '</td></tr>';
+    }).join('') + '</tbody></table>' : '<p>Henüz masaya oturan yok.</p>';
+    var v = V || view();
+    if (v.G && !v.G.over && v.me >= 0) h += '<h4>Oyundan çekil</h4>' + btn('em-askresign', 'Pes et', { cls: 'danger', small: 'Giriş çipin gider, mülklerin bankaya döner' });
+    if (CORE.isAdmin()) {
+      h += CORE.adminHTML(seats, { pre: 'em', esc: esc, sit: true });
+      if (v.G && !v.G.over) h += '<h4>Admin</h4>' + btn('em-askcancel', 'Bu oyunu iptal et', { cls: 'danger', small: 'Giriş çipleri iade edilir' });
+    }
+    return h;
+  }
+
+  // ---------- yazma ----------
+  function toast(t) { var el = $('toast'); el.textContent = t; el.hidden = false; clearTimeout(toast._t); toast._t = setTimeout(function () { el.hidden = true; }, 3200); }
+  function write(fn) {
+    if (busy) return Promise.resolve(false);
+    busy = true; render();
+    return Promise.resolve().then(fn).then(function () { return true; }, function (e) {
+      console.warn(e);
+      if (/PERMISSION/i.test(String((e && (e.code || e.message)) || ''))) { CORE.error = 'perm'; CORE.emit(); } else toast('Kaydedilemedi. Bağlantını kontrol edip tekrar dene.');
+      return false;
+    }).then(function (ok) { busy = false; render(); return ok; });
+  }
+  function saveSeat(patch) {
+    var next = clone(seats[pid] || {});
+    Object.keys(patch).forEach(function (k) { next[k] = patch[k]; });
+    return R.seats.child(pid).set(clone(next));
+  }
+  function pushAction(a) {
+    var expectNo = V.s.no, why = '';
+    return write(function () {
+      return R.st.transaction(function (cur) {
+        why = '';
+        if (cur === null) return null;
+        if (!cur.players || !cur.seed || cur.no !== expectNo) { why = 'Oyun değişti.'; return; }
+        var G0 = EML.replay(norm(cur));
+        if (G0.over || G0.turn !== a.p) { why = 'Sıra sende değil.'; return; }
+        var next = clone(cur); next.actions = (cur.actions || []).concat([a]);
+        var G1 = EML.replay(norm(next));
+        if (G1.actionCount !== (cur.actions || []).length + 1 && !G1.over) { why = 'Bu hamle yapılamıyor.'; return; }
+        return clone(next);
+      }).then(function (res) { if (!res.committed && why) toast(why); });
+    });
+  }
+  function startGame() {
+    var why = '';
+    return write(function () {
+      return R.st.transaction(function (cur) {
+        why = '';
+        var c = cur || {};
+        if (c.players && c.seed) { var G0 = EML.replay(norm(c)); if (!G0.over) { why = 'Oyun sürüyor.'; return; } }
+        var players = seated().slice(0, MAX);
+        if (players.length < 2) { why = 'En az 2 kişi oturmalı.'; return; }
+        var poor = players.filter(function (id) { return CORE.balance(id) < stakeChoice; });
+        if (poor.length) { why = poor.map(nameOf).join(', ') + ' için çip yetmiyor.'; return; }
+        var prev = c.players && c.seed ? (function () { var G1 = EML.replay(norm(c)); return { no: c.no, winners: G1.over.winners, pot: c.stake * c.players.length }; })() : (c.prev || null);
+        return clone({ no: (c.no || 0) + 1, seed: CORE.rnd(), gid: CORE.rnd().slice(0, 8), players: players, stake: stakeChoice, limit: limitChoice, start: 1500, startedAt: Date.now(), prev: prev });
+      }).then(function (res) { if (!res.committed && why) toast(why); });
+    });
+  }
+  function cancelGame() {
+    return write(function () {
+      return R.st.transaction(function (cur) {
+        if (cur === null) return null;
+        var next = clone(cur); delete next.players; delete next.seed; delete next.actions; delete next.gid; return clone(next);
+      }).then(function (res) { if (res.committed) { CORE.refundOpen('emlak', tb); closeSheet(); toast('Oyun iptal edildi; giriş çipleri iade edildi.'); } });
+    });
+  }
+  function openSheet(html, em) { $('sheetPanel').innerHTML = html; $('sheetPanel').setAttribute('data-em', em ? '1' : ''); $('sheet').hidden = false; }
+  function closeSheet() { $('sheet').hidden = true; $('sheetPanel').innerHTML = ''; detailSq = -1; }
+
+  document.addEventListener('click', function (e) {
+    var t = e.target.closest('[data-act]');
+    if (!t || t.disabled) return;
+    var act = t.getAttribute('data-act');
+    if (act.indexOf('em-') !== 0) return;
+    var v = V || view(), G = v.G, sqA = +t.getAttribute('data-sq');
+    switch (act) {
+      case 'em-rules': openSheet('<div class="panel-head"><h3>Emlak</h3><button class="ghost" type="button" data-act="close">Kapat</button></div>' + rulesHTML()); break;
+      case 'em-board': openSheet(boardSheet()); break;
+      case 'em-sq': detailSq = sqA; openSheet(detailHTML(sqA), true); break;
+      case 'em-mine': openSheet(mineHTML()); break;
+      case 'em-join': write(function () { var b = seats[pid] || {}; return saveSeat({ name: CORE.me.name, sit: seated().length < MAX, sitAt: Date.now(), joinedAt: b.joinedAt || Date.now() }); }); break;
+      case 'em-sit': write(function () { return saveSeat({ sit: true, sitAt: Date.now() }); }); break;
+      case 'em-stand': write(function () { return saveSeat({ sit: false }); }); break;
+      case 'em-stake': stakeChoice = +t.getAttribute('data-stake'); render(); break;
+      case 'em-limit': limitChoice = +t.getAttribute('data-v'); render(); break;
+      case 'em-start': startGame(); break;
+      case 'em-roll': if (G && v.me === G.turn) pushAction({ p: v.me, t: 'roll' }); break;
+      case 'em-buy': if (G && v.me === G.turn) pushAction({ p: v.me, t: 'buy' }); break;
+      case 'em-pass': if (G && v.me === G.turn) pushAction({ p: v.me, t: 'pass' }); break;
+      case 'em-end': if (G && v.me === G.turn) pushAction({ p: v.me, t: 'end' }); break;
+      case 'em-payjail': if (G && v.me === G.turn) pushAction({ p: v.me, t: 'payjail' }); break;
+      case 'em-usecard': if (G && v.me === G.turn) pushAction({ p: v.me, t: 'usecard' }); break;
+      case 'em-build': case 'em-sell': case 'em-mort': case 'em-unmort':
+        if (G && v.me === G.turn) pushAction({ p: v.me, t: act.slice(3), sq: sqA }); break;
+      case 'em-auto': if (G && !G.over) pushAction({ p: G.turn, t: 'auto', by: pid }); break;
+      case 'em-askresign': openSheet('<h3>Pes etmek istiyor musun?</h3><p>Giriş çipin gider, mülklerin bankaya döner.</p><div class="row2">' + btn('close', 'Vazgeç') + btn('em-resign', 'Pes et', { cls: 'danger' }) + '</div>'); break;
+      case 'em-resign':
+        if (G && v.me >= 0 && !G.over) {
+          if (G.turn === v.me) { pushAction({ p: v.me, t: 'resign' }).then(closeSheet); }
+          else toast('Pes etmek için sıranı bekle.');
+        }
+        break;
+      case 'em-adm': if (CORE.isAdmin()) write(function () { return CORE.adminOp(R.seats, seats, t.getAttribute('data-op'), t.getAttribute('data-id')); }).then(function () { openSheet(boardSheet()); }); break;
+      case 'em-askcancel': openSheet('<h3>Bu oyun iptal edilsin mi?</h3><p>Giriş çipleri iade edilir.</p><div class="row2">' + btn('close', 'Vazgeç') + btn('em-cancel', 'İptal et', { cls: 'danger' }) + '</div>'); break;
+      case 'em-cancel': if (CORE.isAdmin()) cancelGame(); break;
+    }
+  });
+  setInterval(function () {
+    if (CORE.view !== 'emlak' || !V || !V.G || V.G.over) return;
+    var ms = elapsed(V), k = timerKey(V), els = document.querySelectorAll('[data-emtimer]');
+    for (var i = 0; i < els.length; i++) els[i].textContent = mmss(ms);
+    if (ms >= AUTO_AFTER && autoShown !== k) render();
+  }, 1000);
+  function attach(t) {
+    if (R.st) { R.st.off(); R.seats.off(); }
+    tb = t; st = null; seats = {}; loaded = { st: false, seats: false }; turnSeen = {};
+    render();
+    if (!CORE.db) return;
+    var base = 'rp/t/emlak/' + t + '/';
+    R.st = CORE.db.ref(base + 'state'); R.seats = CORE.db.ref(base + 'seats');
+    function onErr(e) { console.warn(e); CORE.error = 'perm'; CORE.emit(); }
+    R.st.on('value', function (s) { if (tb !== t) return; st = s.val(); loaded.st = true; render(); }, onErr);
+    R.seats.on('value', function (s) { if (tb !== t) return; seats = s.val() || {}; loaded.seats = true; render(); }, onErr);
+  }
+  window.__emDebug = function () { return V; };
+  CORE.whenReady(function () {
+    pid = CORE.pid;
+    $('emRulesL').innerHTML = '<h3>Emlak nasıl oynanır</h3>' + rulesHTML();
+    CORE.onChange(function () { if (tb) render(); });
+    CORE.onTable('emlak', attach);
+  });
+})();
+
+</script>
+<script>
+/* Futbol ligi: takımını ve absürt oyuncularını yarat, lige gir, maçlar iki taraf "hazırım" deyince canlı oynanır.
+   Takımlar herkese ait (rp/fteams/uid); her masa ayrı bir lig (rp/t/futbol/N). */
+(function () {
+  'use strict';
+  var FB = window.FB, CORE = window.CORE, RP = window.RP;
+  var pid = null, tb = 0, R = {}, st = null, seats = {}, teams = {}, matches = {}, loaded = { st: false, seats: false, teams: false };
+  var tab = 'lig', busy = false, stakeChoice = 100, legsChoice = 1, edit = null, simCache = {}, viewer = null, matchRefKey = '';
+  var MATCH_MS = 180000, COUNT = 6000;
+  var KITS = [['#d64545', '#ffffff'], ['#f2c14e', '#1b2a6b'], ['#2f6fd6', '#ffffff'], ['#1f9d55', '#ffffff'], ['#111111', '#ffffff'], ['#ffffff', '#c0392b'], ['#7b2cbf', '#f2c14e'], ['#ff7f11', '#111111'], ['#0aa3a3', '#ffffff'], ['#8b1e3f', '#7fd1ff']];
+  // iki takımın forması aynıysa deplasman takımı ikinci rengini giyer
+  function kits(m) {
+    var h = [m.H.c1 || '#d64545', m.H.c2 || '#ffffff'], a = [m.A.c1 || '#d64545', m.A.c2 || '#ffffff'];
+    function near(x, y) { var p = parseInt(x.slice(1), 16), q = parseInt(y.slice(1), 16); var d = Math.abs((p >> 16) - (q >> 16)) + Math.abs(((p >> 8) & 255) - ((q >> 8) & 255)) + Math.abs((p & 255) - (q & 255)); return d < 120; }
+    if (near(h[0], a[0])) a = near(h[0], a[1]) ? (near(h[0], '#2f6fd6') ? ['#f2c14e', '#111111'] : ['#2f6fd6', '#ffffff']) : [a[1], a[0]];
+    return [h, a];
+  }
+  var NAMES1 = ['Ahmet', 'Mehmet', 'Can', 'Emre', 'Burak', 'Kerem', 'Arda', 'Hakan', 'Volkan', 'Serkan', 'Oğuz', 'Tolga', 'Cenk', 'Barış', 'Umut', 'Selim', 'Kaan', 'Onur', 'Yusuf', 'Rıza', 'Şükrü', 'Fikret', 'Necati', 'Tuncay', 'Hamit', 'Ozan', 'Gökhan', 'İlhan', 'Cemil', 'Nuri'];
+  var NAMES2 = ['Yılmaz', 'Kaya', 'Demir', 'Şahin', 'Çelik', 'Öztürk', 'Aydın', 'Arslan', 'Doğan', 'Kılıç', 'Kurt', 'Koç', 'Özdemir', 'Polat', 'Tekin', 'Bozkurt', 'Erdem', 'Turan', 'Uçar', 'Kalkan', 'Topçu', 'Bacak', 'Çalımcı', 'Golcü', 'Duvar'];
+
+  function $(id) { return document.getElementById(id); }
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  function fmt(n) { n = Number(n || 0); return (n < 0 ? '−' : '') + Math.abs(n).toLocaleString('tr-TR'); }
+  function sfmt(n) { n = Number(n || 0); return (n > 0 ? '+' : n < 0 ? '−' : '±') + Math.abs(n).toLocaleString('tr-TR'); }
+  function clone(o) { return o == null ? o : JSON.parse(JSON.stringify(o)); }
+  function now() { return CORE.serverNow(); }
+  function myTeam() { return teams[pid] || null; }
+  function teamName(uid) { var t = teams[uid]; return t && t.name ? t.name : CORE.userName(uid) + ' FK'; }
+  function teamShort(uid) { var t = teams[uid]; return (t && t.short) || teamName(uid).slice(0, 3).toUpperCase(); }
+  function league() { var s = st || {}; return s.lid ? s : null; }
+  function btn(act, label, o) {
+    o = o || {};
+    return '<button type="button" class="btn ' + (o.cls || '') + '" data-act="' + act + '"' + (o.data || '') + (o.disabled || busy ? ' disabled' : '') + '>' + label + (o.small ? '<small>' + o.small + '</small>' : '') + '</button>';
+  }
+  function toast(t) { var el = $('toast'); el.textContent = t; el.hidden = false; clearTimeout(toast._t); toast._t = setTimeout(function () { el.hidden = true; }, 3200); }
+  function write(fn) {
+    if (busy) return Promise.resolve(false);
+    busy = true;
+    return Promise.resolve().then(fn).then(function () { return true; }, function (e) {
+      console.warn(e);
+      if (/PERMISSION/i.test(String((e && (e.code || e.message)) || ''))) toast('İzin yok: Firebase kurallarını kontrol et.'); else toast('Kaydedilemedi. Bağlantını kontrol edip tekrar dene.');
+      return false;
+    }).then(function (ok) { busy = false; render(true); return ok; });
+  }
+
+  // ---------- takım ----------
+  function newId() { return 'p' + CORE.rnd().slice(0, 7); }
+  function randomTeam(name) {
+    var rng = RP.makeRng(CORE.rnd()), players = {}, roles = ['KL', 'KL', 'DF', 'DF', 'DF', 'DF', 'DF', 'OS', 'OS', 'OS', 'OS', 'OS', 'FV', 'FV', 'FV', 'FV'];
+    var keyFor = { KL: ['kal', 'sog'], DF: ['sav', 'guc', 'kaf'], OS: ['pas', 'viz', 'tek'], FV: ['sut', 'hiz', 'cal'] };
+    roles.forEach(function (pos, i) {
+      var s = {};
+      FB.STATS.forEach(function (x) { s[x.k] = 15 + Math.floor(rng() * 45); });
+      s.kal = pos === 'KL' ? 70 + Math.floor(rng() * 25) : 1 + Math.floor(rng() * 10);
+      keyFor[pos].forEach(function (k) { s[k] = 60 + Math.floor(rng() * 40); });
+      // absürtlük: bir süper, bir berbat özellik
+      var sup = FB.STATS[Math.floor(rng() * FB.STATS.length)].k, bad = FB.STATS[Math.floor(rng() * FB.STATS.length)].k;
+      if (sup !== 'kal' || pos === 'KL') s[sup] = 99;
+      if (bad !== sup) s[bad] = 1 + Math.floor(rng() * 5);
+      var id = 'p' + i + CORE.rnd().slice(0, 4);
+      players[id] = { n: NAMES1[Math.floor(rng() * NAMES1.length)] + ' ' + NAMES2[Math.floor(rng() * NAMES2.length)], no: i === 0 ? 1 : i === 1 ? 12 : i + 1, pos: pos, s: s };
+    });
+    // havuza sığdır
+    var used = 0; Object.keys(players).forEach(function (id) { used += FB.pointsOf(players[id]); });
+    if (used > FB.POOL) {
+      var f = FB.POOL / used;
+      Object.keys(players).forEach(function (id) { FB.STATS.forEach(function (x) { players[id].s[x.k] = Math.max(1, Math.floor(players[id].s[x.k] * f)); }); });
+    }
+    var kit = KITS[Math.floor(rng() * KITS.length)];
+    return { name: name, short: name.replace(/[^A-Za-zÇĞİÖŞÜçğıöşü]/g, '').slice(0, 3).toLocaleUpperCase('tr-TR') || 'TKM', c1: kit[0], c2: kit[1], players: players, tactic: { form: '4-4-2', ment: 2, press: 1, pstyle: 1, tempo: 1, width: 1, line: 1, hard: 1 }, lineup: [], subs: [] };
+  }
+  function saveTeam(t) { t.updatedAt = Date.now(); t.owner = pid; return CORE.db.ref('rp/fteams/' + pid).set(clone(t)); }
+  function usedPoints(t, exceptId) { var u = 0; Object.keys((t && t.players) || {}).forEach(function (id) { if (id !== exceptId) u += FB.pointsOf(t.players[id]); }); return u; }
+
+  // ---------- lig hesapları ----------
+  function lidMatches(L) { return L ? (matches || {}) : {}; }
+  function standings(L) {
+    var rows = {}, M = lidMatches(L);
+    (L.teams || []).forEach(function (u) { rows[u] = { u: u, p: 0, w: 0, d: 0, l: 0, gf: 0, ga: 0, pts: 0 }; });
+    (L.fixtures || []).forEach(function (fx) {
+      var m = M[fx.id]; if (!m || !m.res) return;
+      var h = rows[fx.h], a = rows[fx.a], hg = m.res.hg, ag = m.res.ag; if (!h || !a) return;
+      h.p++; a.p++; h.gf += hg; h.ga += ag; a.gf += ag; a.ga += hg;
+      if (hg > ag) { h.w++; a.l++; h.pts += 3; } else if (hg < ag) { a.w++; h.l++; a.pts += 3; } else { h.d++; a.d++; h.pts++; a.pts++; }
+    });
+    return Object.keys(rows).map(function (k) { return rows[k]; }).sort(function (x, y) { return y.pts - x.pts || (y.gf - y.ga) - (x.gf - x.ga) || y.gf - x.gf || (x.u < y.u ? -1 : 1); });
+  }
+  function seasonDone(L) { var M = lidMatches(L); return !!(L && L.fixtures && L.fixtures.length && L.fixtures.every(function (fx) { return M[fx.id] && M[fx.id].res; })); }
+  function champions(L) {
+    var tbl = standings(L); if (!tbl.length) return [];
+    var t0 = tbl[0];
+    return tbl.filter(function (r) { return r.pts === t0.pts && r.gf - r.ga === t0.gf - t0.ga && r.gf === t0.gf; }).map(function (r) { return r.u; });
+  }
+  // kırmızı kart cezası ve sakatlık: takımın önceki maçlarına göre bu maçta oynayamayanlar
+  function unavailableFor(L, uid, beforeAt) {
+    var M = lidMatches(L), list = [];
+    (L.fixtures || []).forEach(function (fx) { var m = M[fx.id]; if ((fx.h === uid || fx.a === uid) && m && m.res && m.startAt < beforeAt) list.push({ m: m, side: fx.h === uid ? 0 : 1 }); });
+    list.sort(function (a, b) { return a.m.startAt - b.m.startAt; });
+    var out = {};
+    list.forEach(function (x) {
+      Object.keys(out).forEach(function (p) { out[p]--; if (out[p] <= 0) delete out[p]; });
+      var r = x.m.res, snap = x.side === 0 ? x.m.H : x.m.A;
+      Object.keys(r.cards || {}).forEach(function (p) { if (r.cards[p] === 'r' && snap && snap.players && snap.players[p]) out[p] = Math.max(out[p] || 0, 1); });
+      Object.keys(r.inj || {}).forEach(function (p) { if (snap && snap.players && snap.players[p]) out[p] = Math.max(out[p] || 0, r.inj[p]); });
+    });
+    return out;
+  }
+  function makeFixtures(teamIds, legs, seed) {
+    var ids = RP.shuffle(teamIds.slice(), RP.makeRng('fx:' + seed));
+    if (ids.length % 2) ids.push(null);
+    var n = ids.length, rounds = [], arr = ids.slice();
+    for (var r = 0; r < n - 1; r++) {
+      var pairs = [];
+      for (var i = 0; i < n / 2; i++) { var a = arr[i], b = arr[n - 1 - i]; if (a && b) pairs.push(r % 2 ? [b, a] : [a, b]); }
+      rounds.push(pairs);
+      arr = [arr[0]].concat([arr[n - 1]], arr.slice(1, n - 1));
+    }
+    if (legs === 2) rounds = rounds.concat(rounds.map(function (ps) { return ps.map(function (p) { return [p[1], p[0]]; }); }));
+    var fx = [];
+    rounds.forEach(function (ps, w) { ps.forEach(function (p, k) { fx.push({ id: 'w' + (w + 1) + 'm' + (k + 1), w: w + 1, h: p[0], a: p[1] }); }); });
+    return fx;
+  }
+  function liveState(m) {
+    if (!m || !m.startAt) return 'wait';
+    var t = now();
+    if (t < m.startAt) return 'count';
+    if (t < m.startAt + MATCH_MS) return 'live';
+    return 'done';
+  }
+  function simOf(m) {
+    var k = m.seed + ':' + m.startAt;
+    if (!simCache[k]) simCache[k] = FB.simulate({ seed: m.seed, H: m.H, A: m.A });
+    return simCache[k];
+  }
+  function syncLeague(L) {
+    if (!L || L.status === 'kayit' || !L.teams) return;
+    var done = L.status === 'bitti' || seasonDone(L), ch = done ? (L.champion || champions(L)) : [];
+    var sc = {}; L.teams.forEach(function (u) { sc[u] = ch.indexOf(u) >= 0 ? 1 : 0; });
+    CORE.syncGame('futbol', tb, { id: L.lid, players: L.teams, stake: L.stake, n: L.no, over: done, scores: sc }, false);
+    // biten maçların sonucunu yaz, sezon bittiyse şampiyonu yaz
+    var M = lidMatches(L);
+    (L.fixtures || []).forEach(function (fx) {
+      var m = M[fx.id];
+      if (m && m.startAt && !m.res && liveState(m) === 'done' && !finWriting[fx.id]) {
+        finWriting[fx.id] = true;
+        var sum = FB.summary(simOf(m));
+        R.m.child(fx.id).transaction(function (cur) { if (cur === null) return null; if (cur.res || cur.seed !== m.seed) return; var n = clone(cur); n.res = sum; return n; })
+          .then(function () { finWriting[fx.id] = false; }, function () { finWriting[fx.id] = false; });
+      }
+    });
+    if (L.status === 'sezon' && seasonDone(L) && !finWriting.season) {
+      finWriting.season = true;
+      var champ = champions(L);
+      R.st.transaction(function (cur) { if (cur === null) return null; if (cur.lid !== L.lid || cur.status !== 'sezon') return; var n = clone(cur); n.status = 'bitti'; n.champion = champ; n.endedAt = now(); return n; })
+        .then(function () { finWriting.season = false; }, function () { finWriting.season = false; });
+    }
+  }
+  var finWriting = {};
+
+  // ---------- çizim: sekmeler ----------
+  var lastMainHTML = '';
+  function render(force) {
+    if (!tb) return;
+    var L = league();
+    $('fbRound').textContent = 'Lig ' + tb + (L ? ' · Sezon ' + L.no : '');
+    $('fbChipsVal').textContent = fmt(CORE.balance(pid));
+    var bt = CORE.bannerText(loaded.st);
+    $('fbBanner').innerHTML = bt ? '<div class="banner">' + esc(bt) + '</div>' : '';
+    if (L) syncLeague(L);
+    attachMatches();
+    document.querySelectorAll('[data-act="fb-tab"]').forEach(function (b) { b.classList.toggle('on', b.getAttribute('data-t') === tab); });
+    var main = $('fbMain'), ae = document.activeElement;
+    if (!force && ae && main.contains(ae) && /INPUT|SELECT|TEXTAREA/.test(ae.tagName)) return;
+    var h = tab === 'takim' ? teamTab() : tab === 'kadro' ? squadTab() : leagueTab();
+    if (h !== lastMainHTML || force) { main.innerHTML = h; lastMainHTML = h; }
+    if (viewer) drawViewerHud();
+  }
+  function leagueTab() {
+    var L = league(), h = '', t = myTeam(), v = t ? FB.validateTeam(t) : null;
+    if (!t) h += '<div class="banner">Önce <b>Takımım</b> sekmesinden takımını kur. "Hızlı takım kur" ile saniyeler içinde hazır olur.</div>';
+    else if (!v.ok) h += '<div class="banner">Takımın lige hazır değil: ' + esc(v.errs.join(', ')) + '</div>';
+    if (!L || L.status === 'bitti') {
+      if (L && L.status === 'bitti') {
+        var ch = L.champion || champions(L);
+        h += '<div class="gameover"><div class="label">Sezon ' + L.no + ' bitti · pot ' + fmt(L.stake * L.teams.length) + ' çip</div><div class="res-title">🏆 Şampiyon: ' + ch.map(function (u) { return esc(teamName(u)); }).join(', ') + '</div></div>';
+        h += tableHTML(L) + scorersHTML(L);
+      }
+      h += '<div class="section-head"><h2>Yeni lig</h2></div><div class="fb-card"><div class="lenpick-label">Lige giriş çipi · sezon sonunda şampiyon potu alır</div>' + CORE.stakePicker('fb-stake', stakeChoice) +
+        '<div class="lenpick-label">Fikstür</div><div class="fb-seg">' + [[1, 'Tek devre'], [2, 'Çift devre (rövanşlı)']].map(function (x) { return '<button type="button" class="lenbtn' + (x[0] === legsChoice ? ' on' : '') + '" data-act="fb-legs" data-v="' + x[0] + '">' + x[1] + '</button>'; }).join('') + '</div>' +
+        btn('fb-create', 'Ligi aç', { cls: 'primary', small: 'Önce takımlar kaydolur, sonra sezon başlar' }) + '</div>';
+      return h;
+    }
+    if (L.status === 'kayit') {
+      var regs = Object.keys(seats).filter(function (u) { return seats[u] && seats[u].sit && !CORE.isBanned(u); }).sort(function (a, b) { return (seats[a].sitAt || 0) - (seats[b].sitAt || 0); });
+      var iIn = regs.indexOf(pid) >= 0;
+      h += '<div class="fb-card"><div class="label">Sezon ' + L.no + ' · kayıt açık</div><div class="msg">Giriş ' + fmt(L.stake) + ' çip · ' + (L.legs === 2 ? 'çift devre' : 'tek devre') + ' · ' + regs.length + ' takım · pot ' + fmt(L.stake * regs.length) + '</div></div>';
+      h += '<div class="section-head"><h2>Kayıtlı takımlar</h2><span>' + regs.length + '</span></div><div class="prev">' + (regs.length ? regs.map(function (u) {
+        var tv = teams[u] ? FB.validateTeam(teams[u]) : { ok: false, errs: ['takım yok'] };
+        return '<div class="row"><b>' + teamBadge(u) + esc(teamName(u)) + ' <span class="muted">' + esc(CORE.userName(u)) + '</span></b><span>' + (tv.ok ? '<span class="tag win">Hazır</span>' : '<span class="tag loss">' + esc(tv.errs[0]) + '</span>') + '</span></div>';
+      }).join('') : '<div class="row">Henüz kayıt yok.</div>') + '</div>';
+      var okRegs = regs.filter(function (u) { return teams[u] && FB.validateTeam(teams[u]).ok && CORE.balance(u) >= L.stake; });
+      h += '<div class="row2">' + (iIn ? btn('fb-leave', 'Kaydımı sil') : btn('fb-join', 'Lige katıl', { cls: 'primary', disabled: !v || !v.ok || CORE.balance(pid) < L.stake, small: CORE.balance(pid) < L.stake ? 'Çipin yetmiyor' : fmt(L.stake) + ' çip' })) +
+        btn('fb-begin', 'Sezonu başlat', { cls: iIn ? 'primary' : '', disabled: !iIn || okRegs.length < 2, small: okRegs.length < 2 ? 'En az 2 hazır takım' : okRegs.length + ' takım' }) + '</div>';
+      if (CORE.isAdmin()) h += '<div class="row2">' + btn('fb-cancel', 'Ligi iptal et (admin)', { cls: 'danger' }) + '</div>';
+      return h;
+    }
+    // sezon
+    h += tableHTML(L);
+    var M = lidMatches(L), weeks = {};
+    L.fixtures.forEach(function (fx) { (weeks[fx.w] = weeks[fx.w] || []).push(fx); });
+    var curW = 0;
+    Object.keys(weeks).map(Number).sort(function (a, b) { return a - b; }).forEach(function (w) { if (!curW && weeks[w].some(function (fx) { return !(M[fx.id] && M[fx.id].res); })) curW = w; });
+    var mine = L.fixtures.filter(function (fx) { return (fx.h === pid || fx.a === pid) && !(M[fx.id] && M[fx.id].res); });
+    if (mine.length) h += '<div class="section-head"><h2>Senin maçların</h2><span>' + mine.length + ' kaldı</span></div><div class="fb-fix">' + mine.slice(0, 3).map(fixRow).join('') + '</div>';
+    h += '<div class="section-head"><h2>Fikstür</h2><span>' + L.fixtures.filter(function (fx) { return M[fx.id] && M[fx.id].res; }).length + '/' + L.fixtures.length + ' oynandı</span></div>';
+    Object.keys(weeks).map(Number).sort(function (a, b) { return a - b; }).forEach(function (w) {
+      h += '<details class="fb-week"' + (w === curW ? ' open' : '') + '><summary>' + w + '. hafta</summary><div class="fb-fix">' + weeks[w].map(fixRow).join('') + '</div></details>';
+    });
+    h += scorersHTML(L);
+    if (CORE.isAdmin()) h += '<h4>Admin</h4><div class="row2">' + btn('fb-cancel', 'Ligi iptal et', { cls: 'danger', small: 'Giriş çipleri iade edilir' }) + '</div>';
+    return h;
+  }
+  function teamBadge(u) { var t = teams[u] || {}; return '<i class="fb-badge" style="background:' + esc(t.c1 || '#888') + ';border-color:' + esc(t.c2 || '#fff') + '"></i>'; }
+  function fixRow(fx) {
+    var L = league(), m = lidMatches(L)[fx.id] || {}, ls = liveState(m), ready = m.ready || {}, mineSide = fx.h === pid ? 'h' : fx.a === pid ? 'a' : '';
+    var score = m.res ? m.res.hg + ' - ' + m.res.ag : ls === 'live' ? '<span class="tag loss">CANLI</span>' : ls === 'count' ? '<span class="tag gold">Başlıyor</span>' : 'v';
+    var act = '';
+    if (m.startAt) act = btn('fb-watch', m.res || ls === 'done' ? 'Özet' : 'İzle', { cls: 'sm' + (ls === 'live' || ls === 'count' ? ' primary' : ''), data: ' data-id="' + fx.id + '"' });
+    else if (mineSide) act = ready[pid] ? '<span class="tag gold">Hazırsın · rakip bekleniyor</span>' : btn('fb-ready', 'Hazırım', { cls: 'sm primary', data: ' data-id="' + fx.id + '"' });
+    else act = '<span class="muted">' + (ready[fx.h] ? '✓' : '·') + ' / ' + (ready[fx.a] ? '✓' : '·') + ' hazır</span>';
+    return '<div class="fb-row' + (mineSide ? ' mine' : '') + '"><span class="fb-t">' + teamBadge(fx.h) + esc(teamName(fx.h)) + '</span><b class="fb-s">' + score + '</b><span class="fb-t r">' + esc(teamName(fx.a)) + teamBadge(fx.a) + '</span><span class="fb-a">' + act + '</span></div>';
+  }
+  function tableHTML(L) {
+    var tbl = standings(L);
+    return '<div class="section-head"><h2>Puan durumu</h2><span>' + (L.legs === 2 ? 'Çift devre' : 'Tek devre') + ' · pot ' + fmt(L.stake * (L.teams || []).length) + '</span></div>' +
+      '<div class="scroll-x"><table class="scoretbl fb-tbl"><thead><tr><th>#</th><th>Takım</th><th class="n">O</th><th class="n">G</th><th class="n">B</th><th class="n">M</th><th class="n">AV</th><th class="n">P</th></tr></thead><tbody>' +
+      tbl.map(function (r, i) { return '<tr' + (r.u === pid ? ' class="win"' : '') + '><td>' + (i + 1) + '</td><td>' + teamBadge(r.u) + esc(teamName(r.u)) + '</td><td class="n">' + r.p + '</td><td class="n">' + r.w + '</td><td class="n">' + r.d + '</td><td class="n">' + r.l + '</td><td class="n">' + sfmt(r.gf - r.ga) + '</td><td class="n tot">' + r.pts + '</td></tr>'; }).join('') + '</tbody></table></div>';
+  }
+  function scorersHTML(L) {
+    var M = lidMatches(L), goals = {}, reds = {};
+    (L.fixtures || []).forEach(function (fx) {
+      var m = M[fx.id]; if (!m || !m.res) return;
+      (m.res.sc || []).forEach(function (g) { var snap = g.side === 0 ? m.H : m.A, p = snap && snap.players[g.id]; if (!p) return; var k = (g.side === 0 ? fx.h : fx.a) + '|' + g.id; goals[k] = goals[k] || { n: p.n, u: g.side === 0 ? fx.h : fx.a, g: 0 }; goals[k].g++; });
+      Object.keys(m.res.cards || {}).forEach(function (pId) { if (m.res.cards[pId] !== 'r') return; var snap = m.H.players[pId] ? m.H : m.A, p = snap.players[pId]; reds[pId] = reds[pId] || { n: p.n, c: 0 }; reds[pId].c++; });
+    });
+    var list = Object.keys(goals).map(function (k) { return goals[k]; }).sort(function (a, b) { return b.g - a.g; }).slice(0, 8);
+    var rl = Object.keys(reds).map(function (k) { return reds[k]; }).sort(function (a, b) { return b.c - a.c; }).slice(0, 5);
+    return (list.length ? '<div class="section-head"><h2>Gol krallığı</h2></div><div class="prev">' + list.map(function (g) { return '<div class="row"><b>' + esc(g.n) + ' <span class="muted">' + esc(teamName(g.u)) + '</span></b><span>' + g.g + ' gol</span></div>'; }).join('') + '</div>' : '') +
+      (rl.length ? '<div class="section-head"><h2>Kırmızı kart görenler</h2></div><div class="prev">' + rl.map(function (r) { return '<div class="row"><b>' + esc(r.n) + '</b><span>' + r.c + ' kırmızı</span></div>'; }).join('') + '</div>' : '');
+  }
+  function teamTab() {
+    var t = myTeam(), h = '';
+    if (!t) {
+      return '<div class="fb-card"><div class="res-title">Takımını kur</div><p class="lobby-note">Takımın bütün liglerde seninle gelir. Oyuncuların ' + FB.STATS.length + ' özelliği var ve bütün kadro için toplam ' + fmt(FB.POOL) + ' puanlık bir havuzun var: ister 11 dengeli oyuncu yap, ister 1 canavar + 10 felaket.</p>' +
+        '<div class="field"><label for="fbNewName">Takım adı</label><input id="fbNewName" maxlength="24" placeholder="ör. Denizli Yaprakspor"></div>' +
+        '<div class="row2">' + btn('fb-newteam', 'Boş takım kur', { small: 'Oyuncuları sen yaratırsın' }) + btn('fb-quickteam', 'Hızlı takım kur', { cls: 'primary', small: '16 hazır absürt oyuncu' }) + '</div></div>';
+    }
+    var v = FB.validateTeam(t), ids = Object.keys(t.players || {}).sort(function (a, b) { return (t.players[a].no || 99) - (t.players[b].no || 99); });
+    var pct = Math.min(100, v.used / FB.POOL * 100);
+    h += '<div class="fb-card"><div class="fb-team-head">' + teamBadge(pid) + '<div><div class="res-title">' + esc(t.name) + '</div><div class="muted">' + esc(t.short || '') + ' · ' + ids.length + ' oyuncu</div></div></div>' +
+      '<div class="fb-pool"><div class="fb-pool-bar"><span style="width:' + pct + '%;background:' + (v.used > FB.POOL ? 'var(--loss)' : 'var(--gold)') + '"></span></div><div class="muted">Puan havuzu: <b>' + fmt(v.used) + '</b> / ' + fmt(FB.POOL) + ' · kalan ' + fmt(FB.POOL - v.used) + '</div></div>' +
+      (v.ok ? '<div class="tag win">Lige hazır</div>' : '<div class="tag loss">' + esc(v.errs.join(' · ')) + '</div>') +
+      '<div class="row2">' + btn('fb-teamedit', 'Ad ve renkler') + btn('fb-addp', 'Oyuncu ekle', { cls: 'primary', disabled: ids.length >= FB.MAX_SQUAD, small: ids.length + ' / ' + FB.MAX_SQUAD }) + '</div></div>';
+    h += '<div class="fb-players">' + ids.map(function (id) {
+      var p = t.players[id], top = FB.STATS.slice().sort(function (a, b) { return FB.stat(p, b.k) - FB.stat(p, a.k); }), lo = top[top.length - 1];
+      return '<button type="button" class="fb-pl" data-act="fb-editp" data-id="' + id + '"><span class="fb-no">' + (p.no || '') + '</span><span class="fb-pn"><b>' + esc(p.n) + '</b><span class="muted">' + esc(FB.POS[p.pos] || '') + ' · ' + FB.pointsOf(p) + ' puan</span></span>' +
+        '<span class="fb-chips">' + top.slice(0, 2).map(function (x) { return '<span class="tag win">' + x.n + ' ' + FB.stat(p, x.k) + '</span>'; }).join('') + '<span class="tag loss">' + lo.n + ' ' + FB.stat(p, lo.k) + '</span></span></button>';
+    }).join('') + '</div>';
+    h += '<div class="row2">' + btn('fb-reroll', 'Takımı baştan rastgele kur', { small: 'Bütün oyuncular değişir' }) + btn('fb-delteam', 'Takımı sil', { cls: 'danger' }) + '</div>';
+    return h;
+  }
+  function squadTab() {
+    var t = myTeam();
+    if (!t) return '<div class="banner">Önce Takımım sekmesinden takımını kur.</div>';
+    var lu = FB.lineupOf(t), form = lu.form, slots = FB.FORMS[form], ids = Object.keys(t.players || {}), tac = t.tactic || {};
+    var h = '<div class="fb-card"><div class="lenpick-label">Diziliş</div><div class="fb-forms">' + Object.keys(FB.FORMS).map(function (f) { return '<button type="button" class="lenbtn' + (f === form ? ' on' : '') + '" data-act="fb-form" data-f="' + f + '">' + f + '</button>'; }).join('') + '</div>';
+    // saha önizleme
+    h += '<div class="fb-mini">' + slots.map(function (sl, i) {
+      var p = t.players[lu.xi[i]], bad = p && p.pos !== sl[2];
+      return '<span class="fb-dot' + (bad ? ' bad' : '') + '" style="left:' + (sl[1] * 100) + '%;bottom:' + (sl[0] * 92 + 3) + '%"><i style="background:' + esc(t.c1 || '#d64545') + '">' + (p ? p.no || '' : '') + '</i><b>' + esc(p ? p.n.split(' ').slice(-1)[0] : '—') + '</b></span>';
+    }).join('') + '</div>';
+    h += '<div class="lenpick-label">İlk 11 · mevkisi dışında oynayan daha kötü oynar (kalede çok daha kötü)</div><div class="fb-slots">' + slots.map(function (sl, i) {
+      return '<label class="fb-slot"><span class="tag">' + sl[2] + '</span><select data-fb-slot="' + i + '">' + ids.map(function (id) { var p = t.players[id]; return '<option value="' + id + '"' + (lu.xi[i] === id ? ' selected' : '') + '>' + (p.no || '') + ' · ' + esc(p.n) + ' (' + p.pos + ')</option>'; }).join('') + '</select></label>';
+    }).join('') + '</div>';
+    h += '<div class="lenpick-label">Yedekler (sırayla girer): ' + (lu.subs.length ? lu.subs.map(function (id) { return esc(t.players[id].n); }).join(', ') : 'yok') + '</div></div>';
+    h += '<div class="fb-card"><div class="label">Taktik</div>' + FB.TACTICS.map(function (x) {
+      var cur = tac[x.k] == null ? x.def : tac[x.k];
+      return '<div class="lenpick-label">' + x.n + '</div><div class="fb-seg">' + x.o.map(function (o, i) { return '<button type="button" class="lenbtn' + (i === cur ? ' on' : '') + '" data-act="fb-tac" data-k="' + x.k + '" data-v="' + i + '">' + o + '</button>'; }).join('') + '</div>';
+    }).join('');
+    function sel(key, label) { return '<label class="fb-slot"><span class="tag">' + label + '</span><select data-fb-role="' + key + '"><option value="">Otomatik</option>' + ids.map(function (id) { return '<option value="' + id + '"' + (t[key] === id ? ' selected' : '') + '>' + esc(t.players[id].n) + '</option>'; }).join('') + '</select></label>'; }
+    h += '<div class="fb-slots">' + sel('pk', 'Penaltı') + sel('fk', 'Frikik') + '</div></div>';
+    return h;
+  }
+
+  // ---------- oyuncu düzenleme ----------
+  function openSheet(html) { $('sheetPanel').innerHTML = html; $('sheet').hidden = false; }
+  function closeSheet() { $('sheet').hidden = true; $('sheetPanel').innerHTML = ''; edit = null; }
+  function playerSheet(id) {
+    var t = myTeam(), p = id && t.players[id] ? clone(t.players[id]) : { n: '', no: nextNo(t), pos: 'OS', s: {} };
+    FB.STATS.forEach(function (x) { if (!p.s[x.k]) p.s[x.k] = 30; });
+    edit = { id: id || null, p: p };
+    var left = FB.POOL - usedPoints(t, id);
+    var h = '<div class="panel-head"><h3>' + (id ? 'Oyuncuyu düzenle' : 'Yeni oyuncu') + '</h3><button class="ghost" type="button" data-act="close">Kapat</button></div>' +
+      '<div class="fb-pform"><div class="field"><label for="fbPn">İsim</label><input id="fbPn" maxlength="22" value="' + esc(p.n) + '" placeholder="ör. Hızlı Gonzales"></div>' +
+      '<div class="field"><label for="fbPno">Forma no</label><input id="fbPno" type="number" min="1" max="99" value="' + (p.no || '') + '"></div></div>' +
+      '<div class="lenpick-label">Mevki</div><div class="lenpick">' + Object.keys(FB.POS).map(function (k) { return '<button type="button" class="lenbtn' + (p.pos === k ? ' on' : '') + '" data-act="fb-ppos" data-v="' + k + '">' + FB.POS[k] + '</button>'; }).join('') + '</div>' +
+      '<div class="fb-left" id="fbLeft"></div><div class="fb-stats">' + FB.STATS.map(function (x) {
+        return '<label class="fb-st"><span><b>' + x.n + '</b><em>' + x.d + '</em></span><input type="range" min="1" max="99" value="' + p.s[x.k] + '" data-fb-stat="' + x.k + '"><output>' + p.s[x.k] + '</output></label>';
+      }).join('') + '</div>' +
+      '<div class="row2">' + (id ? btn('fb-delp', 'Oyuncuyu sil', { cls: 'danger' }) : btn('close', 'Vazgeç')) + btn('fb-savep', 'Kaydet', { cls: 'primary' }) + '</div>';
+    openSheet(h); edit.left = left; updateLeft();
+  }
+  function nextNo(t) { var used = {}; Object.keys(t.players || {}).forEach(function (id) { used[t.players[id].no] = 1; }); for (var i = 1; i < 100; i++) if (!used[i]) return i; return 99; }
+  function updateLeft() {
+    if (!edit) return;
+    var sum = 0; FB.STATS.forEach(function (x) { sum += edit.p.s[x.k]; });
+    var rem = edit.left - sum, el = $('fbLeft');
+    if (el) el.innerHTML = 'Bu oyuncu <b>' + sum + '</b> puan · takım havuzunda kalan <b class="' + (rem < 0 ? 'neg' : '') + '">' + fmt(rem) + '</b>';
+  }
+  document.addEventListener('input', function (e) {
+    var k = e.target.getAttribute && e.target.getAttribute('data-fb-stat');
+    if (!k || !edit) return;
+    edit.p.s[k] = +e.target.value; var o = e.target.nextElementSibling; if (o) o.textContent = e.target.value;
+    updateLeft();
+  });
+  document.addEventListener('change', function (e) {
+    var t = myTeam(); if (!t) return;
+    var slot = e.target.getAttribute && e.target.getAttribute('data-fb-slot'), role = e.target.getAttribute && e.target.getAttribute('data-fb-role');
+    if (slot != null) {
+      var lu = FB.lineupOf(t), xi = lu.xi.slice(), i = +slot, id = e.target.value, prev = xi.indexOf(id);
+      if (prev >= 0 && prev !== i) xi[prev] = xi[i];
+      xi[i] = id;
+      var nt = clone(t); nt.lineup = xi; nt.subs = Object.keys(t.players).filter(function (x) { return xi.indexOf(x) < 0; });
+      write(function () { return saveTeam(nt); });
+    } else if (role) {
+      var nt2 = clone(t); nt2[role] = e.target.value || null; write(function () { return saveTeam(nt2); });
+    }
+  });
+
+  // ---------- maç izleme ----------
+  function openViewer(fid) {
+    var L = league(), m = lidMatches(L)[fid]; if (!m || !m.seed) return;
+    var fx = L.fixtures.filter(function (x) { return x.id === fid; })[0];
+    viewer = { fid: fid, fx: fx, replay: null, speed: 1, shown: {}, flash: null, kits: kits(m) };
+    $('fbStage').hidden = false; document.body.classList.add('sl-lock');
+    viewer.cv = $('fbCanvas'); viewer.ctx = viewer.cv.getContext('2d');
+    var ls = liveState(m);
+    if (ls === 'done') viewer.replay = { at: performance.now(), base: 5400, speed: 0 };
+    drawViewerHud(true);
+  }
+  function closeViewer() { viewer = null; $('fbStage').hidden = true; document.body.classList.remove('sl-lock'); }
+  function viewerSec(m) {
+    if (viewer.replay) { var r = viewer.replay; return Math.min(5400, r.base + (performance.now() - r.at) / 1000 * r.speed * 30); }
+    return Math.max(0, Math.min(5400, (now() - m.startAt) / MATCH_MS * 5400));
+  }
+  function nameAt(sim, m, ent, sec) {
+    var hist = sim.slotHist[ent], id = hist[0].id;
+    for (var i = 0; i < hist.length; i++) if (hist[i].t <= sec) id = hist[i].id;
+    var snap = ent < 11 ? m.H : m.A; return id && snap.players[id] ? snap.players[id] : null;
+  }
+  function drawViewerHud(force) {
+    if (!viewer) return;
+    var L = league(), m = lidMatches(L)[viewer.fid]; if (!m) return;
+    var sim = simOf(m), sec = viewerSec(m), ls = liveState(m), evs = sim.ev.filter(function (e) { return e.t <= sec; });
+    var sc = evs.length ? evs[evs.length - 1].sc : [0, 0];
+    var minute = ls === 'count' && !viewer.replay ? 0 : Math.min(90, Math.floor(sec / 60));
+    var H = m.H, A = m.A;
+    var K = viewer.kits;
+    var top = '<button type="button" class="sl-chip sl-exit" data-act="fb-closev">‹</button>' +
+      '<div class="fb-score"><span><i class="fb-badge" style="background:' + esc(K[0][0]) + ';border-color:' + esc(K[0][1]) + '"></i>' + esc(H.short || H.name.slice(0, 3)) + '</span><b>' + sc[0] + ' - ' + sc[1] + '</b><span>' + esc(A.short || A.name.slice(0, 3)) + '<i class="fb-badge" style="background:' + esc(K[1][0]) + ';border-color:' + esc(K[1][1]) + '"></i></span></div>' +
+      '<span class="sl-chip">' + (ls === 'count' && !viewer.replay ? 'Başlıyor ' + Math.ceil((m.startAt - now()) / 1000) : (sec >= 5400 ? 'MS' : minute + '\'')) + (ls === 'live' && !viewer.replay ? ' <span class="tag loss">CANLI</span>' : '') + '</span>';
+    var topEl = $('fbTop'); if (force || topEl.getAttribute('data-k') !== top) { topEl.innerHTML = top; topEl.setAttribute('data-k', top); }
+    var important = { goal: 1, red: 1, yellow: 1, pen: 1, save: 1, mad: 1, sub: 1, inj: 1, half: 1, end: 1, start: 1, offside: 1, miss: 1, cross: 1, fk: 1, block: 1 };
+    var feed = evs.slice(-60).reverse().filter(function (e) { return important[e.type] || evs.length < 8; }).slice(0, 14);
+    var fh = feed.map(function (e) { return '<div class="fb-ev t-' + e.type + '"><b>' + e.m + '\'</b> ' + esc(e.txt) + '</div>'; }).join('');
+    var fe = $('fbFeed'); if (force || fe.getAttribute('data-n') !== String(evs.length)) { fe.innerHTML = fh; fe.setAttribute('data-n', String(evs.length)); }
+    // gol bağırışı
+    evs.forEach(function (e, i) { if (e.type === 'goal' && !viewer.shown[i]) { viewer.shown[i] = 1; if (sec - e.t < 20) { viewer.flash = { txt: e.txt, until: performance.now() + 3500 }; CORE.shout('Goool!'); } } });
+    var ctl = '';
+    if (ls === 'done' || viewer.replay) {
+      ctl = [1, 4, 16].map(function (s) { return '<button type="button" class="lenbtn' + (viewer.replay && viewer.replay.speed === s ? ' on' : '') + '" data-act="fb-speed" data-v="' + s + '">' + s + '×</button>'; }).join('') +
+        '<button type="button" class="lenbtn" data-act="fb-restart">Baştan</button><button type="button" class="lenbtn" data-act="fb-end">Sona git</button>';
+      if (sec >= 5400) {
+        var s2 = sim.stats;
+        ctl += '<div class="fb-stats2"><span>Topa sahip olma</span><b>%' + s2.poss[0] + ' - %' + s2.poss[1] + '</b><span>Şut (isabet)</span><b>' + s2.shots[0] + ' (' + s2.onT[0] + ') - ' + s2.shots[1] + ' (' + s2.onT[1] + ')</b><span>Faul</span><b>' + s2.fouls[0] + ' - ' + s2.fouls[1] + '</b><span>Korner</span><b>' + s2.corners[0] + ' - ' + s2.corners[1] + '</b><span>Sarı / Kırmızı</span><b>' + s2.yellow[0] + '/' + s2.red[0] + ' - ' + s2.yellow[1] + '/' + s2.red[1] + '</b></div>';
+      }
+    }
+    var ce = $('fbCtl'); if (force || ce.getAttribute('data-k') !== ctl) { ce.innerHTML = ctl; ce.setAttribute('data-k', ctl); }
+  }
+  function drawPitch(ctx, W, H, sx, sy, s) {
+    ctx.fillStyle = '#1f6b3a'; ctx.fillRect(0, 0, W, H);
+    for (var i = 0; i < 10; i++) { if (i % 2) { ctx.fillStyle = '#226f3e'; ctx.fillRect(sx(i * 10.5), sy(0), 10.5 * s, 68 * s); } }
+    ctx.strokeStyle = 'rgba(255,255,255,.75)'; ctx.lineWidth = Math.max(1, s * 0.15);
+    ctx.strokeRect(sx(0), sy(0), 105 * s, 68 * s);
+    ctx.beginPath(); ctx.moveTo(sx(52.5), sy(0)); ctx.lineTo(sx(52.5), sy(68)); ctx.stroke();
+    ctx.beginPath(); ctx.arc(sx(52.5), sy(34), 9.15 * s, 0, Math.PI * 2); ctx.stroke();
+    [[0, 1], [105, -1]].forEach(function (g) {
+      ctx.strokeRect(g[1] > 0 ? sx(0) : sx(105 - 16.5), sy(13.85), 16.5 * s, 40.3 * s);
+      ctx.strokeRect(g[1] > 0 ? sx(0) : sx(105 - 5.5), sy(24.85), 5.5 * s, 18.3 * s);
+      ctx.fillStyle = 'rgba(255,255,255,.9)'; ctx.fillRect(g[1] > 0 ? sx(-1.5) : sx(105), sy(30.34), 1.5 * s, 7.32 * s);
+    });
+  }
+  function drawViewer() {
+    if (!viewer) return;
+    var L = league(), m = lidMatches(L)[viewer.fid]; if (!m) return;
+    var sim = simOf(m), cv = viewer.cv, ctx = viewer.ctx, dpr = Math.min(2, window.devicePixelRatio || 1);
+    var w = cv.clientWidth, h = cv.clientHeight;
+    if (cv.width !== Math.round(w * dpr) || cv.height !== Math.round(h * dpr)) { cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr); }
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    var s = Math.min((w - 16) / 108, (h - 16) / 71), ox = (w - 105 * s) / 2, oy = (h - 68 * s) / 2;
+    function sx(x) { return ox + x * s; } function sy(y) { return oy + y * s; }
+    ctx.fillStyle = '#0b2a18'; ctx.fillRect(0, 0, w, h);
+    drawPitch(ctx, w, h, sx, sy, s);
+    var sec = viewerSec(m), f0 = Math.floor(sec), fr = sec - f0, f1 = Math.min(sim.T, f0 + 1), FR = sim.FR, F = sim.frames;
+    function pos(k) {
+      var a = f0 * FR + k, b = f1 * FR + k, x0 = F[a], x1 = F[b], y0 = F[a + 1], y1 = F[b + 1];
+      if (x0 < -10 || x1 < -10) return x1 < -10 ? null : [x1, y1];
+      return [x0 + (x1 - x0) * fr, y0 + (y1 - y0) * fr];
+    }
+    var r = Math.max(4.5, 1.25 * s);
+    for (var e = 0; e < 22; e++) {
+      var p = pos(e * 2); if (!p) continue;
+      var snap = e < 11 ? m.H : m.A, pl = nameAt(sim, m, e, sec), gk = e % 11 === 0;
+      ctx.beginPath(); ctx.arc(sx(p[0]), sy(p[1]), r, 0, Math.PI * 2);
+      var kit = viewer.kits[e < 11 ? 0 : 1];
+      ctx.fillStyle = gk ? (e < 11 ? '#222' : '#ddd') : kit[0]; ctx.fill();
+      ctx.lineWidth = Math.max(1.5, r * 0.28); ctx.strokeStyle = gk ? kit[0] : kit[1]; ctx.stroke();
+      if (r >= 7 && pl) { ctx.fillStyle = gk ? (e < 11 ? '#fff' : '#111') : kit[1]; ctx.font = '800 ' + Math.round(r * 0.95) + 'px Manrope, system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(String(pl.no || ''), sx(p[0]), sy(p[1]) + 0.5); }
+    }
+    var b = pos(44);
+    if (b) { ctx.beginPath(); ctx.arc(sx(b[0]), sy(b[1]), Math.max(3, 0.8 * s), 0, Math.PI * 2); ctx.fillStyle = '#fff'; ctx.fill(); ctx.strokeStyle = '#111'; ctx.lineWidth = 1; ctx.stroke(); }
+    if (viewer.flash && performance.now() < viewer.flash.until) {
+      ctx.fillStyle = 'rgba(0,0,0,.45)'; ctx.fillRect(0, h / 2 - 34, w, 68);
+      ctx.fillStyle = '#f2c14e'; ctx.font = '700 ' + Math.round(Math.min(40, w / 10)) + 'px "Bodoni Moda", Georgia, serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText('GOL!', w / 2, h / 2 - 8);
+      ctx.fillStyle = '#fff'; ctx.font = '700 13px Manrope, system-ui, sans-serif'; ctx.fillText(viewer.flash.txt.replace(/^GOL! /, ''), w / 2, h / 2 + 18);
+    }
+  }
+  var lastHud = 0;
+  function loop(ts) {
+    requestAnimationFrame(loop);
+    if (!viewer) return;
+    drawViewer();
+    if (ts - lastHud > 250) { lastHud = ts; drawViewerHud(); }
+  }
+
+  // ---------- yazma: lig ----------
+  function createLeague() {
+    var why = '';
+    return write(function () {
+      return R.st.transaction(function (cur) {
+        why = '';
+        var c = cur || {};
+        if (c.lid && c.status !== 'bitti') { why = 'Bu masada zaten bir lig var.'; return; }
+        return { lid: CORE.rnd().slice(0, 8), no: (c.no || 0) + 1, status: 'kayit', stake: stakeChoice, legs: legsChoice, createdBy: pid, createdAt: now(), prevChampion: c.champion || null };
+      }).then(function (res) {
+        if (!res.committed) { if (why) toast(why); return; }
+        return R.seats.child(pid).set({ name: CORE.me.name, sit: true, sitAt: Date.now() });
+      });
+    });
+  }
+  function beginSeason() {
+    var L = league(), why = '';
+    return write(function () {
+      return R.st.transaction(function (cur) {
+        why = '';
+        if (cur === null) return null;
+        if (cur.status !== 'kayit' || cur.lid !== L.lid) { why = 'Lig durumu değişti.'; return; }
+        var regs = Object.keys(seats).filter(function (u) { return seats[u] && seats[u].sit && !CORE.isBanned(u) && teams[u] && FB.validateTeam(teams[u]).ok && CORE.balance(u) >= cur.stake; });
+        if (regs.length < 2) { why = 'En az 2 hazır takım gerekli.'; return; }
+        var n = clone(cur); n.status = 'sezon'; n.teams = regs; n.fixtures = makeFixtures(regs, cur.legs, cur.lid); n.startedAt = now();
+        return n;
+      }).then(function (res) { if (!res.committed && why) toast(why); });
+    });
+  }
+  function cancelLeague() {
+    return write(function () {
+      return R.st.transaction(function (cur) {
+        if (cur === null) return null;
+        return { no: cur.no || 0 };
+      }).then(function (res) { if (res.committed) { CORE.refundOpen('futbol', tb); R.seats.remove(); toast('Lig iptal edildi; giriş çipleri iade edildi.'); } });
+    });
+  }
+  function snapshot(L, uid, at) {
+    var t = clone(teams[uid]); if (!t) return null;
+    t.unavailable = unavailableFor(L, uid, at);
+    delete t.updatedAt;
+    return t;
+  }
+  function readyUp(fid) {
+    var L = league(), fx = L.fixtures.filter(function (x) { return x.id === fid; })[0];
+    if (!fx) return;
+    var tv = myTeam() ? FB.validateTeam(myTeam()) : { ok: false };
+    if (!tv.ok) { toast('Takımın hazır değil: ' + (tv.errs || ['takım yok']).join(', ')); return; }
+    var why = '';
+    return write(function () {
+      return R.m.child(fid).transaction(function (cur) {
+        why = '';
+        var c = cur || {};
+        if (c.startAt) { why = 'Maç zaten başladı.'; return; }
+        var n = clone(c); n.ready = n.ready || {}; n.ready[pid] = true;
+        if (n.ready[fx.h] && n.ready[fx.a]) {
+          var at = now() + COUNT;
+          var H = snapshot(L, fx.h, at), A = snapshot(L, fx.a, at);
+          if (!H || !A || !FB.validateTeam(H).ok || !FB.validateTeam(A).ok) { why = 'Takımlardan biri hazır değil.'; n.ready = { }; n.ready[pid] = true; return n; }
+          n.startAt = at; n.seed = CORE.rnd(); n.H = H; n.A = A;
+        }
+        return n;
+      }).then(function (res) {
+        if (why) toast(why);
+        var m = res.snapshot && res.snapshot.val();
+        if (m && m.startAt) setTimeout(function () { openViewer(fid); }, 300);
+      });
+    });
+  }
+
+  // ---------- olaylar ----------
+  document.addEventListener('click', function (e) {
+    var t = e.target.closest('[data-act]');
+    if (!t || t.disabled) return;
+    var act = t.getAttribute('data-act');
+    if (act.indexOf('fb-') !== 0) return;
+    var team = myTeam(), id = t.getAttribute('data-id');
+    switch (act) {
+      case 'fb-tab': tab = t.getAttribute('data-t'); render(true); break;
+      case 'fb-rules': openSheet('<div class="panel-head"><h3>Futbol Ligi</h3><button class="ghost" type="button" data-act="close">Kapat</button></div>' + rulesHTML()); break;
+      case 'fb-board': openSheet(boardSheet()); break;
+      case 'fb-stake': stakeChoice = +t.getAttribute('data-stake'); render(true); break;
+      case 'fb-legs': legsChoice = +t.getAttribute('data-v'); render(true); break;
+      case 'fb-create': createLeague(); break;
+      case 'fb-join': write(function () { return R.seats.child(pid).set({ name: CORE.me.name, sit: true, sitAt: Date.now() }); }); break;
+      case 'fb-leave': write(function () { return R.seats.child(pid).remove(); }); break;
+      case 'fb-begin': beginSeason(); break;
+      case 'fb-cancel': if (CORE.isAdmin()) { if (t.getAttribute('data-sure') !== '1') { t.setAttribute('data-sure', '1'); t.firstChild.textContent = 'Emin misin? Tekrar bas'; } else cancelLeague(); } break;
+      case 'fb-ready': readyUp(id); break;
+      case 'fb-watch': openViewer(id); break;
+      case 'fb-closev': closeViewer(); break;
+      case 'fb-speed': if (viewer) { var m0 = lidMatches(league())[viewer.fid]; var sec = viewerSec(m0); viewer.replay = { at: performance.now(), base: sec >= 5400 ? 0 : sec, speed: +t.getAttribute('data-v') }; viewer.shown = {}; drawViewerHud(true); } break;
+      case 'fb-restart': if (viewer) { viewer.replay = { at: performance.now(), base: 0, speed: (viewer.replay && viewer.replay.speed) || 4 }; viewer.shown = {}; drawViewerHud(true); } break;
+      case 'fb-end': if (viewer) { viewer.replay = { at: performance.now(), base: 5400, speed: 0 }; drawViewerHud(true); } break;
+      case 'fb-newteam': case 'fb-quickteam':
+        var nm = ($('fbNewName') && $('fbNewName').value.trim()) || (CORE.me.name + ' FK');
+        var nt = randomTeam(nm.slice(0, 24));
+        if (act === 'fb-newteam') nt.players = {};
+        write(function () { return saveTeam(nt); }); break;
+      case 'fb-reroll': if (team) { var rt = randomTeam(team.name); rt.short = team.short; rt.c1 = team.c1; rt.c2 = team.c2; rt.tactic = team.tactic; write(function () { return saveTeam(rt); }); } break;
+      case 'fb-delteam':
+        if (t.getAttribute('data-sure') !== '1') { t.setAttribute('data-sure', '1'); t.firstChild.textContent = 'Emin misin? Tekrar bas'; break; }
+        write(function () { return CORE.db.ref('rp/fteams/' + pid).remove(); }); break;
+      case 'fb-teamedit':
+        openSheet('<div class="panel-head"><h3>Takım</h3><button class="ghost" type="button" data-act="close">Kapat</button></div>' +
+          '<div class="field"><label for="fbTn">Takım adı</label><input id="fbTn" maxlength="24" value="' + esc(team.name) + '"></div>' +
+          '<div class="field"><label for="fbTs">Kısa ad (3 harf)</label><input id="fbTs" maxlength="4" value="' + esc(team.short || '') + '"></div>' +
+          '<div class="fb-pform"><div class="field"><label for="fbC1">Forma rengi</label><input id="fbC1" type="color" value="' + esc(team.c1 || '#d64545') + '"></div><div class="field"><label for="fbC2">İkinci renk</label><input id="fbC2" type="color" value="' + esc(team.c2 || '#ffffff') + '"></div></div>' +
+          btn('fb-saveteam', 'Kaydet', { cls: 'primary' })); break;
+      case 'fb-saveteam':
+        var t2 = clone(team); t2.name = ($('fbTn').value || team.name).trim().slice(0, 24); t2.short = ($('fbTs').value || '').trim().toUpperCase().slice(0, 4); t2.c1 = $('fbC1').value; t2.c2 = $('fbC2').value;
+        write(function () { return saveTeam(t2); }).then(closeSheet); break;
+      case 'fb-addp': playerSheet(null); break;
+      case 'fb-editp': playerSheet(id); break;
+      case 'fb-ppos': if (edit) { edit.p.pos = t.getAttribute('data-v'); document.querySelectorAll('[data-act="fb-ppos"]').forEach(function (b) { b.classList.toggle('on', b === t); }); } break;
+      case 'fb-savep':
+        if (!edit) break;
+        edit.p.n = ($('fbPn').value || '').trim().slice(0, 22) || 'İsimsiz';
+        edit.p.no = Math.max(1, Math.min(99, +$('fbPno').value || 1));
+        var sum = 0; FB.STATS.forEach(function (x) { sum += edit.p.s[x.k]; });
+        if (sum > edit.left) { toast('Puan havuzu yetmiyor: ' + (sum - edit.left) + ' puan fazla.'); break; }
+        var t3 = clone(team), pidNew = edit.id || newId(); t3.players = t3.players || {}; t3.players[pidNew] = edit.p;
+        write(function () { return saveTeam(t3); }).then(closeSheet); break;
+      case 'fb-delp':
+        if (!edit || !edit.id) break;
+        var t4 = clone(team); delete t4.players[edit.id]; t4.lineup = (t4.lineup || []).filter(function (x) { return x !== edit.id; });
+        write(function () { return saveTeam(t4); }).then(closeSheet); break;
+      case 'fb-form': var t5 = clone(team); t5.tactic = t5.tactic || {}; t5.tactic.form = t.getAttribute('data-f'); write(function () { return saveTeam(t5); }); break;
+      case 'fb-tac': var t6 = clone(team); t6.tactic = t6.tactic || {}; t6.tactic[t.getAttribute('data-k')] = +t.getAttribute('data-v'); write(function () { return saveTeam(t6); }); break;
+      case 'fb-adm': if (CORE.isAdmin()) write(function () { return CORE.adminOp(R.seats, seats, t.getAttribute('data-op'), t.getAttribute('data-id')); }).then(function () { openSheet(boardSheet()); }); break;
+    }
+  });
+  function rulesHTML() {
+    return '<p>Herkes kendi takımını ve futbolcularını yaratır. Statlar tamamen serbest: Hız 99, Oyun zekası 1 bir kanat olabilir. Tek sınır takımın toplam puan havuzudur (' + fmt(FB.POOL) + '): 11–18 oyuncuya istediğin gibi dağıt.</p>' +
+      '<h4>Statlar maçta ne yapar</h4><ul>' + FB.STATS.map(function (x) { return '<li><b>' + x.n + ':</b> ' + x.d + '</li>'; }).join('') + '</ul>' +
+      '<p>Oyun zekası düşük oyuncular topu alıp taca koşabilir, orta sahadan şut çekebilir, ofsayta düşer, kendi kalecisine pas atar. Agresifliği yüksek olan çok top kapar ama faul yapar, kart görür. Dayanıklılığı düşük olan erken yorulur ve değiştirilir. Kalecilik sadece kalede işe yarar; mevkisi dışında oynayan daha kötü oynar.</p>' +
+      '<h4>Taktik</h4><p>Diziliş, oyun anlayışı, pres, pas stili, tempo, genişlik, defans hattı ve sertlik maçı doğrudan etkiler. Penaltı ve frikikçiyi sen seçersin.</p>' +
+      '<h4>Lig</h4><ol><li>Bir masada lig açılır, giriş çipi ve tek/çift devre seçilir.</li><li>Takımlar kaydolur, biri sezonu başlatır; giriş çipleri ortaya konur.</li>' +
+      '<li>Her maç, iki takım sahibi de "Hazırım" deyince 6 saniye sonra canlı başlar ve 3 dakika sürer. Herkes izleyebilir.</li>' +
+      '<li>Galibiyet 3, beraberlik 1 puan. Eşitlikte averaj, sonra atılan gol.</li><li>Kırmızı kart gören bir sonraki maçta oynayamaz; sakatlanan 1–3 maç yoktur. Maçta en çok 5 değişiklik otomatik yapılır.</li>' +
+      '<li>Bütün maçlar bitince şampiyon potun hepsini alır (eşitlikte bölüşülür).</li></ol>';
+  }
+  function boardSheet() {
+    var ids = Object.keys(seats).filter(function (id) { return seats[id] && seats[id].name; });
+    var h = '<div class="panel-head"><h3>Futbol Ligi · Masa ' + tb + '</h3><button class="ghost" type="button" data-act="close">Kapat</button></div>';
+    h += ids.length ? '<table><thead><tr><th>Oyuncu</th><th class="n">Bu ligde</th><th class="n">Çip</th></tr></thead><tbody>' + ids.map(function (id) {
+      var n = CORE.tableNet(id, 'futbol', tb);
+      return '<tr><td>' + esc(teamName(id)) + ' <span class="muted">' + esc(CORE.userName(id)) + '</span></td><td class="n"><span class="amt ' + (n > 0 ? 'pos' : n < 0 ? 'neg' : 'zero') + '">' + sfmt(n) + '</span></td><td class="n">' + fmt(CORE.balance(id)) + '</td></tr>';
+    }).join('') + '</tbody></table>' : '<p>Henüz kayıtlı takım yok.</p>';
+    if (CORE.isAdmin()) h += CORE.adminHTML(seats, { pre: 'fb', esc: esc, sit: true });
+    return h;
+  }
+
+  // ---------- bağlantı ----------
+  function attachMatches() {
+    var L = league(), key = L ? tb + ':' + L.lid : '';
+    if (key === matchRefKey) return;
+    matchRefKey = key;
+    if (R.m) { R.m.off(); R.m = null; }
+    matches = {};
+    if (!L || !CORE.db) return;
+    R.m = CORE.db.ref('rp/t/futbol/' + tb + '/m/' + L.lid);
+    var mine = R.m;
+    R.m.on('value', function (s) {
+      if (R.m !== mine) return;
+      var prev = matches; matches = s.val() || {};
+      // rakip de hazır olunca maç başlar: kendi maçımsa izleme ekranını aç
+      Object.keys(matches).forEach(function (fid) {
+        var m = matches[fid], was = prev[fid];
+        if (m.startAt && (!was || !was.startAt) && m.H && m.A && CORE.view === 'futbol' && !viewer) {
+          var fx = (L.fixtures || []).filter(function (x) { return x.id === fid; })[0];
+          if (fx && (fx.h === pid || fx.a === pid) && now() < m.startAt + MATCH_MS) openViewer(fid);
+        }
+      });
+      render();
+    });
+  }
+  function attach(t) {
+    if (R.st) { R.st.off(); R.seats.off(); }
+    if (R.m) { R.m.off(); R.m = null; }
+    tb = t; st = null; seats = {}; matches = {}; matchRefKey = ''; loaded.st = loaded.seats = false;
+    closeViewer(); render(true);
+    if (!CORE.db) return;
+    var base = 'rp/t/futbol/' + t + '/';
+    R.st = CORE.db.ref(base + 'state'); R.seats = CORE.db.ref(base + 'seats');
+    R.st.on('value', function (s) { if (tb !== t) return; st = s.val(); loaded.st = true; render(); });
+    R.seats.on('value', function (s) { if (tb !== t) return; seats = s.val() || {}; loaded.seats = true; render(); });
+  }
+  setInterval(function () { if (tb && (CORE.view === 'futbol' || league())) render(); }, 1000);
+  window.__fbDebug = { league: league, matches: function () { return matches; }, teams: function () { return teams; }, viewer: function () { return viewer; } };
+  CORE.whenReady(function () {
+    pid = CORE.pid;
+    $('fbRulesL').innerHTML = '<h3>Futbol Ligi</h3>' + rulesHTML();
+    CORE.db && CORE.db.ref('rp/fteams').on('value', function (s) { teams = s.val() || {}; loaded.teams = true; render(); });
+    CORE.onChange(function () { if (tb) render(); if (viewer && CORE.view !== 'futbol') closeViewer(); });
+    CORE.onTable('futbol', attach);
+    requestAnimationFrame(loop);
   });
 })();
 
