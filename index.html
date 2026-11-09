@@ -264,6 +264,12 @@ th { color: var(--muted); font-weight: 600; font-size: 12px; }
 .view[hidden] { display: none !important; }
 [hidden] { display: none !important; }
 .game-col { display: flex; flex-direction: column; gap: 14px; flex: 1; min-width: 0; }
+/* Telefonda: kartların (elin) ve butonların oyuncu listesinin ÜSTÜNDE olması için sıralama */
+@media (max-width: 760px) {
+  .game-col > .mine-hand, .game-col > .ok-mine { order: 3; }
+  .game-col > .actions { order: 4; }
+  .game-col > [aria-label="Oyuncular"] { order: 5; }
+}
 .rules-side { display: none; }
 #okeyView { max-width: 900px; }
 @media (min-width: 1100px) {
