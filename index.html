@@ -3323,7 +3323,7 @@ window.CORE = (function () {
   var TITLES = { poker: 'Rus Pokeri', okey: 'Okey', holdem: 'Texas Hold\'em', pisti: 'Pişti', esli: 'Eşli Pişti', bj: 'Blackjack', slither: 'Slither', tombala: 'Tombala', emlak: 'Emlak', futbol: 'Futbol Ligi', flip7: 'Flip 7', slot: 'Tatlı Yağmur', yaris: 'At Yarışı', isim: 'İsim Şehir', chat: 'Sohbet', kayit: 'Kayıtlar', admin: 'Admin paneli' };
   var core = { db: null, auth: null, user: null, me: null, pid: null, connected: false, online: {}, ownerId: null, error: null,
     view: 'lobby', table: 1, TABLES: 3, bootAt: Date.now(), ready: false, authKnown: false,
-    ledger: {}, users: {}, requests: {}, bans: {}, deleted: {}, weekly: {}, weeklyLoaded: false, ledgerLoaded: false, START_CHIPS: 1000, GAMES: ['poker', 'okey', 'holdem', 'pisti', 'esli', 'bj', 'slither', 'tombala', 'emlak', 'futbol', 'flip7', 'slot', 'yaris', 'isim'] };
+    ledger: {}, users: {}, requests: {}, bans: {}, deleted: {}, weekly: {}, weeklyLoaded: false, kule: {}, ledgerLoaded: false, START_CHIPS: 1000, GAMES: ['poker', 'okey', 'holdem', 'pisti', 'esli', 'bj', 'slither', 'tombala', 'emlak', 'futbol', 'flip7', 'slot', 'yaris', 'isim'] };
   core.GAME_NAMES = { poker: 'Rus Pokeri', okey: 'Okey', holdem: 'Hold\'em', pisti: 'Pişti', esli: 'Eşli Pişti', bj: 'Blackjack', slither: 'Slither', tombala: 'Tombala', emlak: 'Emlak', futbol: 'Futbol Ligi', flip7: 'Flip 7', slot: 'Tatlı Yağmur', yaris: 'At Yarışı', isim: 'İsim Şehir', admin: 'Admin', start: 'Başlangıç', prize: 'Haftalık ödül' };
   var subs = [], readyFns = [];
   core.onChange = function (fn) { subs.push(fn); };
@@ -3495,6 +3495,7 @@ window.CORE = (function () {
   var weekBusy = {};
   // Hafta bitince siteyi ilk açan kişinin cihazı kazananı yazar; aynı hafta iki kez yazılmaz
   function processWeekly() {
+    processKule();
     if (!core.db || !core.ledgerLoaded || !core.weeklyLoaded) return;
     var cur = core.weekStart(Date.now());
     [1, 2].forEach(function (k) {
@@ -3506,6 +3507,32 @@ window.CORE = (function () {
       var val = w.winners.length ? { winners: w.winners, net: w.net, prize: core.WEEKLY_PRIZE, at: Date.now() } : { none: true, at: Date.now() };
       core.db.ref('rp/weekly/' + id).transaction(function (c) { return c ? undefined : val; })
         .then(function (r) { if (r.committed) payWeek(id, r.snapshot.val()); }, function () { weekBusy[id] = false; });
+    });
+  }
+  // Buz Kule haftalık birinci: en yüksek puan, eşitlikte önce yapan
+  function kuleTop(id) {
+    var w = (core.kule.weeks || {})[id] || {}, list = Object.keys(w).filter(function (u) { return !core.deleted[u] && w[u] && w[u].score > 0; }).map(function (u) { return { id: u, name: w[u].name, score: w[u].score, floors: w[u].floors || 0, at: w[u].at || 0 }; });
+    list.sort(function (a, b) { return b.score - a.score || a.at - b.at; });
+    return list;
+  }
+  core.kuleTop = kuleTop;
+  function payKule(id, rec) {
+    if (!rec || !rec.winner) return;
+    core.ensureEntries([{ uid: rec.winner, key: 'kule-' + id, d: rec.prize || core.WEEKLY_PRIZE, g: 'prize', n: 'Buz Kule haftanın birincisi · ' + id }]);
+  }
+  var kuleBusy = {};
+  function processKule() {
+    if (!core.db || !core.ledgerLoaded || !core.kule) return;
+    var cur = core.weekStart(Date.now()), paid = core.kule.paid || {};
+    [1, 2].forEach(function (k) {
+      var id = core.weekId(cur - k * 7 * DAY), rec = paid[id];
+      if (rec) { payKule(id, rec); return; }
+      if (kuleBusy[id]) return;
+      var top = kuleTop(id); if (!top.length) return;
+      kuleBusy[id] = true;
+      var val = { winner: top[0].id, name: top[0].name, score: top[0].score, prize: core.WEEKLY_PRIZE, at: Date.now() };
+      core.db.ref('rp/kule/paid/' + id).transaction(function (c) { return c ? undefined : val; })
+        .then(function (r) { if (r.committed) payKule(id, r.snapshot.val()); }, function () { kuleBusy[id] = false; });
     });
   }
   // veriler otursun diye biraz bekleyip hesapla
@@ -3815,6 +3842,7 @@ window.CORE = (function () {
     db.ref('rp/bans').on('value', function (s) { core.bans = s.val() || {}; core.emit(); }, function () {});
     db.ref('rp/deleted').on('value', function (s) { core.deleted = s.val() || {}; if (core.deleted[core.pid]) gone(core.user); core.emit(); }, function () {});
     db.ref('rp/weekly').on('value', function (s) { core.weekly = s.val() || {}; core.weeklyLoaded = true; scheduleWeekly(); core.emit(); }, function () {});
+    db.ref('rp/kule').on('value', function (s) { core.kule = s.val() || {}; scheduleWeekly(); core.emit(); }, function () {});
     db.ref('rp/ledger').on('value', function (s) {
       core.ledger = s.val() || {};
       prunePending();
@@ -3891,6 +3919,15 @@ window.CORE = (function () {
   function lastSeen(id) {
     var u = CORE.users[id] || {};
     return CORE.online[id] ? '<span class="tag win">Şu an sitede</span>' : esc(when(u.lastIn));
+  }
+  function kuleHTML() {
+    var id = CORE.weekId(CORE.weekStart(Date.now())), top = CORE.kuleTop(id).slice(0, 10), paid = (CORE.kule.paid || {}), prev = Object.keys(paid).sort().reverse()[0];
+    var h = '<div class="section-head"><h2>Buz Kule · haftalık</h2><span><a href="kule/">Oyna →</a></span></div><div class="week-card"><p class="lobby-note">Haftanın en yüksek puanını yapan <b>' + fmt(CORE.WEEKLY_PRIZE) + ' çip hediye</b> alır (Pazar 23:59\'a kadar).</p>';
+    if (top.length) h += '<div class="scroll-x"><table class="scoretbl"><thead><tr><th>Sıra</th><th>Oyuncu</th><th class="n">Puan</th><th class="n">Kat</th></tr></thead><tbody>' + top.map(function (t, i) {
+      return '<tr' + (i === 0 ? ' class="win"' : '') + '><td>' + (i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : (i + 1) + '.') + '</td><td>' + esc((CORE.users[t.id] && CORE.users[t.id].name) || t.name) + (t.id === CORE.pid ? ' <span class="tag gold">sen</span>' : '') + '</td><td class="n tot">' + t.score + '</td><td class="n">' + t.floors + '</td></tr>';
+    }).join('') + '</tbody></table></div>'; else h += '<p class="lobby-note">Bu hafta henüz kimse oynamadı.</p>';
+    if (prev && paid[prev] && paid[prev].winner) h += '<div class="prev"><div class="row"><b>Geçen haftanın birincisi</b><span>' + esc((CORE.users[paid[prev].winner] && CORE.users[paid[prev].winner].name) || paid[prev].name) + ' · ' + paid[prev].score + ' puan · <span class="amt pos">+' + fmt(paid[prev].prize || CORE.WEEKLY_PRIZE) + ' hediye</span></span></div></div>';
+    return h + '</div>';
   }
   // Haftalık yarış tablosu: bu hafta oyunlardan kazanılan çip
   function weeklyHTML(full) {
@@ -4019,7 +4056,7 @@ window.CORE = (function () {
       el.innerHTML = h;
     });
     var lb = $('lobbyBoard');
-    if (lb && CORE.ready && CORE.view === 'lobby') lb.innerHTML = '<div class="lobby-tables"><div>' + weeklyHTML(false) + '</div><div>' + playersHTML() + '</div></div>';
+    if (lb && CORE.ready && CORE.view === 'lobby') lb.innerHTML = '<div class="lobby-tables"><div>' + weeklyHTML(false) + '</div><div>' + playersHTML() + '</div></div><div class="lobby-tables"><div>' + kuleHTML() + '</div></div>';
     ['lobbyBanner', 'loginBanner'].forEach(function (id) {
       var b = $(id); if (!b) return;
       var t = CORE.error ? CORE.bannerText(true) : '';

@@ -22,10 +22,16 @@
       });
     }
   } catch (e) { db = null; }
+  var DAYMS = 86400000, TRT = 3 * 3600000;
+  function weekId() {
+    var d = new Date(Date.now() + TRT), dow = (d.getUTCDay() + 6) % 7, ws = Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()) - dow * DAYMS;
+    var x = new Date(ws); function p2(n) { return (n < 10 ? '0' : '') + n; }
+    return x.getUTCFullYear() + '-' + p2(x.getUTCMonth() + 1) + '-' + p2(x.getUTCDate());
+  }
   function loadBoard() {
     if (!db) return;
-    db.ref('rp/kule/best').once('value').then(function (s) {
-      var v = s.val() || {}; board = Object.keys(v).map(function (k) { return { id: k, name: v[k].name, floors: v[k].floors || 0, score: v[k].score || 0 }; }).sort(function (a, b) { return b.score - a.score; });
+    db.ref('rp/kule/weeks/' + weekId()).once('value').then(function (s) {
+      var v = s.val() || {}; board = Object.keys(v).map(function (k) { return { id: k, name: v[k].name, floors: v[k].floors || 0, score: v[k].score || 0, at: v[k].at || 0 }; }).sort(function (a, b) { return b.score - a.score || a.at - b.at; });
       var m = v[uid]; if (m) best = { floors: m.floors || 0, score: m.score || 0 };
       if (!running) showMenu();
     }, function () {});
@@ -34,7 +40,7 @@
     if (!db || !uid) return;
     if (G.score > best.score) {
       best = { floors: Math.max(best.floors, G.floors), score: G.score };
-      db.ref('rp/kule/best/' + uid).set({ name: myName, floors: best.floors, score: best.score, at: Date.now() }).then(loadBoard, function () {});
+      db.ref('rp/kule/weeks/' + weekId() + '/' + uid).set({ name: myName, floors: best.floors, score: best.score, at: Date.now() }).then(loadBoard, function () {});
     }
   }
 
@@ -165,13 +171,13 @@
 
   /* ---- menüler ---- */
   function boardHTML() {
-    if (!board.length) return '<div class="help">Skor tablosu için ana sayfadan giriş yap.</div>';
-    return '<div id="lb">' + board.slice(0, 10).map(function (b, i) { return '<div class="' + (b.id === uid ? 'me' : '') + '"><span>' + (i + 1) + '. ' + esc(b.name) + '</span><b>' + b.score + ' <small style="color:#9db4d8">· ' + b.floors + ' kat</small></b></div>'; }).join('') + '</div>';
+    if (!board.length) return '<div class="help">Bu hafta henüz kimse oynamadı (skor için ana sayfadan giriş yap).</div>';
+    return '<div class="sub" style="margin:8px 0 0">🏆 Bu haftanın sıralaması · 1. olana <b>500 çip</b> hediye</div><div id="lb">' + board.slice(0, 10).map(function (b, i) { return '<div class="' + (b.id === uid ? 'me' : '') + '"><span>' + (i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : (i + 1) + '.') + ' ' + esc(b.name) + '</span><b>' + b.score + ' <small style="color:#9db4d8">· ' + b.floors + ' kat</small></b></div>'; }).join('') + '</div>';
   }
   function showMenu() {
     if (running) return; ov.hidden = false; pad.hidden = true;
     card.innerHTML = '<h1>❄ BUZ KULE ❄</h1><div class="sub">Platformdan platforma zıpla, kuleye tırman, aşağıda kalma!</div>' +
-      (uid ? '<div class="sub">En iyin: <b>' + best.score + '</b> puan · ' + best.floors + ' kat</div>' : '') + boardHTML() +
+      (uid ? '<div class="sub">Bu hafta en iyin: <b>' + best.score + '</b> puan · ' + best.floors + ' kat</div>' : '') + boardHTML() +
       '<button class="btn pri" id="go" type="button">Başla</button>' +
       '<div class="help">' + (TOUCH ? '◀ ▶ ile koş, ⤒ ile zıpla. <b>Hızlı koşarken zıplarsan çok daha yükseğe çıkarsın.</b>' : '← → veya A D ile koş, Boşluk/↑ ile zıpla. <b>Hızlıyken zıplarsan daha yükseğe çıkarsın.</b>') +
       '<br>Duvardan seker. Bir seferde 2+ kat çıkıp art arda zıplarsan <b>kombo</b> puanı kazanırsın. Ekran yukarı kayar, geride kalma!</div>';
