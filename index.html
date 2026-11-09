@@ -208,7 +208,24 @@ th { color: var(--muted); font-weight: 600; font-size: 12px; }
 .banner { padding: 10px 12px; border-radius: 10px; background: rgba(241,148,130,.14); border: 1px solid rgba(241,148,130,.4); font-size: 14px; }
 
 @media (prefers-reduced-motion: reduce) { .card { transition: none; } }
-.view[hidden] { display: none; }
+.view[hidden] { display: none !important; }
+.game-col { display: flex; flex-direction: column; gap: 14px; flex: 1; min-width: 0; }
+.rules-side { display: none; }
+#okeyView { max-width: 900px; }
+@media (min-width: 1100px) {
+  .view.game-view { max-width: 1520px; display: grid; grid-template-columns: minmax(250px, 330px) minmax(0, 1fr) minmax(250px, 330px); gap: 28px; align-items: start; }
+  #okeyView.game-view { max-width: 1640px; }
+  .game-col { min-height: calc(100vh - 12px); width: 100%; justify-self: center; }
+  #pokerView .game-col { max-width: 620px; }
+  #okeyView .game-col { max-width: 920px; }
+  .rules-side { display: grid; gap: 10px; align-content: start; position: sticky; top: 16px; max-height: calc(100vh - 32px); overflow-y: auto;
+    padding: 18px; border-radius: 16px; background: rgba(0,0,0,.2); border: 1px solid var(--line); }
+  .rules-side h3 { font-size: 20px; }
+  .rules-side p, .rules-side li { font-size: 14px; }
+  .rules-side table { font-size: 13px; }
+  .rules-btn { display: none; }
+  .game-view .actions { margin-left: 0; margin-right: 0; border-radius: 16px 16px 0 0; }
+}
 .back { padding: 5px 11px; font-size: 18px; line-height: 1; text-decoration: none; }
 /* Lobi */
 .lobby-cards { display: grid; gap: 12px; }
@@ -261,9 +278,14 @@ th { color: var(--muted); font-weight: 600; font-size: 12px; }
 .near-cell .tile { width: 40px; }
 .near-msg { font-size: 13px; color: var(--muted); text-align: center; text-wrap: balance; }
 .near-msg b { color: var(--win); }
-.rack { display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 5px; padding: 14px 8px 10px; border-radius: 12px;
+.rack { display: grid; grid-template-columns: repeat(var(--cols, 10), minmax(0, 1fr)); gap: 10px 4px; padding: 14px 8px 10px; border-radius: 12px;
   background: linear-gradient(#6e4524, #4b2e16); box-shadow: inset 0 2px 0 rgba(255,255,255,.12), 0 6px 16px rgba(0,0,0,.35); }
 .rack .tile { width: 100%; }
+.rack .tile .tn { font-size: clamp(13px, 3.9vw, 27px); }
+.rack .tile .tsub { font-size: clamp(5.5px, 1.4vw, 9px); }
+.slot { aspect-ratio: 3 / 4.1; width: 100%; border: 0; padding: 0; border-radius: 6px; background: rgba(0,0,0,.18); box-shadow: inset 0 1px 3px rgba(0,0,0,.35); }
+.rack.moving .slot { background: rgba(217,180,91,.16); box-shadow: inset 0 0 0 1px rgba(217,180,91,.55); cursor: pointer; }
+@media (min-width: 700px) { .rack { gap: 12px 5px; padding: 16px 12px 12px; } .ok-cell .tile, .near-cell .tile { width: 52px; } }
 .ok-result { display: grid; gap: 10px; }
 .res-title { font-family: var(--display); font-size: 22px; font-weight: 700; }
 .res-tags { display: flex; gap: 6px; flex-wrap: wrap; }
@@ -308,14 +330,16 @@ th { color: var(--muted); font-weight: 600; font-size: 12px; }
   <p class="lobby-note">Linki arkadaşlarına at, herkes buradan istediği masaya geçer. Masadan lobiye sol üstteki ‹ düğmesiyle dönülür.</p>
 </div>
 
-<div class="view" id="pokerView" hidden>
+<div class="view game-view" id="pokerView" hidden>
+  <aside class="rules-side panel" id="pokerRulesL" aria-label="Rus Pokeri kuralları"></aside>
+  <main class="game-col">
   <header class="top">
     <a class="ghost back" href="#" aria-label="Lobiye dön">‹</a>
     <div class="brand">Rus Pokeri<small id="roundNo">Masa</small></div>
     <div class="spacer"></div>
     <span class="pill" id="myChips" title="Fişin"><span class="dot"></span><span id="myChipsVal">—</span></span>
     <button class="ghost" type="button" data-act="board">Fişler</button>
-    <button class="ghost" type="button" data-act="rules">Kurallar</button>
+    <button class="ghost rules-btn" type="button" data-act="rules">Kurallar</button>
   </header>
 
   <section class="dealer" aria-label="Krupiye">
@@ -335,21 +359,27 @@ th { color: var(--muted); font-weight: 600; font-size: 12px; }
   <section class="mine-hand" id="mine" aria-label="Senin elin"></section>
 
   <footer class="actions" id="actions" aria-live="polite"></footer>
+  </main>
+  <aside class="rules-side panel" id="pokerRulesR" aria-label="Ödeme tablosu"></aside>
 </div>
 
-<div class="view" id="okeyView" hidden>
+<div class="view game-view" id="okeyView" hidden>
+  <aside class="rules-side panel" id="okeyRulesL" aria-label="Okey kuralları"></aside>
+  <main class="game-col">
   <header class="top">
     <a class="ghost back" href="#" aria-label="Lobiye dön">‹</a>
     <div class="brand">Okey<small id="okRound">Renk</small></div>
     <div class="spacer"></div>
     <button class="ghost" type="button" data-act="ok-board">Puanlar</button>
-    <button class="ghost" type="button" data-act="ok-rules">Kurallar</button>
+    <button class="ghost rules-btn" type="button" data-act="ok-rules">Kurallar</button>
   </header>
   <div id="okBanner"></div>
   <section id="okCenter" aria-label="Gösterge"></section>
   <section id="okOpps" aria-label="Oyuncular"></section>
   <section class="ok-mine" id="okMine" aria-label="Istakan" hidden></section>
   <footer class="actions" id="okActions" aria-live="polite"></footer>
+  </main>
+  <aside class="rules-side panel" id="okeyRulesR" aria-label="Ceza tablosu"></aside>
 </div>
 
 <div class="sheet" id="sheet" hidden>
@@ -1485,6 +1515,11 @@ window.CORE = (function () {
       '<h4>Oyuncu kaydı</h4><p>Masadaki yerin bu telefona ve tarayıcıya kayıtlıdır. Başka bir telefondan ya da tarayıcıdan girersen yeni oyuncu olarak başlarsın.</p>';
   }
 
+  function rulesSplit() {
+    var full = rulesHTML().replace(/^<div class="panel-head">[\s\S]*?<\/div>/, '');
+    var i = full.indexOf('<h4>Ödeme tablosu</h4>'), j = full.indexOf('<h4>Süre</h4>');
+    return { play: full.slice(0, i) + full.slice(j), pay: full.slice(i, j) };
+  }
   function boardHTML() {
     var v = V || view(), b = bankOf(stateDoc);
     var ids = Object.keys(seats).filter(function (id) { return seats[id] && seats[id].name; });
@@ -1585,6 +1620,9 @@ window.CORE = (function () {
 
   // ---------- başlatma ----------
   function boot() {
+    var rs = rulesSplit();
+    $('pokerRulesL').innerHTML = '<h3>Rus Pokeri nasıl oynanır</h3>' + rs.play;
+    $('pokerRulesR').innerHTML = '<h3>Ödeme tablosu</h3>' + rs.pay.replace('<h4>Ödeme tablosu</h4>', '');
     render();
     CORE.onChange(render);
     if (!CORE.db) return;
@@ -1654,37 +1692,79 @@ window.CORE = (function () {
     return OKE.COLORS[g.rep.c] + ' ' + g.rep.n;
   }
 
-  // ---------- ıstaka sırası (bu cihazda saklanır) ----------
-  function rackKey(s) { return 'ok_rack_' + s.no + '_' + s.seed; }
-  function loadOrder(s) { try { return JSON.parse(localStorage.getItem(rackKey(s)) || 'null'); } catch (e) { return null; } }
-  function saveOrder(s, order) { try { localStorage.setItem(rackKey(s), JSON.stringify(order)); } catch (e) {} memOrder[rackKey(s)] = order; }
-  var memOrder = {};
+  // ---------- ıstaka: 2 sıra yuva, boşluk bırakılabilir (bu cihazda saklanır) ----------
+  var memRack = {};
+  function rackCols() { return window.innerWidth >= 700 ? 13 : 10; }
+  function rackKey(s) { return 'ok_rack2_' + s.no + '_' + s.seed; }
+  function loadRack(s) {
+    var k = rackKey(s); if (memRack[k]) return memRack[k];
+    try { return JSON.parse(localStorage.getItem(k) || 'null'); } catch (e) { return null; }
+  }
+  function saveRack(s, cols, slots) {
+    var k = rackKey(s), o = { cols: cols, slots: slots.slice() }; memRack[k] = o;
+    try { localStorage.setItem(k, JSON.stringify(o)); } catch (e) {}
+  }
   function sortByColor(hand) {
     return hand.slice().sort(function (a, b) {
       var ca = a >= 104 ? 9 : OKE.colorOf(a), cb = b >= 104 ? 9 : OKE.colorOf(b);
       return ca - cb || OKE.numOf(a) - OKE.numOf(b) || a - b;
     });
   }
-  function rackOrder(v) {
-    var hand = v.r.hands[v.me];
-    var saved = memOrder[rackKey(v.s)] || loadOrder(v.s);
-    var order = saved ? saved.filter(function (id) { return hand.indexOf(id) >= 0; }) : sortByColor(hand);
-    hand.forEach(function (id) { if (order.indexOf(id) < 0) order.push(id); });
-    return order;
+  function byColorChunks(ids) {
+    var out = [], cur = null, key = null;
+    sortByColor(ids).forEach(function (id) {
+      var k = id >= 104 ? 9 : OKE.colorOf(id);
+      if (k !== key) { cur = []; out.push(cur); key = k; }
+      cur.push(id);
+    });
+    return out;
   }
-  function arrangeSeri(v) {
-    var hand = v.r.hands[v.me], a = OKE.arrange(hand, v.r.g);
-    var order = [];
-    a.groups.forEach(function (gr) { order = order.concat(gr); });
-    order = order.concat(sortByColor(a.left));
-    saveOrder(v.s, order);
+  // gruplar arasına birer boşluk koyarak yuvalara yerleştir; sığmazsa boşluksuz diz
+  function layout(groups, cols) {
+    var cap = cols * 2, slots = [], pos = 0, over = false;
+    groups.forEach(function (gr) {
+      if (!gr.length) return;
+      if (pos < cols && pos + gr.length > cols && gr.length <= cols) pos = cols;
+      gr.forEach(function (id) { if (pos >= cap) over = true; slots[pos++] = id; });
+      pos++;
+    });
+    if (over) slots = [].concat.apply([], groups);
+    var outArr = [];
+    for (var i = 0; i < cap; i++) outArr.push(slots[i] == null ? null : slots[i]);
+    return outArr;
   }
-  function arrangeCift(v) {
-    var hand = v.r.hands[v.me], g = v.r.g, byKey = {}, jokers = [], rest = [];
+  function reflow(old, cols) {
+    var groups = [], cur = [];
+    old.forEach(function (id) { if (id == null) { if (cur.length) groups.push(cur); cur = []; } else cur.push(id); });
+    if (cur.length) groups.push(cur);
+    return layout(groups, cols);
+  }
+  function seriGroups(v) {
+    var a = OKE.arrange(v.r.hands[v.me], v.r.g);
+    return a.groups.concat(byColorChunks(a.left));
+  }
+  function ciftGroups(v) {
+    var hand = v.r.hands[v.me], g = v.r.g, byKey = {}, jokers = [], rest = [], groups = [];
     hand.forEach(function (id) { var e = OKE.eff(id, g); if (e === 'J') jokers.push(id); else { var k = e.c * 14 + e.n; (byKey[k] = byKey[k] || []).push(id); } });
-    var pairs = [];
-    Object.keys(byKey).forEach(function (k) { if (byKey[k].length >= 2) pairs = pairs.concat(byKey[k]); else rest = rest.concat(byKey[k]); });
-    saveOrder(v.s, pairs.concat(jokers).concat(sortByColor(rest)));
+    Object.keys(byKey).forEach(function (k) { if (byKey[k].length >= 2) groups.push(byKey[k]); else rest = rest.concat(byKey[k]); });
+    if (jokers.length) groups.push(jokers);
+    return groups.concat(byColorChunks(rest));
+  }
+  function rackSlots(v) {
+    var hand = v.r.hands[v.me], cols = rackCols(), cap = cols * 2, saved = loadRack(v.s), slots;
+    if (!saved) { slots = layout(seriGroups(v), cols); saveRack(v.s, cols, slots); }
+    else if (saved.cols !== cols) { slots = reflow(saved.slots, cols); saveRack(v.s, cols, slots); }
+    else slots = saved.slots.slice();
+    slots = slots.map(function (id) { return id != null && hand.indexOf(id) >= 0 ? id : null; });
+    while (slots.length < cap) slots.push(null);
+    hand.forEach(function (id) {
+      if (slots.indexOf(id) >= 0) return;
+      var last = -1;
+      for (var i = slots.length - 1; i >= 0; i--) if (slots[i] != null) { last = i; break; }
+      var at = last + 1 < slots.length && slots[last + 1] == null ? last + 1 : slots.lastIndexOf(null);
+      slots[at] = id;
+    });
+    return { cols: cols, slots: slots };
   }
 
   // ---------- çizim ----------
@@ -1790,22 +1870,23 @@ window.CORE = (function () {
     var r = v.r, el = $('okMine');
     if (!r || r.end || v.me < 0) { el.innerHTML = ''; el.hidden = true; return; }
     el.hidden = false;
-    var order = rackOrder(v), g = r.g, n = r.n;
-    if (sel != null && order.indexOf(sel) < 0) sel = null;
+    var rk = rackSlots(v), g = r.g, n = r.n;
+    if (sel != null && rk.slots.indexOf(sel) < 0) sel = null;
     var myTurn = r.turn === v.me, newId = myTurn && r.phase === 'discard' ? r.lastDrawn : null;
     var prev = (v.me - 1 + n) % n, prevTop = r.discards[prev].length ? r.discards[prev][r.discards[prev].length - 1] : null;
     var myTop = r.discards[v.me].length ? r.discards[v.me][r.discards[v.me].length - 1] : null;
-    var rack = order.map(function (id) {
+    var rack = rk.slots.map(function (id, i) {
+      if (id == null) return '<button type="button" class="slot" data-act="ok-slot" data-slot="' + i + '" aria-label="Boş yer"></button>';
       return tileHTML(id, g, { sel: sel === id, isNew: newId === id, act: 'data-act="ok-tile" data-id="' + id + '"' });
     }).join('');
     var opts = myTurn && r.phase === 'discard' ? OKE.finishOptions(r.hands[v.me], g) : [];
     el.innerHTML =
       '<div class="ok-near">' +
         '<div class="near-cell"><span class="label">Soldan gelen</span>' + (prevTop != null ? tileHTML(prevTop, g, {}) : '<span class="tile empty"></span>') + '</div>' +
-        '<div class="near-msg">' + (opts.length ? '<b>Bitirebilirsin!</b> Bitir\'e bas.' : sel != null ? 'Seçili taşı at ya da yerini değiştirmek için başka bir taşa dokun.' : 'Taşa dokunup seç; ikinci bir taşa dokununca yer değiştirirler.') + '</div>' +
+        '<div class="near-msg">' + (opts.length ? '<b>Bitirebilirsin!</b> Bitir\'e bas.' : sel != null ? 'Seçili taşı at, başka bir taşa dokunup yer değiştir ya da boş bir yere taşı.' : 'Taşa dokunup seç; sonra başka bir taşa ya da boş bir yere dokun.') + '</div>' +
         '<div class="near-cell"><span class="label">Senin attığın</span>' + (myTop != null ? tileHTML(myTop, g, {}) : '<span class="tile empty"></span>') + '</div>' +
       '</div>' +
-      '<div class="rack" role="group" aria-label="Istakan">' + rack + '</div>';
+      '<div class="rack' + (sel != null ? ' moving' : '') + '" style="--cols:' + rk.cols + '" role="group" aria-label="Istakan">' + rack + '</div>';
   }
 
   function timerKey(v) { return v.r && !v.r.end ? v.s.no + ':' + v.s.seed + ':' + v.r.actionCount : null; }
@@ -1973,6 +2054,11 @@ window.CORE = (function () {
       '<h4>Süre</h4><p>Sırası gelen 1,5 dakika oynamazsa masadakiler onun yerine otomatik oynatabilir: ortadan çekip çektiği taşı atar.</p>' +
       '<h4>Puan</h4><p>Cezalar el el toplanır. Toplam cezası en az olan önde.</p>';
   }
+  function rulesSplit() {
+    var full = rulesHTML().replace(/^<div class="panel-head">[\s\S]*?<\/div>/, '');
+    var i = full.indexOf('<h4>Ceza (Renk)</h4>'), j = full.indexOf('<h4>Süre</h4>'), k = full.indexOf('<h4>Puan</h4>');
+    return { play: full.slice(0, i) + full.slice(j, k), pay: full.slice(i, j) + full.slice(k) };
+  }
   function boardHTML() {
     var v = V || view();
     var ids = Object.keys(seats).filter(function (id) { return seats[id] && seats[id].name; });
@@ -2015,13 +2101,18 @@ window.CORE = (function () {
         if (sel == null) sel = id;
         else if (sel === id) sel = null;
         else {
-          var order = rackOrder(v), a = order.indexOf(sel), b = order.indexOf(id);
-          if (a >= 0 && b >= 0) { order[a] = id; order[b] = sel; saveOrder(v.s, order); }
+          var rk = rackSlots(v), ia = rk.slots.indexOf(sel), ib = rk.slots.indexOf(id);
+          if (ia >= 0 && ib >= 0) { rk.slots[ia] = id; rk.slots[ib] = sel; saveRack(v.s, rk.cols, rk.slots); }
           sel = null;
         }
         render(); break;
-      case 'ok-seri': if (r && v.me >= 0) { arrangeSeri(v); sel = null; render(); } break;
-      case 'ok-cift': if (r && v.me >= 0) { arrangeCift(v); sel = null; render(); } break;
+      case 'ok-slot':
+        if (sel == null) break;
+        var rk2 = rackSlots(v), from = rk2.slots.indexOf(sel), to = +t.getAttribute('data-slot');
+        if (from >= 0 && rk2.slots[to] == null) { rk2.slots[to] = sel; rk2.slots[from] = null; saveRack(v.s, rk2.cols, rk2.slots); }
+        sel = null; render(); break;
+      case 'ok-seri': if (r && v.me >= 0) { saveRack(v.s, rackCols(), layout(seriGroups(v), rackCols())); sel = null; render(); } break;
+      case 'ok-cift': if (r && v.me >= 0) { saveRack(v.s, rackCols(), layout(ciftGroups(v), rackCols())); sel = null; render(); } break;
       case 'ok-draw-c': pushAction({ p: v.me, t: 'd', src: 'c' }, function (rr) { return rr.phase === 'draw' && rr.centerCount > 0; }); break;
       case 'ok-draw-p': pushAction({ p: v.me, t: 'd', src: 'p' }, function (rr) { var pv = (v.me - 1 + rr.n) % rr.n; return rr.phase === 'draw' && rr.discards[pv].length > 0; }); break;
       case 'ok-discard':
@@ -2072,6 +2163,11 @@ window.CORE = (function () {
 
   window.__okDebug = function () { return V; };
   function boot() {
+    var rs = rulesSplit();
+    $('okeyRulesL').innerHTML = '<h3>Okey nasıl oynanır</h3>' + rs.play;
+    $('okeyRulesR').innerHTML = '<h3>Ceza · Renk</h3>' + rs.pay;
+    var lastCols = rackCols();
+    window.addEventListener('resize', function () { if (rackCols() !== lastCols) { lastCols = rackCols(); render(); } });
     render();
     CORE.onChange(render);
     if (!CORE.db) return;
