@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>Neon Yarış — 8 Kişilik Araba Yarışı</title>
+<style>
+* { box-sizing:border-box; -webkit-tap-highlight-color:transparent; -webkit-user-select:none; user-select:none; }
+html, body { margin:0; height:100%; overflow:hidden; background:#050a18; color:#fff; font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; touch-action:none; overscroll-behavior:none; }
+canvas#gl { position:fixed; inset:0; width:100%; height:100%; display:block; }
+[hidden] { display:none !important; }
+.btn { background:#26324d; color:#fff; border:1px solid #3a4870; border-radius:12px; padding:12px 16px; font-size:16px; font-weight:800; text-decoration:none; display:inline-block; }
+.btn.pri { background:linear-gradient(#ff4fd8,#a020d0); border-color:#ff8ae8; }
+.btn:active { transform:scale(.97); }
+#menu, #res { position:fixed; inset:0; background:radial-gradient(120% 80% at 50% 0%, #2a1060, #050a18); display:flex; align-items:center; justify-content:center; padding:16px; z-index:50; overflow:auto; }
+#res { background:rgba(5,10,24,.82); z-index:40; }
+.card { background:#141b38; border:1px solid #3b4690; border-radius:16px; padding:16px; width:100%; max-width:440px; }
+h1 { margin:0 0 4px; text-align:center; letter-spacing:.1em; font-size:28px; color:#ff9af0; text-shadow:0 0 14px #ff40d0; } .sub { color:#a3acd6; text-align:center; font-size:13px; margin:0 0 12px; }
+.room { display:flex; justify-content:space-between; align-items:center; gap:8px; background:#1f2a55; border-radius:12px; padding:12px; margin:8px 0; } .room small { color:#a3acd6; display:block; }
+#menuMsg { color:#ffb4a8; text-align:center; min-height:20px; font-size:14px; }
+.help { color:#a3acd6; font-size:12.5px; line-height:1.5; margin-top:10px; }
+.row { display:flex; justify-content:space-between; padding:6px 10px; border-radius:8px; font-size:15px; } .row:nth-child(odd) { background:#1c2650; } .row.me { outline:1px solid #ff8ae8; }
+#hud { position:fixed; inset:0; pointer-events:none; z-index:10; }
+#pos { position:absolute; left:12px; top:calc(10px + env(safe-area-inset-top)); font-size:44px; font-weight:900; text-shadow:0 0 12px #ff40d0, 0 2px 4px #000; } #pos small { font-size:20px; opacity:.8; }
+#lap { position:absolute; left:14px; top:calc(62px + env(safe-area-inset-top)); font-weight:800; font-size:16px; text-shadow:0 2px 4px #000; }
+#spd { position:absolute; right:14px; bottom:calc(150px + env(safe-area-inset-bottom)); font-size:34px; font-weight:900; text-shadow:0 0 12px #40d0ff, 0 2px 4px #000; text-align:right; } #spd small { font-size:14px; opacity:.8; }
+#item { position:absolute; left:50%; top:calc(12px + env(safe-area-inset-top)); transform:translateX(-50%); min-width:74px; height:74px; border-radius:16px; border:2px solid rgba(255,255,255,.5); background:rgba(10,20,50,.6); display:flex; flex-direction:column; align-items:center; justify-content:center; font-size:34px; } #item small { font-size:11px; font-weight:800; }
+#mini { position:absolute; right:10px; top:calc(10px + env(safe-area-inset-top)); width:110px; height:110px; background:rgba(10,20,50,.55); border-radius:12px; }
+#cnt { position:absolute; left:0; right:0; top:28%; text-align:center; font-size:96px; font-weight:900; text-shadow:0 0 24px #ff40d0; }
+#msg { position:absolute; left:0; right:0; top:42%; text-align:center; font-size:22px; font-weight:800; text-shadow:0 2px 6px #000; }
+#fx { position:fixed; inset:0; pointer-events:none; z-index:5; background:radial-gradient(ellipse at center, rgba(0,0,0,0) 40%, rgba(90,190,255,.55) 100%); opacity:0; transition:opacity .15s; }
+#flash { position:fixed; inset:0; background:#fff; opacity:0; pointer-events:none; z-index:6; transition:opacity .35s; }
+#pad { position:fixed; left:0; right:0; bottom:0; height:130px; z-index:12; display:flex; justify-content:space-between; align-items:flex-end; padding:10px 14px calc(12px + env(safe-area-inset-bottom)); pointer-events:none; }
+#pad .g { display:flex; gap:10px; } #pad button { pointer-events:auto; width:84px; height:84px; border-radius:50%; border:2px solid rgba(255,255,255,.4); background:rgba(40,60,130,.5); color:#fff; font-size:30px; font-weight:900; } #pad button.on { background:rgba(255,80,220,.6); } #bI { width:96px !important; height:96px !important; background:rgba(255,160,40,.45) !important; }
+#leave { position:fixed; left:8px; bottom:calc(150px + env(safe-area-inset-bottom)); z-index:12; padding:6px 10px; font-size:13px; opacity:.8; }
+</style>
+</head>
+<body>
+<canvas id="gl"></canvas><div id="fx"></div><div id="flash"></div>
+<div id="hud" hidden>
+  <div id="pos"></div><div id="lap"></div><div id="item"></div><canvas id="mini" width="220" height="220"></canvas><div id="spd"></div><div id="cnt"></div><div id="msg"></div>
+</div>
+<div id="pad" hidden><div class="g"><button id="bL">◀</button><button id="bR">▶</button></div><div class="g"><button id="bB">⏹</button><button id="bI">⚡</button></div></div>
+<button class="btn" id="leave" hidden>✕ Çık</button>
+<div id="menu"><div class="card" id="mcard"></div></div>
+<div id="res" hidden><div class="card" id="rcard"></div></div>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<script src="three.min.js"></script>
+<script src="race.js"></script>
+</body>
+</html>
