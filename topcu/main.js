@@ -19,11 +19,12 @@
   $('tabLogin').onclick = function () { setMode('login'); }; $('tabReg').onclick = function () { setMode('reg'); };
   $('auGo').onclick = function () {
     var n = $('auName').value, p = $('auPass').value; $('auErr').textContent = ''; $('auGo').disabled = true;
-    (mode === 'login' ? Auth.login(n, p) : Auth.register(n, p)).then(function () { $('auGo').disabled = false; }, function (e) { $('auGo').disabled = false; $('auErr').textContent = Auth.errText(e); });
+    (mode === 'login' ? Auth.login(n, p) : Auth.register(n, p)).then(function () { setTimeout(function () { $('auGo').disabled = false; }, 4000); }, function (e) { $('auGo').disabled = false; $('auErr').textContent = Auth.errText(e); });
   };
   $('auPass').onkeydown = function (e) { if (e.key === 'Enter') $('auGo').click(); };
   $('btnOut').onclick = function () { Auth.logout(); };
 
+  Auth.onError(function (msg) { $('auGo').disabled = false; $('auErr').textContent = msg; });
   Auth.onChange(function (p) {
     P = p;
     if (!p) { leaveBattle(); stopHubListeners(); view = 'auth'; show('authView'); return; }

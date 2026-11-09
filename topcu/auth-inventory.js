@@ -78,6 +78,8 @@
       return DB.auth().signInWithEmailAndPassword(nameToEmail(name), pass);
     },
     logout: function () { return DB.auth().signOut(); },
+    errHandlers: [], onError: function (fn) { Auth.errHandlers.push(fn); },
+    fail: function (msg) { Auth.errHandlers.forEach(function (f) { f(msg); }); DB.auth().signOut(); },
     errText: function (e) {
       var c = (e && e.code) || '';
       if (c === 'auth/email-already-in-use') return 'Bu kullanıcı adı alınmış.';
@@ -94,10 +96,11 @@
     if (!user) { Auth.ready = true; Auth.emit(); return; }
     var nm = pendingName || emailToName(user.email); pendingName = null;
     // profil yoksa oluştur (varsa dokunma)
+    function fail(e) { Auth.fail((e && e.code === 'PERMISSION_DENIED') || /permission/i.test((e && e.message) || '') ? 'Veritabanı izni yok: Firebase Rules\'a "topcu" yolunu eklemelisin.' : 'Profil yüklenemedi: ' + ((e && e.message) || e)); }
     DB.tx('users/' + user.uid, function (cur) { return cur === null ? defaultProfile(nm) : undefined; }).then(function () {
       profRef = DB.ref('users/' + user.uid);
-      profRef.on('value', function (s) { var v = s.val(); if (!v) return; Auth.profile = norm(v); Auth.ready = true; Auth.emit(); });
-    });
+      profRef.on('value', function (s) { var v = s.val(); if (!v) return; Auth.profile = norm(v); Auth.ready = true; Auth.emit(); }, fail);
+    }, fail);
   });
 
   /* ---- ENVANTER İŞLEMLERİ (hepsi transaction ile; altın sahteciliği olmasın diye) ---- */
