@@ -632,6 +632,20 @@ body.sl-lock { overflow: hidden; overscroll-behavior: none; }
 #chatFab span { position: absolute; top: -4px; right: -4px; min-width: 20px; height: 20px; padding: 0 5px; border-radius: 10px; background: #e5484d; color: #fff; font-size: 12px; font-weight: 800; display: grid; place-items: center; }
 #chatPop { position: fixed; left: 12px; right: 12px; top: calc(10px + env(safe-area-inset-top)); z-index: 60; max-width: 460px; margin: 0 auto; padding: 10px 14px; border-radius: 14px; background: #f3ead7; color: #1a1208; box-shadow: 0 8px 24px rgba(0,0,0,.45); overflow-wrap: anywhere; }
 #chatPop b { color: #8a5a00; }
+
+/* isim şehir */
+.is-letter { width: 96px; height: 96px; border-radius: 22px; display: grid; place-items: center; font-family: var(--display); font-size: 64px; font-weight: 800; color: #1a1208; background: linear-gradient(160deg, #f6d77a, #d9b45b); box-shadow: 0 8px 22px rgba(0,0,0,.4); }
+.is-letter.idle { background: rgba(243,234,215,.12); color: var(--muted); }
+.is-form { display: grid; gap: 8px; }
+.is-f { display: grid; gap: 3px; }
+.is-f span { font-size: 11px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--gold); }
+.is-f input { padding: 12px 14px; border-radius: 12px; border: 1px solid rgba(243,234,215,.2); background: rgba(0,0,0,.3); color: inherit; font: inherit; font-size: 17px; width: 100%; box-sizing: border-box; }
+.is-cat { margin-bottom: 10px; padding: 8px 10px; border-radius: 12px; background: rgba(243,234,215,.06); }
+.is-row { display: grid; grid-template-columns: 90px 1fr auto; gap: 8px; align-items: center; padding: 4px 0; border-top: 1px solid rgba(243,234,215,.08); }
+.is-row:first-of-type { border-top: 0; }
+.is-row.dim { opacity: .5; } .is-row.bad span { text-decoration: line-through; opacity: .7; }
+.is-row em { font-style: normal; color: var(--loss); font-size: 11px; }
+.is-row i { font-style: normal; color: var(--loss); font-weight: 700; }
 </style>
 </head>
 <body>
@@ -749,6 +763,12 @@ body.sl-lock { overflow: hidden; overscroll-behavior: none; }
       <div class="gc-title">At Yarışı</div>
       <div class="gc-sub">Herkes aynı yarışa bahis oynar · kazanır / ilk 3 · her 80 saniyede yeni yarış</div>
       <div class="tbls" id="tbls-yaris"></div>
+    </div>
+    <div class="game-card">
+      <div class="gc-art" style="font-size:30px;line-height:48px;font-weight:800;letter-spacing:4px;font-family:var(--display)">İŞHB</div>
+      <div class="gc-title">İsim Şehir</div>
+      <div class="gc-sub">İsim · şehir · hayvan · bitki · eşya · 2–8 kişi · itirazlı puanlama · giriş çipi</div>
+      <div class="tbls" id="tbls-isim"></div>
     </div>
   </div>
   <div id="lobbyBoard"></div>
@@ -951,6 +971,27 @@ body.sl-lock { overflow: hidden; overscroll-behavior: none; }
   <footer class="actions" id="hrStake"></footer>
   </main>
   <aside class="rules-side panel" id="hrRulesR" aria-label=""></aside>
+</div>
+
+<div class="view game-view" id="isimView" hidden>
+  <aside class="rules-side panel" id="isRulesL" aria-label="Kurallar"></aside>
+  <main class="game-col">
+  <header class="top">
+    <a class="ghost back" href="#" aria-label="Lobiye dön">‹</a>
+    <div class="brand">İsim Şehir<small id="isRound">Oyun yok</small></div>
+    <div class="spacer"></div>
+    <button class="ghost" type="button" data-act="is-board">Puanlar</button>
+    <button class="ghost rules-btn" type="button" data-act="is-rules">Kurallar</button>
+  </header>
+  <div id="isBanner"></div>
+  <section class="dealer" id="isTable" aria-label="Harf"></section>
+  <section aria-label="Cevaplar">
+    <div class="section-head"><h2 id="isBodyTitle">Masa</h2></div>
+    <div id="isBody"></div>
+  </section>
+  <footer class="actions" id="isActions" aria-live="polite"></footer>
+  </main>
+  <aside class="rules-side panel" aria-label=""></aside>
 </div>
 
 <div class="view game-view" id="esliView" hidden>
@@ -3164,16 +3205,74 @@ var FB_CONFIG = { apiKey: "AIzaSyBsP1VNPJpt1Y6MN0FwDCmvuHeZxaDoTGU", authDomain:
 
 </script>
 <script>
+/* İsim–Şehir–Hayvan–Bitki(–Eşya): harf seçimi, geçerlilik ve puanlama (saf fonksiyonlar) */
+(function (root) {
+  'use strict';
+  var RP = (typeof module !== 'undefined' && module.exports) ? require('./engine.js') : root.RP;
+  var CATS = ['İsim', 'Şehir', 'Hayvan', 'Bitki', 'Eşya'];
+  var HINTS = ['Ali, Zeynep…', 'Ankara, Rize…', 'Kedi, Aslan…', 'Gül, Çam…', 'Masa, Kalem…'];
+  var LETTERS = 'ABCÇDEFGHİIJKLMNOÖPRSŞTUÜVYZ'.split('');
+  var PLAY_MS = 100000, COUNT_MS = 4000, FINISH_MS = 10000, GRACE_MS = 3000, REVIEW_MS = 25000;
+
+  function norm(s) { return String(s == null ? '' : s).replace(/\s+/g, ' ').trim().toLocaleLowerCase('tr-TR'); }
+  function letterFor(seed, no) { var rng = RP.makeRng('isim:' + seed + ':' + no); return LETTERS[Math.floor(rng() * LETTERS.length)]; }
+  function valid(letter, s) { s = norm(s); return s.length >= 2 && s.charAt(0) === letter.toLocaleLowerCase('tr-TR'); }
+
+  // o: {letter, players:[uid], ans:{uid:[a0..a4]}, votes:{uid:{ci:{voter:1}}}}
+  function score(o) {
+    var pts = {}, detail = {}, ps = o.players;
+    ps.forEach(function (u) { pts[u] = 0; detail[u] = []; });
+    CATS.forEach(function (_, ci) {
+      var info = {}, groups = {};
+      ps.forEach(function (u) {
+        var raw = ((o.ans || {})[u] || [])[ci], n = norm(raw), st = 'empty';
+        if (n) {
+          var v = (((o.votes || {})[u] || {})[ci]) || {}, rej = 0, others = ps.length - 1;
+          Object.keys(v).forEach(function (w) { if (w !== u && ps.indexOf(w) >= 0 && v[w]) rej++; });
+          if (!valid(o.letter, raw)) st = 'wrong';
+          else if (others > 0 && rej * 2 > others) st = 'rejected';
+          else st = 'ok';
+        }
+        info[u] = { a: String(raw == null ? '' : raw).replace(/\s+/g, ' ').trim(), n: n, st: st };
+        if (st === 'ok') (groups[n] = groups[n] || []).push(u);
+      });
+      var okCount = ps.filter(function (u) { return info[u].st === 'ok'; }).length;
+      ps.forEach(function (u) {
+        var p = 0;
+        if (info[u].st === 'ok') p = groups[info[u].n].length > 1 ? 5 : (okCount === 1 ? 15 : 10);
+        info[u].p = p; pts[u] += p; detail[u].push({ a: info[u].a, st: info[u].st, p: p });
+      });
+    });
+    return { pts: pts, detail: detail };
+  }
+  // aşamalar (sunucu saatine göre)
+  function endAt(st) { return st.endAt || st.hardEnd; }
+  function phase(st, now) {
+    if (!st || !st.startAt) return 'idle';
+    if (now < st.startAt) return 'count';
+    var e = endAt(st);
+    if (now < e) return 'play';
+    if (now < e + GRACE_MS) return 'wait';
+    if (st.final) return 'result';
+    if (now < e + GRACE_MS + REVIEW_MS) return 'review';
+    return 'final';
+  }
+  var api = { CATS: CATS, HINTS: HINTS, PLAY_MS: PLAY_MS, COUNT_MS: COUNT_MS, FINISH_MS: FINISH_MS, GRACE_MS: GRACE_MS, REVIEW_MS: REVIEW_MS, norm: norm, letterFor: letterFor, valid: valid, score: score, phase: phase, endAt: endAt };
+  if (typeof module !== 'undefined' && module.exports) module.exports = api; else root.IS = api;
+})(typeof window !== 'undefined' ? window : globalThis);
+
+</script>
+<script>
 /* Ortak bağlantı: Firebase, hesaplar, admin, çevrimiçi durumu, ses, lobi yönlendirme */
 window.CORE = (function () {
   'use strict';
-  var VIEWS = ['lobby', 'poker', 'okey', 'holdem', 'pisti', 'esli', 'bj', 'slither', 'tombala', 'emlak', 'futbol', 'flip7', 'slot', 'yaris', 'chat', 'kayit', 'admin'];
-  var GAMES = ['poker', 'okey', 'holdem', 'pisti', 'esli', 'bj', 'slither', 'tombala', 'emlak', 'futbol', 'flip7', 'slot', 'yaris'];
-  var TITLES = { poker: 'Rus Pokeri', okey: 'Okey', holdem: 'Texas Hold\'em', pisti: 'Pişti', esli: 'Eşli Pişti', bj: 'Blackjack', slither: 'Slither', tombala: 'Tombala', emlak: 'Emlak', futbol: 'Futbol Ligi', flip7: 'Flip 7', slot: 'Tatlı Yağmur', yaris: 'At Yarışı', chat: 'Sohbet', kayit: 'Kayıtlar', admin: 'Admin paneli' };
+  var VIEWS = ['lobby', 'poker', 'okey', 'holdem', 'pisti', 'esli', 'bj', 'slither', 'tombala', 'emlak', 'futbol', 'flip7', 'slot', 'yaris', 'isim', 'isim', 'chat', 'kayit', 'admin'];
+  var GAMES = ['poker', 'okey', 'holdem', 'pisti', 'esli', 'bj', 'slither', 'tombala', 'emlak', 'futbol', 'flip7', 'slot', 'yaris', 'isim'];
+  var TITLES = { poker: 'Rus Pokeri', okey: 'Okey', holdem: 'Texas Hold\'em', pisti: 'Pişti', esli: 'Eşli Pişti', bj: 'Blackjack', slither: 'Slither', tombala: 'Tombala', emlak: 'Emlak', futbol: 'Futbol Ligi', flip7: 'Flip 7', slot: 'Tatlı Yağmur', yaris: 'At Yarışı', isim: 'İsim Şehir', chat: 'Sohbet', kayit: 'Kayıtlar', admin: 'Admin paneli' };
   var core = { db: null, auth: null, user: null, me: null, pid: null, connected: false, online: {}, ownerId: null, error: null,
     view: 'lobby', table: 1, TABLES: 3, bootAt: Date.now(), ready: false, authKnown: false,
-    ledger: {}, users: {}, requests: {}, bans: {}, deleted: {}, weekly: {}, weeklyLoaded: false, ledgerLoaded: false, START_CHIPS: 1000, GAMES: ['poker', 'okey', 'holdem', 'pisti', 'esli', 'bj', 'slither', 'tombala', 'emlak', 'futbol', 'flip7', 'slot', 'yaris'] };
-  core.GAME_NAMES = { poker: 'Rus Pokeri', okey: 'Okey', holdem: 'Hold\'em', pisti: 'Pişti', esli: 'Eşli Pişti', bj: 'Blackjack', slither: 'Slither', tombala: 'Tombala', emlak: 'Emlak', futbol: 'Futbol Ligi', flip7: 'Flip 7', slot: 'Tatlı Yağmur', yaris: 'At Yarışı', admin: 'Admin', start: 'Başlangıç', prize: 'Haftalık ödül' };
+    ledger: {}, users: {}, requests: {}, bans: {}, deleted: {}, weekly: {}, weeklyLoaded: false, ledgerLoaded: false, START_CHIPS: 1000, GAMES: ['poker', 'okey', 'holdem', 'pisti', 'esli', 'bj', 'slither', 'tombala', 'emlak', 'futbol', 'flip7', 'slot', 'yaris', 'isim'] };
+  core.GAME_NAMES = { poker: 'Rus Pokeri', okey: 'Okey', holdem: 'Hold\'em', pisti: 'Pişti', esli: 'Eşli Pişti', bj: 'Blackjack', slither: 'Slither', tombala: 'Tombala', emlak: 'Emlak', futbol: 'Futbol Ligi', flip7: 'Flip 7', slot: 'Tatlı Yağmur', yaris: 'At Yarışı', isim: 'İsim Şehir', admin: 'Admin', start: 'Başlangıç', prize: 'Haftalık ödül' };
   var subs = [], readyFns = [];
   core.onChange = function (fn) { subs.push(fn); };
   core.emit = function () { subs.forEach(function (f) { try { f(); } catch (e) { console.error(e); } }); };
@@ -3722,7 +3821,7 @@ window.CORE = (function () {
     if (!t) return '—';
     try { return new Date(t).toLocaleString('tr-TR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }); } catch (e) { return '—'; }
   }
-  var GAMES = ['poker', 'okey', 'holdem', 'pisti', 'esli', 'bj', 'slither', 'tombala', 'emlak', 'futbol', 'flip7', 'slot', 'yaris'];
+  var GAMES = ['poker', 'okey', 'holdem', 'pisti', 'esli', 'bj', 'slither', 'tombala', 'emlak', 'futbol', 'flip7', 'slot', 'yaris', 'isim'];
   var GDESC = {
     poker: 'Krupiyeye karşı · 1–6 kişi · kart değiştir, 6. kart al',
     okey: '2–4 kişi · giriş çipi, kazanan potu alır',
@@ -3881,7 +3980,7 @@ window.CORE = (function () {
   function groupEntries(uid) {
     var l = CORE.ledger[uid] || {}, groups = {};
     Object.keys(l).forEach(function (k) {
-      var e = l[k], i = k.lastIndexOf('-'), grp = /^(poker|okey|holdem|pisti|esli|bj|slither|tombala|emlak|futbol|flip7|slot|yaris)-/.test(k) && i > 0 ? k.slice(0, i) : k, suf = k.slice(i + 1);
+      var e = l[k], i = k.lastIndexOf('-'), grp = /^(poker|okey|holdem|pisti|esli|bj|slither|tombala|emlak|futbol|flip7|slot|yaris|isim)-/.test(k) && i > 0 ? k.slice(0, i) : k, suf = k.slice(i + 1);
       var g = groups[grp] = groups[grp] || { d: 0, at: 0, g: e.g, tb: e.tb, notes: [], open: false, closed: false };
       g.d += Number(e.d) || 0; g.at = Math.max(g.at, e.at || 0);
       if (e.n && g.notes.indexOf(e.n) < 0) g.notes.push(e.n);
@@ -9008,6 +9107,390 @@ window.CORE = (function () {
     $('hrRulesR').innerHTML = '';
     CORE.onChange(function () { if (tb) { shownKey = ''; draw(); settle(); } });
     CORE.onTable(KEY, function (t) { tb = t; shownKey = ''; race = null; lastSpoken = ''; draw(); settle(); start(); });
+  });
+})();
+
+</script>
+<script>
+/* İsim Şehir Hayvan Bitki Eşya: 2–8 kişi, el el harf, süreli yazma, itirazlı puanlama; giriş çipi pot */
+(function () {
+  'use strict';
+  var IS = window.IS, CORE = window.CORE, KEY = 'isim', pre = 'is', MIN = 2, MAX = 8, CATS = IS.CATS;
+  var pid = null, tb = 0, R = {}, st = null, seats = {}, loaded = { st: false, seats: false }, ans = {}, votes = {};
+  var busy = false, V = null, lenChoice = 5, stakeChoice = 100, mine = {}, submitted = {}, finalTry = {}, bodyKey = '', ansNo = 0;
+
+  function $(id) { return document.getElementById(pre + id); }
+  function g$(id) { return document.getElementById(id); }
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  function fmt(n) { n = Number(n || 0); return (n < 0 ? '−' : '') + Math.abs(n).toLocaleString('tr-TR'); }
+  function clone(o) { return o == null ? o : JSON.parse(JSON.stringify(o)); }
+  function nameOf(id) { var s = seats[id]; return (s && s.name) || CORE.userName(id); }
+  function joined() { return !!(pid && seats[pid] && seats[pid].name); }
+  function now() { return CORE.serverNow(); }
+  function seated() {
+    return Object.keys(seats).filter(function (id) { return seats[id] && seats[id].sit && !seats[id].banned && !CORE.isBanned(id) && seats[id].name; })
+      .sort(function (a, b) { return (seats[a].sitAt || 0) - (seats[b].sitAt || 0); });
+  }
+  function dot(id) { return CORE.here(id, KEY) ? '<span class="on-dot" title="Masada"></span>' : ''; }
+
+  // ---------- oyun / tur durumu ----------
+  function active(s) { return !!(s && s.startAt && s.players); }
+  function pendingDeltas(s) {
+    if (!(s && s.final && (s.applied || 0) < s.no)) return null;
+    return s.final.pts;
+  }
+  function gameDisp(s) { return s && s.game ? CORE.gameDisplay(s.game, pendingDeltas(s), s.no) : null; }
+  function view() { var s = st || {}; return { s: s, ph: IS.phase(s, now()), me: s.players ? s.players.indexOf(pid) : -1 }; }
+  function gOpts() { return { lowerBetter: false, fmt: fmt, esc: esc, nameOf: nameOf, me: pid, scoreWord: 'Puan' }; }
+  function myAns(no) { return mine[no] || (mine[no] = CATS.map(function () { return ''; })); }
+
+  // ---------- çizim ----------
+  function render() {
+    V = view();
+    var s = V.s, gd = gameDisp(s), on = active(s) && V.ph !== 'result';
+    $('Round').textContent = 'Masa ' + tb + ' · ' + (gd ? CORE.gameLabel(gd, on) : 'Oyun yok');
+    CORE.syncGame(KEY, tb, gd, false);
+    var bt = CORE.bannerText(loaded.st);
+    $('Banner').innerHTML = bt ? '<div class="banner">' + esc(bt) + '</div>' : '';
+    renderTable(V); renderBody(V); renderActions(V);
+  }
+  function renderTable(v) {
+    var s = v.s, el = $('Table');
+    if (!active(s) || v.ph === 'idle') { el.innerHTML = '<div class="is-letter idle">?</div><div class="dstatus">Yeni tur için masaya oturun</div>'; return; }
+    el.innerHTML = '<div class="is-letter">' + esc(s.letter) + '</div><div class="dstatus" id="isClock"></div>';
+    clock(v);
+  }
+  function clock(v) {
+    var el = g$('isClock'); if (!el) return;
+    var s = v.s, t = now(), e = IS.endAt(s), txt = '';
+    if (v.ph === 'count') txt = 'Başlıyor… ' + Math.ceil((s.startAt - t) / 1000);
+    else if (v.ph === 'play') txt = 'Kalan süre: <b>' + Math.max(0, Math.ceil((e - t) / 1000)) + '</b> sn' + (s.endAt ? ' · ' + esc(nameOf(s.endBy)) + ' bitirdi!' : '');
+    else if (v.ph === 'wait') txt = 'Süre doldu, cevaplar toplanıyor…';
+    else if (v.ph === 'review') txt = 'İtiraz süresi: <b>' + Math.max(0, Math.ceil((e + IS.GRACE_MS + IS.REVIEW_MS - t) / 1000)) + '</b> sn';
+    else if (v.ph === 'final') txt = 'Puanlar hesaplanıyor…';
+    else if (v.ph === 'result') txt = 'Tur sonucu';
+    el.innerHTML = txt;
+  }
+  function sigAns() {
+    return Object.keys(ans).sort().map(function (u) { return u + ':' + (ans[u] || []).join('|'); }).join(';') + '#' + JSON.stringify(votes);
+  }
+  function renderBody(v) {
+    var s = v.s, el = $('Body');
+    if (v.ph === 'play' && v.me >= 0 && el.getAttribute('data-form') === String(s.no)) return; // yazarken form yeniden kurulmasın
+    el.removeAttribute('data-form');
+    var key = (s.no || 0) + ':' + v.ph + ':' + (v.ph === 'review' || v.ph === 'wait' ? sigAns() : '') + ':' + (loaded.st && loaded.seats ? 1 : 0) + ':' + (s.final ? 1 : 0) + ':' + (s.game && s.game.over ? 1 : 0) + ':' + (s.applied || 0);
+    if (key === bodyKey && v.ph !== 'idle') return;
+    bodyKey = key;
+    var h = '', gd = gameDisp(s);
+    if (v.ph === 'idle' || !active(s)) {
+      $('BodyTitle').textContent = 'Masada oturanlar';
+      var list = seated();
+      if (gd && gd.over) h += CORE.gameOverHTML(gd, gOpts());
+      if (gd) h += CORE.potLine(gd);
+      if (gd && gd.played) h += CORE.scoreTable(gd, Object.assign(gOpts(), { extra: [] }));
+      if (!list.length) h += '<div class="empty-note">Henüz kimse oturmadı. 2–8 kişi oturunca başlanır.</div>';
+      list.forEach(function (id, i) { h += '<div class="seat' + (id === pid ? ' mine' : '') + '"><div class="who">' + dot(id) + esc(nameOf(id)) + '</div><div class="sub"><span class="tag gold">Oturuyor</span> Sıra ' + (i + 1) + ' · ' + fmt(CORE.balance(id)) + ' çip</div></div>'; });
+      el.innerHTML = h; return;
+    }
+    if (v.ph === 'count') { $('BodyTitle').textContent = 'Hazır ol'; el.innerHTML = '<div class="empty-note">Harf <b>' + esc(s.letter) + '</b>. İsim, şehir, hayvan, bitki ve eşya yaz!</div>'; return; }
+    if (v.ph === 'play') {
+      $('BodyTitle').textContent = 'Yaz!';
+      if (v.me < 0) { el.innerHTML = '<div class="empty-note">Bu turu izliyorsun.</div>'; return; }
+      var a = myAns(s.no);
+      el.innerHTML = '<div class="is-form">' + CATS.map(function (c, i) {
+        return '<label class="is-f"><span>' + esc(c) + '</span><input data-ci="' + i + '" value="' + esc(a[i]) + '" placeholder="' + esc(s.letter + ' ile · ' + IS.HINTS[i]) + '" autocomplete="off" autocapitalize="words" maxlength="40"></label>';
+      }).join('') + '</div>';
+      el.setAttribute('data-form', String(s.no));
+      var first = el.querySelector('input'); if (first && !first.value) try { first.focus(); } catch (e) {}
+      return;
+    }
+    if (v.ph === 'wait') { $('BodyTitle').textContent = 'Cevaplar'; el.innerHTML = '<div class="empty-note">Süre doldu!</div>'; return; }
+    if (v.ph === 'review' || v.ph === 'final') { $('BodyTitle').textContent = 'Cevaplar · itiraz et'; el.innerHTML = reviewHTML(v); return; }
+    // sonuç
+    $('BodyTitle').textContent = 'Tur sonucu';
+    if (gd && gd.over) h += CORE.gameOverHTML(gd, gOpts()) + CORE.potLine(gd);
+    h += resultHTML(v);
+    if (gd) h += CORE.scoreTable(gd, gOpts());
+    el.innerHTML = h;
+  }
+  function reviewHTML(v) {
+    var s = v.s, ps = s.players, h = '<div class="msg" style="color:var(--muted)">Geçersiz ya da uydurma bir cevap görürsen <b>İtiraz</b> et. Çoğunluk itiraz ederse puan almaz.</div>';
+    CATS.forEach(function (c, ci) {
+      var rows = '';
+      ps.forEach(function (u) {
+        var raw = ((ans[u] || [])[ci] || '').trim();
+        if (!raw) { rows += '<div class="is-row dim"><b>' + esc(nameOf(u)) + '</b><span>—</span></div>'; return; }
+        var okL = IS.valid(s.letter, raw), vs = ((votes[u] || {})[ci]) || {}, n = Object.keys(vs).filter(function (w) { return w !== u && vs[w]; }).length, my = !!vs[pid];
+        rows += '<div class="is-row' + (okL ? '' : ' bad') + '"><b>' + esc(nameOf(u)) + '</b><span>' + esc(raw) + (okL ? '' : ' <em>(harf yok)</em>') + (n ? ' <i>✗' + n + '</i>' : '') + '</span>' +
+          (u !== pid && okL && v.ph === 'review' && v.me >= 0 ? '<button type="button" class="btn sm' + (my ? ' danger' : '') + '" data-act="is-vote" data-u="' + esc(u) + '" data-ci="' + ci + '">' + (my ? 'İtirazın var' : 'İtiraz') + '</button>' : '') + '</div>';
+      });
+      h += '<div class="is-cat"><div class="label">' + esc(c) + '</div>' + rows + '</div>';
+    });
+    return h;
+  }
+  function resultHTML(v) {
+    var s = v.s, f = s.final, ps = s.players, h = '';
+    if (!f) return '';
+    CATS.forEach(function (c, ci) {
+      var rows = ps.map(function (u) {
+        var d = (f.detail[u] || [])[ci] || { a: '', st: 'empty', p: 0 };
+        var tag = d.st === 'ok' ? '' : d.st === 'empty' ? '' : d.st === 'wrong' ? ' <em>(harf yok)</em>' : ' <em>(itiraz)</em>';
+        return '<div class="is-row' + (d.st === 'ok' || d.st === 'empty' ? '' : ' bad') + (d.st === 'empty' ? ' dim' : '') + '"><b>' + esc(nameOf(u)) + '</b><span>' + (d.a ? esc(d.a) : '—') + tag + '</span><span class="amt ' + (d.p ? 'pos' : 'zero') + '">' + (d.p ? '+' + d.p : '0') + '</span></div>';
+      }).join('');
+      h += '<div class="is-cat"><div class="label">' + esc(c) + '</div>' + rows + '</div>';
+    });
+    h += '<div class="is-cat"><div class="label">Bu tur toplam</div>' + ps.map(function (u) { return '<div class="is-row"><b>' + esc(nameOf(u)) + (u === pid ? ' <span class="tag gold">sen</span>' : '') + '</b><span></span><span class="amt pos">+' + (f.pts[u] || 0) + '</span></div>'; }).join('') + '</div>';
+    return h;
+  }
+  function btn(act, label, o) {
+    o = o || {};
+    return '<button type="button" class="btn ' + (o.cls || '') + '" data-act="' + act + '"' + (o.data || '') + (o.disabled || busy ? ' disabled' : '') + '>' + label + (o.small ? '<small>' + o.small + '</small>' : '') + '</button>';
+  }
+  function renderActions(v) {
+    var el = $('Actions'), s = v.s, h = '';
+    if (CORE.error) { el.innerHTML = '<div class="msg">Masa şu an açılamıyor.</div>'; return; }
+    if (!(loaded.st && loaded.seats)) { el.innerHTML = '<div class="msg">Masaya bağlanılıyor…</div>'; return; }
+    if (!joined()) { el.innerHTML = '<div class="msg">Oynamak için masaya otur.</div>' + btn(pre + '-join', 'Masaya otur', { cls: 'primary' }); return; }
+    if (seats[pid].banned || CORE.isBanned(pid)) { el.innerHTML = '<div class="msg">Admin seni bu masadan çıkardı. Oyunu izleyebilirsin.</div>'; return; }
+    var list = seated(), iSit = !!seats[pid].sit, enough = list.length >= MIN;
+    if (v.ph === 'idle' || v.ph === 'result') {
+      var gd = gameDisp(s), needGame = !gd || gd.over, myBal = CORE.balance(pid), gp = !needGame && gd.players ? gd.players : null;
+      var canStart = needGame ? iSit && enough && myBal >= stakeChoice : (gp ? gp.indexOf(pid) >= 0 : iSit && enough);
+      if (needGame) {
+        h += '<div class="lenpick-label">' + (gd ? 'Yeni oyun' : 'Oyun') + ' kaç tur sürsün? Her tur yeni bir harf.</div>' + CORE.lenPicker(pre + '-len', lenChoice);
+        h += '<div class="lenpick-label">Giriş çipi · herkes koyar, en çok puanı olan potu alır</div>' + CORE.stakePicker(pre + '-stake', stakeChoice);
+      } else if (gp && gp.indexOf(pid) < 0) h += '<div class="msg" style="color:var(--muted)">Oyun sürüyor. Bitince yeni oyuna katılabilirsin.</div>';
+      h += '<div class="row2">' + (iSit ? btn(pre + '-stand', 'Masadan kalk', { small: gp && gp.indexOf(pid) >= 0 ? 'Oyun bitmeden kalkma' : 'İzlemeye geç' }) : btn(pre + '-sit', 'Masaya otur', { disabled: list.length >= MAX, small: list.length >= MAX ? 'Masa dolu' : list.length + ' / ' + MAX })) +
+        btn(pre + '-start', needGame ? (gd ? 'Yeni oyun' : 'Oyunu başlat') : 'Sonraki tur', { cls: 'primary', disabled: !canStart,
+          small: needGame ? (!enough ? 'En az 2 kişi gerekli' : myBal < stakeChoice ? 'Çipin yetmiyor (' + fmt(myBal) + ')' : lenChoice + ' tur · ' + fmt(stakeChoice) + ' çip · pot ' + fmt(stakeChoice * Math.min(list.length, MAX))) : 'Tur ' + ((gd.played || 0) + 1) + '/' + gd.len }) + '</div>';
+      el.innerHTML = h; return;
+    }
+    if (v.ph === 'play' && v.me >= 0) {
+      var a = myAns(s.no), full = a.every(function (x) { return String(x).trim().length >= 2; });
+      el.innerHTML = btn(pre + '-done', 'Bitirdim!', { cls: 'primary', disabled: !full || !!s.endAt, small: s.endAt ? 'Süre kısaldı' : full ? 'Diğerlerine 10 sn kalır' : 'Önce hepsini doldur' });
+      return;
+    }
+    el.innerHTML = '<div class="msg" style="color:var(--muted)">' + (v.me < 0 ? 'Bu turu izliyorsun.' : v.ph === 'review' ? 'Cevaplara bak, şüpheli olana itiraz et.' : '') + '</div>';
+  }
+
+  // ---------- yazma ----------
+  function toast(t) { var el = g$('toast'); el.textContent = t; el.hidden = false; clearTimeout(toast._t); toast._t = setTimeout(function () { el.hidden = true; }, 3200); }
+  function write(fn) {
+    if (busy) return Promise.resolve(false);
+    busy = true; render();
+    var slow = new Promise(function (res) { setTimeout(function () { res('slow'); }, 8000); });
+    var work = Promise.resolve().then(fn).then(function () { return true; });
+    return Promise.race([work, slow]).then(function (x) {
+      if (x === 'slow') toast('Bağlantı yavaş; hamlen bağlantı gelince gönderilecek.');
+      return x === true;
+    }, function (e) {
+      console.warn(e);
+      if (/PERMISSION/i.test(String((e && (e.code || e.message)) || ''))) { CORE.error = 'perm'; CORE.emit(); }
+      else toast('Kaydedilemedi. Bağlantını kontrol edip tekrar dene.');
+      return false;
+    }).then(function (ok) { busy = false; render(); return ok; });
+  }
+  function saveSeat(patch) {
+    var next = clone(seats[pid] || {});
+    Object.keys(patch).forEach(function (k) { next[k] = patch[k]; });
+    return R.seats.child(pid).set(clone(next));
+  }
+  function base() { return 'rp/t/' + KEY + '/' + tb + '/'; }
+  function submit(no) {
+    if (submitted[no] || !CORE.db || !pid) return Promise.resolve();
+    var s = st; if (!s || s.no !== no || !s.players || s.players.indexOf(pid) < 0) return Promise.resolve();
+    submitted[no] = 1;
+    var a = myAns(no).map(function (x) { return String(x).replace(/\s+/g, ' ').trim().slice(0, 40); });
+    if (!a.some(function (x) { return x; })) { submitted[no] = 1; return Promise.resolve(); } // boş cevabın üstüne yazma
+    return CORE.db.ref(base() + 'ans/' + no + '/' + pid).set(a).catch(function (e) { console.warn(e); submitted[no] = 0; });
+  }
+  function finishRound() {
+    var no = st.no; submit(no);
+    return R.st.transaction(function (cur) {
+      if (cur === null) return null;
+      if (!cur.startAt || cur.no !== no || cur.endAt) return;
+      var t = now(); if (t >= cur.hardEnd - IS.FINISH_MS || t < cur.startAt) return;
+      var n = clone(cur); n.endAt = Math.min(cur.hardEnd, t + IS.FINISH_MS); n.endBy = pid;
+      return n;
+    });
+  }
+  function finalize() {
+    var s = st, no = s.no;
+    if (!CORE.db || finalTry[no] && Date.now() - finalTry[no] < 4000) return;
+    finalTry[no] = Date.now();
+    Promise.all([CORE.db.ref(base() + 'ans/' + no).once('value'), CORE.db.ref(base() + 'votes/' + no).once('value')]).then(function (r) {
+      var res = IS.score({ letter: s.letter, players: s.players, ans: r[0].val() || {}, votes: r[1].val() || {} });
+      return R.st.transaction(function (cur) {
+        if (cur === null) return null;
+        if (!cur.startAt || cur.no !== no || cur.final) return;
+        var n = clone(cur); n.final = { pts: res.pts, detail: res.detail };
+        return n;
+      });
+    }).catch(function (e) { console.warn(e); });
+  }
+  function startRound(len, stake) {
+    var why = '';
+    if (V) CORE.syncGame(KEY, tb, gameDisp(V.s), false);
+    return write(function () {
+      return R.st.transaction(function (cur) {
+        why = '';
+        var c = cur || {}, ph = IS.phase(c, now());
+        if (active(c) && !c.final && ph !== 'idle') { why = 'Tur devam ediyor.'; return; }
+        var game = clone(c.game) || null, archive = clone(c.lastGames) || [], applied = c.applied || 0, players;
+        if (active(c) && c.final && applied < c.no) {
+          if (game && !game.over) game = CORE.applyHand(game, c.final.pts, c.no);
+          applied = c.no;
+        }
+        if (len) {
+          if (game && !game.over) { why = 'Oyun devam ediyor.'; return; }
+          players = seated().slice(0, MAX);
+          if (players.length < MIN) { why = 'En az 2 kişi oturmalı.'; return; }
+          var poor = players.filter(function (id) { return CORE.balance(id) < stake; });
+          if (poor.length) { why = poor.map(nameOf).join(', ') + ' için çip yetmiyor (' + fmt(stake) + ' gerekli).'; return; }
+          if (game && game.over) archive = CORE.archive(archive, game, false);
+          game = CORE.newGame(len, (game ? game.n : (c.lastGames && c.lastGames.length ? c.lastGames[c.lastGames.length - 1].n : 0)) + 1);
+          game.stake = stake; game.players = players; game.id = CORE.rnd().slice(0, 8);
+        } else {
+          if (!game || game.over) { why = 'Önce yeni oyun başlat.'; return; }
+          players = game.players ? game.players.slice() : seated().slice(0, MAX);
+          if (players.length < MIN) { why = 'Oyuncu sayısı yetmiyor.'; return; }
+        }
+        var no = (c.no || 0) + 1, seed = CORE.rnd(), startAt = now() + IS.COUNT_MS;
+        return clone({ no: no, seed: seed, letter: IS.letterFor(seed, no), players: players, startAt: startAt, hardEnd: startAt + IS.PLAY_MS, applied: applied, game: game, lastGames: archive });
+      }).then(function (res) { if (!res.committed && why) toast(why); });
+    });
+  }
+  function cancelRound() {
+    return write(function () {
+      return R.st.transaction(function (cur) {
+        if (cur === null) return null;
+        var n = clone(cur); delete n.startAt; delete n.hardEnd; delete n.endAt; delete n.endBy; delete n.final; delete n.players; delete n.letter; n.applied = cur.no || 0;
+        return clone(n);
+      }).then(function (res) { if (res.committed) { closeSheet(); toast('Tur iptal edildi.'); } });
+    });
+  }
+  function cancelGame() {
+    return write(function () {
+      return R.st.transaction(function (cur) {
+        if (cur === null) return null;
+        var n = clone(cur); ['startAt', 'hardEnd', 'endAt', 'endBy', 'final', 'players', 'letter', 'game'].forEach(function (k) { delete n[k]; }); n.applied = cur.no || 0;
+        return clone(n);
+      }).then(function (res) {
+        if (!res.committed) return;
+        var n = CORE.refundOpen(KEY, tb); closeSheet();
+        toast('Oyun iptal edildi' + (n ? '; giriş çipleri iade edildi.' : '.'));
+      });
+    });
+  }
+  function toggleVote(u, ci) {
+    var ref = CORE.db.ref(base() + 'votes/' + st.no + '/' + u + '/' + ci + '/' + pid), had = !!(((votes[u] || {})[ci] || {})[pid]);
+    var p = had ? ref.remove() : ref.set(1);
+    // yerel güncelle, dinleyici gelene kadar tepki versin
+    votes[u] = votes[u] || {}; votes[u][ci] = votes[u][ci] || {}; if (had) delete votes[u][ci][pid]; else votes[u][ci][pid] = 1;
+    bodyKey = ''; render();
+    return p.catch(function (e) { console.warn(e); toast('İtiraz kaydedilemedi.'); });
+  }
+
+  // ---------- alt sayfalar ----------
+  function openSheet(html) { g$('sheetPanel').innerHTML = html; g$('sheet').hidden = false; }
+  function closeSheet() { g$('sheet').hidden = true; g$('sheetPanel').innerHTML = ''; }
+  function rulesPlay() {
+    return '<p>2–8 kişi. Her turda rastgele bir harf çıkar; <b>İsim, Şehir, Hayvan, Bitki, Eşya</b> kutularına o harfle başlayan cevaplar yazılır. Süre ' + Math.round(IS.PLAY_MS / 1000) + ' saniye; biri hepsini bitirince diğerlerine 10 saniye kalır.</p>' +
+      '<h4>Puan</h4><ul><li>Başka kimsenin yazmadığı tek cevap: <b>15</b></li><li>Farklı cevaplar: <b>10</b></li><li>Aynı cevabı yazanlar: <b>5</b></li><li>Boş ya da harfi tutmayan: 0</li></ul>' +
+      '<h4>İtiraz</h4><p>Süre bitince herkesin cevabı görünür (' + Math.round(IS.REVIEW_MS / 1000) + ' sn). Uydurma cevaba itiraz edilir; diğer oyuncuların yarısından fazlası itiraz ederse cevap 0 puandır (iki kişide tek itiraz yeter).</p>' +
+      '<h4>Oyun ve çip</h4><p>3, 5, 7 ya da 11 tur ve giriş çipi seçilir; herkes koyar, sonunda en çok puanı olan potu alır, beraberlikte pot bölüşülür. Oyun iptal edilirse giriş çipleri iade edilir.</p>';
+  }
+  function boardHTML() {
+    var v = V || view(), s = v.s, gd = gameDisp(s);
+    var h = '<div class="panel-head"><h3>İsim Şehir puanları · Masa ' + tb + '</h3><button class="ghost" type="button" data-act="close">Kapat</button></div>';
+    if (gd) { h += '<p style="color:var(--muted);font-size:13px">Oyun ' + gd.n + ' · ' + gd.played + '/' + gd.len + ' tur oynandı.</p>' + CORE.potLine(gd); if (gd.over) h += CORE.gameOverHTML(gd, gOpts()); h += CORE.scoreTable(gd, Object.assign(gOpts(), { extra: seated() })); }
+    else h += '<p>Henüz oyun başlamadı.</p>';
+    h += CORE.lastGamesHTML(s.lastGames, gOpts());
+    if (CORE.isAdmin()) {
+      var on = active(s) && v.ph !== 'result' && v.ph !== 'idle';
+      h += CORE.adminHTML(seats, { pre: pre, esc: esc, sit: true });
+      h += '<h4>Admin</h4><div class="row2">' + (on ? btn(pre + '-askcancel', 'Bu turu iptal et', { cls: 'danger', small: 'Puan yazılmaz' }) : '') + (gd && !gd.over ? btn(pre + '-askreset', 'Oyunu iptal et', { cls: 'danger', small: 'Giriş çipleri iade edilir' }) : '') + '</div>';
+    }
+    var ids = Object.keys(seats).filter(function (id) { return seats[id] && seats[id].name; });
+    if (ids.length) h += '<h4>Çipler</h4><div class="prev">' + ids.map(function (id) {
+      var n = CORE.tableNet(id, KEY, tb);
+      return '<div class="row"><b>' + dot(id) + esc(nameOf(id)) + '</b><span>' + fmt(CORE.balance(id)) + ' çip · bu masada <span class="amt ' + (n > 0 ? 'pos' : n < 0 ? 'neg' : 'zero') + '">' + (n > 0 ? '+' : '') + fmt(n) + '</span></span></div>';
+    }).join('') + '</div>';
+    return h;
+  }
+
+  // ---------- olaylar ----------
+  document.addEventListener('input', function (e) {
+    var t = e.target; if (!t.matches || !t.matches('#isBody .is-f input') || !st) return;
+    myAns(st.no)[+t.getAttribute('data-ci')] = t.value;
+    var full = myAns(st.no).every(function (x) { return String(x).trim().length >= 2; }), b = document.querySelector('[data-act="is-done"]');
+    if (b) { b.disabled = !full || !!st.endAt || busy; var sm = b.querySelector('small'); if (sm) sm.textContent = st.endAt ? 'Süre kısaldı' : full ? 'Diğerlerine 10 sn kalır' : 'Önce hepsini doldur'; }
+  });
+  document.addEventListener('click', function (e) {
+    var t = e.target.closest('[data-act]');
+    if (!t || t.disabled) return;
+    var act = t.getAttribute('data-act');
+    if (act.indexOf(pre + '-') !== 0) return;
+    act = act.slice(pre.length + 1);
+    var v = V || view(), s = v.s;
+    switch (act) {
+      case 'rules': openSheet('<div class="panel-head"><h3>İsim Şehir</h3><button class="ghost" type="button" data-act="close">Kapat</button></div>' + rulesPlay()); break;
+      case 'board': openSheet(boardHTML()); break;
+      case 'join':
+        var full = seated().length >= MAX;
+        write(function () { var b = seats[pid] || {}; return saveSeat({ name: CORE.me.name, sit: !full, sitAt: Date.now(), joinedAt: b.joinedAt || Date.now() }); }).then(function (ok) { if (ok && full) toast('Masa dolu; izleyici olarak girdin.'); }); break;
+      case 'sit': if (seated().length >= MAX) { toast('Masa dolu.'); break; } write(function () { return saveSeat({ sit: true, sitAt: Date.now() }); }); break;
+      case 'stand': write(function () { return saveSeat({ sit: false }); }); break;
+      case 'len': lenChoice = +t.getAttribute('data-len'); bodyKey = ''; render(); break;
+      case 'stake': stakeChoice = +t.getAttribute('data-stake'); render(); break;
+      case 'start': var gdS = gameDisp(s); startRound(!gdS || gdS.over ? lenChoice : 0, stakeChoice); break;
+      case 'done': if (v.ph === 'play' && v.me >= 0) write(function () { return finishRound(); }); break;
+      case 'vote': if (v.ph === 'review' && v.me >= 0) toggleVote(t.getAttribute('data-u'), +t.getAttribute('data-ci')); break;
+      case 'adm': if (CORE.isAdmin()) write(function () { return CORE.adminOp(R.seats, seats, t.getAttribute('data-op'), t.getAttribute('data-id')); }).then(function () { openSheet(boardHTML()); }); break;
+      case 'askcancel': openSheet('<h3>Bu tur iptal edilsin mi?</h3><p>Tur hiç oynanmamış sayılır, puan yazılmaz.</p><div class="row2">' + btn('close', 'Vazgeç') + btn(pre + '-cancel', 'İptal et', { cls: 'danger' }) + '</div>'); break;
+      case 'cancel': if (CORE.isAdmin()) cancelRound(); break;
+      case 'askreset': openSheet('<h3>Oyun iptal edilsin mi?</h3><p>Bu oyunun puanları silinir, kazanan ilan edilmez, giriş çipleri herkese iade edilir.</p><div class="row2">' + btn('close', 'Vazgeç') + btn(pre + '-reset', 'Oyunu iptal et', { cls: 'danger' }) + '</div>'); break;
+      case 'reset': if (CORE.isAdmin()) cancelGame(); break;
+    }
+  });
+
+  var lastPh = '';
+  setInterval(function () {
+    if (CORE.view !== KEY || !st) return;
+    var v = view(), key = (st.no || 0) + ':' + v.ph + ':' + (st.endAt || 0);
+    if (key !== lastPh) { lastPh = key; render(); }
+    clock(v);
+    if (!active(st) || v.me < 0) { if (active(st) && v.ph === 'final' && joined() && v.me >= 0) finalize(); return; }
+    if (v.ph !== 'count' && v.ph !== 'play' && v.ph !== 'idle') submit(st.no);
+    if (v.ph === 'final' && !st.final) finalize();
+  }, 250);
+  // bakan oyuncular da (oturmayan) sonucu hesaplatabilir
+  window.__isDebug = function () { return { V: V, st: st, ans: ans, votes: votes, mine: mine }; };
+
+  function attachRound() {
+    if (!st || !st.no || ansNo === st.no) return;
+    ansNo = st.no;
+    if (R.ans) { R.ans.off(); R.votes.off(); }
+    ans = {}; votes = {};
+    var n = st.no; R.ans = CORE.db.ref(base() + 'ans/' + n); R.votes = CORE.db.ref(base() + 'votes/' + n);
+    R.ans.on('value', function (s) { if (st && st.no === n) { ans = s.val() || {}; bodyKey = ''; render(); } });
+    R.votes.on('value', function (s) { if (st && st.no === n) { votes = s.val() || {}; bodyKey = ''; render(); } });
+  }
+  function attach(t) {
+    if (R.st) { R.st.off(); R.seats.off(); if (R.ans) { R.ans.off(); R.votes.off(); R.ans = null; } }
+    tb = t; st = null; seats = {}; loaded = { st: false, seats: false }; ans = {}; votes = {}; ansNo = 0; bodyKey = ''; lastPh = '';
+    render();
+    if (!CORE.db) return;
+    R.st = CORE.db.ref(base() + 'state'); R.seats = CORE.db.ref(base() + 'seats');
+    function onErr(e) { console.warn(e); CORE.error = 'perm'; CORE.emit(); }
+    R.st.on('value', function (s) { if (tb !== t) return; st = s.val(); loaded.st = true; attachRound(); bodyKey = ''; render(); }, onErr);
+    R.seats.on('value', function (s) { if (tb !== t) return; seats = s.val() || {}; loaded.seats = true; bodyKey = ''; render(); }, onErr);
+  }
+  CORE.whenReady(function () {
+    pid = CORE.pid;
+    $('RulesL').innerHTML = '<h3>İsim Şehir nasıl oynanır</h3>' + rulesPlay();
+    CORE.onChange(function () { if (tb) { bodyKey = ''; render(); } });
+    CORE.onTable(KEY, attach);
   });
 })();
 
