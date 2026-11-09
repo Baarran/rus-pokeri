@@ -150,6 +150,31 @@ button.card { border: 0; padding: 0; }
 .gameover { display: grid; gap: 6px; padding: 14px; border-radius: 12px; background: rgba(217,180,91,.12); border: 1px solid rgba(217,180,91,.45); }
 .gstatus { display: flex; justify-content: space-between; gap: 8px; align-items: center; padding: 8px 12px; border-radius: 10px; background: rgba(0,0,0,.18); font-size: 13.5px; }
 .gstatus b { color: var(--gold); }
+.login-card { display: grid; gap: 14px; padding: 18px; border-radius: 16px; background: var(--panel); border: 1px solid var(--line); }
+.tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.tabs button { min-height: 42px; border-radius: 10px; border: 1px solid var(--line); background: transparent; color: var(--ink); font-weight: 800; }
+.tabs button.on { background: var(--gold); color: var(--gold-ink); border-color: var(--gold); }
+#loginForm { display: grid; gap: 8px; }
+.lg-msg { min-height: 20px; color: var(--loss); font-size: 14px; margin: 0; }
+.adm { display: grid; gap: 8px; }
+.adm-row { display: grid; gap: 6px; padding: 8px 10px; border-radius: 10px; background: rgba(0,0,0,.18); }
+.adm-name { font-weight: 700; }
+.adm-info { color: var(--muted); font-size: 12.5px; font-weight: 500; }
+.adm-btns { display: flex; flex-wrap: wrap; gap: 6px; }
+.adm-btns .btn { min-height: 34px; }
+.pile-wrap { display: grid; justify-items: center; gap: 8px; width: 100%; }
+.pile { position: relative; --cw: min(22vw, 88px); padding: 8px 12px 0 0; }
+.pile .card { --cw: min(22vw, 88px); position: relative; z-index: 2; }
+.pile-under { position: absolute; left: 0; top: 8px; width: var(--cw); aspect-ratio: 5 / 7; border-radius: calc(var(--cw) * .11); z-index: 1;
+  background: repeating-linear-gradient(45deg, #7c1f2c 0 4px, #92283a 4px 8px); border: 3px solid var(--card); box-shadow: 0 2px 6px rgba(0,0,0,.3);
+  transform: translate(calc(var(--i) * 4px), calc(var(--i) * -4px)); }
+.event { min-height: 22px; font-size: 14px; text-align: center; text-wrap: balance; }
+b.pisti { color: var(--gold); font-size: 18px; letter-spacing: .02em; }
+.team { display: inline-block; padding: 1px 7px; border-radius: 999px; font-size: 11px; font-weight: 800; vertical-align: middle; }
+.team.t0 { background: rgba(47,111,181,.4); color: #d7e6ff; }
+.team.t1 { background: rgba(183,52,43,.4); color: #ffdcd6; }
+#piMine .cards, #peMine .cards { --cw: min(19vw, 80px); }
+.vote { display: grid; gap: 8px; padding: 10px; border-radius: 12px; background: rgba(217,180,91,.1); border: 1px solid rgba(217,180,91,.4); }
 .badge { display: inline-grid; place-items: center; min-width: 22px; height: 20px; padding: 0 5px; border-radius: 999px; font-size: 10.5px; font-weight: 800; vertical-align: middle; margin-left: 3px; background: #f3ead7; color: #1a1a1a; }
 .badge.sb { background: #2f6fb5; color: #fff; }
 .badge.bb { background: #b7342b; color: #fff; }
@@ -328,9 +353,38 @@ th { color: var(--muted); font-weight: 600; font-size: 12px; }
 </style>
 </head>
 <body>
-<div class="view" id="lobbyView">
+<div class="view" id="loginView" hidden>
   <header class="top">
-    <div class="brand">Arkadaş Masası<small>Bir oyun seç</small></div>
+    <div class="brand">Arkadaş Masası<small>Hesabınla gir</small></div>
+  </header>
+  <div id="loginBanner"></div>
+  <div class="login-card">
+    <div class="tabs" role="tablist">
+      <button type="button" id="lgTabIn" class="on" role="tab" aria-selected="true" data-act="lg-tab" data-tab="in">Giriş yap</button>
+      <button type="button" id="lgTabUp" role="tab" aria-selected="false" data-act="lg-tab" data-tab="up">Hesap aç</button>
+    </div>
+    <form id="loginForm" class="field">
+      <label for="lgName">İsim</label>
+      <input id="lgName" name="name" maxlength="16" autocomplete="username" autocapitalize="words" required>
+      <label for="lgPass">Şifre</label>
+      <input id="lgPass" name="password" type="password" autocomplete="current-password" required>
+      <div id="lgPass2Wrap" class="field" hidden>
+        <label for="lgPass2">Şifre tekrar</label>
+        <input id="lgPass2" name="password2" type="password" autocomplete="new-password">
+      </div>
+      <button class="btn primary" type="submit" id="lgSubmit">Giriş yap</button>
+      <p class="lg-msg" id="lgMsg" role="alert"></p>
+    </form>
+    <p class="lobby-note">Hesabını bir kere aç; sonra hangi telefondan girersen gir aynı isim, fiş ve puanlarla devam edersin. Şifre en az 6 karakter olmalı. Başka yerde kullandığın bir şifreyi kullanma.</p>
+  </div>
+</div>
+
+<div class="view" id="lobbyView" hidden>
+  <header class="top">
+    <div class="brand">Arkadaş Masası<small id="lobbyUser">Bağlanılıyor…</small></div>
+    <div class="spacer"></div>
+    <button class="ghost" type="button" data-act="mute" id="muteBtn">Ses açık</button>
+    <button class="ghost" type="button" data-act="logout">Çıkış</button>
   </header>
   <div id="lobbyBanner"></div>
   <div class="lobby-cards">
@@ -364,7 +418,28 @@ th { color: var(--muted); font-weight: 600; font-size: 12px; }
       <div class="gc-sub">Birbirinize karşı · 2–8 kişi · no-limit, blind 10/20</div>
       <div class="gc-online" id="lobbyHoldem">Bağlanılıyor…</div>
     </a>
+    <a class="game-card" href="#pisti">
+      <div class="gc-art">
+        <div class="card"><span class="r">J</span><span class="s1">♠&#xFE0E;</span><span class="s">♠&#xFE0E;</span></div>
+        <div class="card red"><span class="r">7</span><span class="s1">♥&#xFE0E;</span><span class="s">♥&#xFE0E;</span></div>
+        <div class="card"><span class="r">7</span><span class="s1">♣&#xFE0E;</span><span class="s">♣&#xFE0E;</span></div>
+      </div>
+      <div class="gc-title">Pişti</div>
+      <div class="gc-sub">2–4 kişi · herkes kendi için · pişti 10, vale piştisi 20</div>
+      <div class="gc-online" id="lobbyPisti">Bağlanılıyor…</div>
+    </a>
+    <a class="game-card" href="#esli">
+      <div class="gc-art">
+        <div class="card red"><span class="r">10</span><span class="s1">♦&#xFE0E;</span><span class="s">♦&#xFE0E;</span></div>
+        <div class="card"><span class="r">2</span><span class="s1">♣&#xFE0E;</span><span class="s">♣&#xFE0E;</span></div>
+        <div class="card back"></div><div class="card back"></div>
+      </div>
+      <div class="gc-title">Eşli Pişti</div>
+      <div class="gc-sub">4 kişi · 2'ye 2 takım · karşılıklı oturanlar eş</div>
+      <div class="gc-online" id="lobbyEsli">Bağlanılıyor…</div>
+    </a>
   </div>
+  <div id="lobbyAdmin"></div>
   <p class="lobby-note">Linki arkadaşlarına at, herkes buradan istediği masaya geçer. Masadan lobiye sol üstteki ‹ düğmesiyle dönülür.</p>
 </div>
 
@@ -448,16 +523,61 @@ th { color: var(--muted); font-weight: 600; font-size: 12px; }
   <aside class="rules-side panel" id="holdemRulesR" aria-label="El sıralaması"></aside>
 </div>
 
+<div class="view game-view" id="pistiView" hidden>
+  <aside class="rules-side panel" id="piRulesL" aria-label="Pişti kuralları"></aside>
+  <main class="game-col">
+  <header class="top">
+    <a class="ghost back" href="#" aria-label="Lobiye dön">‹</a>
+    <div class="brand">Pişti<small id="piRound">Oyun yok</small></div>
+    <div class="spacer"></div>
+    <button class="ghost" type="button" data-act="pi-board">Puanlar</button>
+    <button class="ghost rules-btn" type="button" data-act="pi-rules">Kurallar</button>
+  </header>
+  <div id="piBanner"></div>
+  <section class="dealer" id="piTable" aria-label="Yer"></section>
+  <section aria-label="Oyuncular">
+    <div class="section-head"><h2 id="piSeatsTitle">Masa</h2><span id="piSeatsCount"></span></div>
+    <div class="seats" id="piSeats"></div>
+  </section>
+  <section class="mine-hand" id="piMine" aria-label="Senin elin" hidden></section>
+  <footer class="actions" id="piActions" aria-live="polite"></footer>
+  </main>
+  <aside class="rules-side panel" id="piRulesR" aria-label="Puanlar"></aside>
+</div>
+
+<div class="view game-view" id="esliView" hidden>
+  <aside class="rules-side panel" id="peRulesL" aria-label="Eşli Pişti kuralları"></aside>
+  <main class="game-col">
+  <header class="top">
+    <a class="ghost back" href="#" aria-label="Lobiye dön">‹</a>
+    <div class="brand">Eşli Pişti<small id="peRound">Oyun yok</small></div>
+    <div class="spacer"></div>
+    <button class="ghost" type="button" data-act="pe-board">Puanlar</button>
+    <button class="ghost rules-btn" type="button" data-act="pe-rules">Kurallar</button>
+  </header>
+  <div id="peBanner"></div>
+  <section class="dealer" id="peTable" aria-label="Yer"></section>
+  <section aria-label="Oyuncular">
+    <div class="section-head"><h2 id="peSeatsTitle">Masa</h2><span id="peSeatsCount"></span></div>
+    <div class="seats" id="peSeats"></div>
+  </section>
+  <section class="mine-hand" id="peMine" aria-label="Senin elin" hidden></section>
+  <footer class="actions" id="peActions" aria-live="polite"></footer>
+  </main>
+  <aside class="rules-side panel" id="peRulesR" aria-label="Puanlar"></aside>
+</div>
+
 <div class="sheet" id="sheet" hidden>
   <div class="panel" id="sheetPanel" role="dialog" aria-modal="true"></div>
 </div>
 <div class="toast" id="toast" hidden></div>
 
 <script>
-/* Masanın veritabanı adresi (Firebase Realtime Database) */
-var VERITABANI = "https://ruspokeri-de28e-default-rtdb.europe-west1.firebasedatabase.app";
+/* Firebase ayarları (bu anahtar gizli değildir) */
+var FB_CONFIG = { apiKey: "AIzaSyBsP1VNPJpt1Y6MN0FwDCmvuHeZxaDoTGU", authDomain: "ruspokeri-de28e.firebaseapp.com", databaseURL: "https://ruspokeri-de28e-default-rtdb.europe-west1.firebasedatabase.app", projectId: "ruspokeri-de28e" };
 </script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 <script>
 /* Rus Pokeri — oyun motoru (saf fonksiyonlar, deterministik) */
@@ -959,6 +1079,23 @@ var VERITABANI = "https://ruspokeri-de28e-default-rtdb.europe-west1.firebasedata
     return solve(t.counts, t.J, true, {}).cost;
   }
 
+  // Çift sayımı: aynı taşlar çift, okey tek kalanla çift olur. {pairs, cost, groups, left}
+  function pairArrange(tiles, g) {
+    var by = {}, jok = [], groups = [], singles = [];
+    tiles.forEach(function (id) { var e = eff(id, g); if (e === 'J') jok.push(id); else { var k = e.c * 14 + e.n; (by[k] = by[k] || []).push(id); } });
+    Object.keys(by).forEach(function (k) {
+      var a = by[k];
+      while (a.length >= 2) groups.push(a.splice(0, 2));
+      if (a.length) singles.push(a[0]);
+    });
+    // okeyleri en yüksek tek taşlarla eşle
+    singles.sort(function (x, y) { return value(y, g) - value(x, g); });
+    while (jok.length && singles.length) groups.push([singles.shift(), jok.shift()]);
+    while (jok.length >= 2) groups.push(jok.splice(0, 2));
+    var left = singles.concat(jok);
+    return { pairs: groups.length, groups: groups, left: left, cost: left.reduce(function (t, id) { return t + value(id, g); }, 0) };
+  }
+
   // Bitirebilecek taşlar: bu taşı atınca kalan 14 taş per/çift oluyor
   function finishOptions(hand, g) {
     var out = [], seen = {};
@@ -1029,7 +1166,9 @@ var VERITABANI = "https://ruspokeri-de28e-default-rtdb.europe-west1.firebasedata
           var ded = g.mult * (end.okey ? 100 : 10) * (end.kind === 'cift' ? 2 : 1);
           return { base: 0, factor: 0, pen: -ded, winner: true };
         }
-        var ar = arrange(h, g);
+        var ar = arrange(h, g), pr = pairArrange(h, g);
+        var byPairs = pr.pairs >= 4 && (!ar.groups.length || pr.cost < ar.cost);
+        if (byPairs) return { base: pr.cost, factor: g.mult * f2, pen: pr.cost * g.mult * f2, byPairs: true };
         if (!ar.groups.length) return { base: 0, factor: g.mult * 100 * f2, pen: g.mult * 100 * f2, noPer: true };
         return { base: ar.cost, factor: g.mult * f2, pen: ar.cost * g.mult * f2 };
       });
@@ -1040,7 +1179,7 @@ var VERITABANI = "https://ruspokeri-de28e-default-rtdb.europe-west1.firebasedata
   var api = {
     COLORS: COLORS, MULT: MULT, FAKE_MULT: FAKE_MULT, colorOf: colorOf, numOf: numOf, idsOf: idsOf,
     setup: setup, eff: eff, value: value, isJoker: isJoker, canMeld: canMeld, isPairs: isPairs,
-    finishKind: finishKind, finishOptions: finishOptions, arrange: arrange, penaltyBase: penaltyBase, replay: replay
+    finishKind: finishKind, finishOptions: finishOptions, arrange: arrange, pairArrange: pairArrange, penaltyBase: penaltyBase, replay: replay
   };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.OK = api;
@@ -1197,13 +1336,139 @@ var VERITABANI = "https://ruspokeri-de28e-default-rtdb.europe-west1.firebasedata
 
 </script>
 <script>
-/* Ortak bağlantı: Firebase, oyuncu kimliği, çevrimiçi durumu, lobi yönlendirme */
+/* Pişti (tekli ve eşli) — oyun motoru (saf fonksiyonlar, deterministik) */
+(function (root) {
+  'use strict';
+  var RP = (typeof module !== 'undefined' && module.exports) ? require('./engine.js') : root.RP;
+  var J = 9; // vale (0=2 ... 9=J, 10=Q, 11=K, 12=A)
+  function rank(c) { return c % 13; }
+  function suit(c) { return Math.floor(c / 13); }
+  function range(n) { var a = []; for (var i = 0; i < n; i++) a.push(i); return a; }
+
+  // Kart puanı: as 1, vale 1, sinek ikilisi 2, karo onlusu 3
+  function cardPoints(c) {
+    var r = rank(c), s = suit(c);
+    if (r === 0 && s === 3) return 2;   // ♣2
+    if (r === 8 && s === 2) return 3;   // ♦10
+    if (r === 12 || r === J) return 1;
+    return 0;
+  }
+
+  function setup(seed, no) {
+    var rng = RP.makeRng('pisti:' + seed + ':' + no);
+    var deck = RP.shuffle(range(52), rng);
+    var table = deck.slice(0, 4), rest = deck.slice(4);
+    // yerdeki açık kart vale olmasın
+    var guard = 0;
+    while (rank(table[3]) === J && guard++ < 52) { rest.push(table[3]); table[3] = rest.shift(); }
+    return { table: table, rest: rest };
+  }
+
+  // st: {no, seed, players:[id], dealer, team:bool, actions:[{p, c}|{p, t:'auto'}]}
+  function replay(st) {
+    var n = st.players.length, team = !!st.team;
+    var g = setup(st.seed, st.no);
+    var rest = g.rest.slice(), pile = g.table.slice(), hidden = 3;
+    var hands = range(n).map(function () { return []; });
+    var caps = range(n).map(function () { return []; });
+    var pisti = range(n).map(function () { return 0; }), pistiCount = range(n).map(function () { return 0; });
+    var first = ((st.dealer || 0) + 1) % n, turn = first, last = -1, events = [], dealRound = 0, end = false;
+    function deal() {
+      dealRound++;
+      for (var k = 0; k < 4; k++) for (var i = 0; i < n; i++) { var p = (first + i) % n; if (rest.length) hands[p].push(rest.shift()); }
+    }
+    deal();
+    function autoCard(h, top) {
+      if (top != null) {
+        for (var i = 0; i < h.length; i++) if (rank(h[i]) === rank(top)) return h[i];
+        if (pile.length > 1) for (i = 0; i < h.length; i++) if (rank(h[i]) === J) return h[i];
+      }
+      var best = h[0];
+      h.forEach(function (c) { if (rank(c) !== J && (rank(best) === J || cardPoints(c) < cardPoints(best))) best = c; });
+      return best;
+    }
+    var acts = st.actions || [];
+    for (var ai = 0; ai < acts.length && !end; ai++) {
+      var a = acts[ai];
+      if (!a || a.p !== turn) continue;
+      var h = hands[turn], top = pile.length ? pile[pile.length - 1] : null;
+      var c = a.t === 'auto' ? autoCard(h, top) : a.c;
+      var at = h.indexOf(c);
+      if (at < 0) continue;
+      h.splice(at, 1);
+      if (top != null && (rank(c) === rank(top) || rank(c) === J)) {
+        var isPisti = pile.length === 1 && rank(c) === rank(top);
+        var pts = isPisti ? (rank(c) === J ? 20 : 10) : 0;
+        pile.push(c);
+        caps[turn] = caps[turn].concat(pile);
+        if (isPisti) { pisti[turn] += pts; pistiCount[turn]++; }
+        events.push({ p: turn, type: isPisti ? 'pisti' : 'take', card: c, count: pile.length, pts: pts, auto: a.t === 'auto' });
+        pile = []; hidden = 0; last = turn;
+      } else {
+        pile.push(c);
+        events.push({ p: turn, type: 'put', card: c, auto: a.t === 'auto' });
+      }
+      turn = (turn + 1) % n;
+      if (hands.every(function (x) { return !x.length; })) {
+        if (rest.length) deal();
+        else end = true;
+      }
+    }
+    var res = { n: n, team: team, hands: hands, pile: pile, hidden: hidden, restCount: rest.length, turn: end ? -1 : turn, first: first,
+      caps: caps.map(function (x) { return x.length; }), pistiCount: pistiCount, pisti: pisti, last: last, events: events, dealRound: dealRound,
+      totalDeals: Math.round(48 / (4 * n)), actionCount: acts.length, end: null };
+    if (end) {
+      var leftover = pile.length;
+      if (last >= 0) { caps[last] = caps[last].concat(pile); }
+      res.leftoverTo = last; res.leftover = leftover;
+      res.caps = caps.map(function (x) { return x.length; });
+      var sides = team ? [0, 1] : range(n);
+      function sideOf(i) { return team ? i % 2 : i; }
+      var cardsBy = sides.map(function () { return 0; });
+      caps.forEach(function (x, i) { cardsBy[sideOf(i)] += x.length; });
+      var maxC = Math.max.apply(null, cardsBy), maxCount = cardsBy.filter(function (x) { return x === maxC; }).length;
+      var detail = range(n).map(function (i) {
+        var pts = 0, aces = 0, jacks = 0, c2 = false, d10 = false;
+        caps[i].forEach(function (c) {
+          pts += cardPoints(c);
+          if (rank(c) === 12) aces++;
+          if (rank(c) === J) jacks++;
+          if (rank(c) === 0 && suit(c) === 3) c2 = true;
+          if (rank(c) === 8 && suit(c) === 2) d10 = true;
+        });
+        return { cards: caps[i].length, aces: aces, jacks: jacks, c2: c2, d10: d10, cardPts: pts, pisti: pisti[i], pistiCount: pistiCount[i] };
+      });
+      var sideTotals = sides.map(function (sd) {
+        var t = { cards: cardsBy[sd], cardPts: 0, pisti: 0, majority: (cardsBy[sd] === maxC && maxCount === 1) ? 3 : 0 };
+        detail.forEach(function (d, i) { if (sideOf(i) === sd) { t.cardPts += d.cardPts; t.pisti += d.pisti; } });
+        t.total = t.cardPts + t.pisti + t.majority;
+        return t;
+      });
+      res.detail = detail; res.sides = sideTotals;
+      res.points = range(n).map(function (i) { return sideTotals[sideOf(i)].total; });
+      res.end = { done: true };
+    }
+    return res;
+  }
+
+  var api = { J: J, rank: rank, suit: suit, cardPoints: cardPoints, setup: setup, replay: replay };
+  if (typeof module !== 'undefined' && module.exports) module.exports = api;
+  else root.PI = api;
+})(this);
+
+</script>
+<script>
+/* Ortak bağlantı: Firebase, hesaplar, admin, çevrimiçi durumu, ses, lobi yönlendirme */
 window.CORE = (function () {
   'use strict';
-  var core = { db: null, pid: null, connected: false, online: {}, ownerId: null, error: null, view: 'lobby', bootAt: Date.now() };
-  var subs = [];
+  var VIEWS = ['lobby', 'poker', 'okey', 'holdem', 'pisti', 'esli'];
+  var TITLES = { poker: 'Rus Pokeri Masası', okey: 'Okey Masası', holdem: 'Texas Hold\'em Masası', pisti: 'Pişti Masası', esli: 'Eşli Pişti Masası' };
+  var core = { db: null, auth: null, user: null, me: null, pid: null, connected: false, online: {}, ownerId: null, error: null,
+    view: 'lobby', bootAt: Date.now(), ready: false, authKnown: false };
+  var subs = [], readyFns = [];
   core.onChange = function (fn) { subs.push(fn); };
   core.emit = function () { subs.forEach(function (f) { try { f(); } catch (e) { console.error(e); } }); };
+  core.whenReady = function (fn) { if (core.ready) fn(); else readyFns.push(fn); };
 
   function rnd() {
     var a = new Uint32Array(3);
@@ -1211,28 +1476,84 @@ window.CORE = (function () {
     return Array.prototype.map.call(a, function (x) { return x.toString(36); }).join('');
   }
   core.rnd = rnd;
-  (function () {
-    var id = null;
-    try { id = localStorage.getItem('rp_pid'); } catch (e) {}
-    if (!id || !/^[A-Za-z0-9_]+$/.test(id)) { id = 'p_' + rnd(); try { localStorage.setItem('rp_pid', id); } catch (e) {} }
-    core.pid = id;
-  })();
-  core.savedName = function () { try { return localStorage.getItem('rp_name') || ''; } catch (e) { return ''; } };
-  core.saveName = function (n) { try { localStorage.setItem('rp_name', n); } catch (e) {} };
+  core.savedName = function () { return core.me ? core.me.name : ''; };
+  core.saveName = function () {};
   core.isOwner = function () { return !!core.pid && core.ownerId === core.pid; };
-  core.claimOwner = function () {
-    return core.db.ref('rp/owner').transaction(function (cur) { return cur == null ? core.pid : undefined; });
-  };
+  core.isAdmin = core.isOwner;
+  core.claimOwner = function () { return Promise.resolve(); };
   core.countOnline = function (view) {
     return Object.keys(core.online).filter(function (k) { return core.online[k] === view; }).length;
   };
   core.bannerText = function (loaded) {
-    if (core.error === 'config') return 'Masanın veritabanı adresi girilmemiş. Kodun başındaki VERITABANI satırına Firebase adresini yaz.';
+    if (core.error === 'config') return 'Site ayarı eksik: Firebase bilgileri girilmemiş.';
     if (core.error === 'nolib') return 'Oyun dosyaları yüklenemedi. İnternet bağlantını kontrol edip sayfayı yenile.';
-    if (core.error === 'perm') return 'Masaya erişilemiyor. Firebase\'de Realtime Database → Kurallar sekmesinde "rp" için okuma ve yazma izni açık olmalı.';
+    if (core.error === 'perm') return 'Masaya erişilemiyor. Firebase\'de Realtime Database kurallarının giriş yapan herkese açık olması gerekiyor.';
     if (loaded && !core.connected && Date.now() - core.bootAt > 6000) return 'Bağlantı koptu, yeniden bağlanılıyor… Bu sırada yaptığın hamleler bağlantı gelince gönderilir.';
     if (!loaded && Date.now() - core.bootAt > 10000) return 'Masaya bağlanılamıyor. İnternet bağlantını kontrol et; bağlantı gelince masa kendiliğinden yüklenir.';
     return '';
+  };
+
+  // ---------- ses: "Sıra sende" ----------
+  var spoken = {};
+  core.muted = function () { try { return localStorage.getItem('rp_mute') === '1'; } catch (e) { return false; } };
+  core.setMuted = function (m) { try { localStorage.setItem('rp_mute', m ? '1' : '0'); } catch (e) {} core.emit(); };
+  core.say = function (text) {
+    if (core.muted() || !window.speechSynthesis || !window.SpeechSynthesisUtterance) return;
+    try {
+      var u = new SpeechSynthesisUtterance(text);
+      u.lang = 'tr-TR'; u.rate = 1; u.pitch = 1;
+      var vs = speechSynthesis.getVoices() || [], tr = vs.filter(function (v) { return /^tr/i.test(v.lang); })[0];
+      if (tr) u.voice = tr;
+      speechSynthesis.cancel(); speechSynthesis.speak(u);
+    } catch (e) {}
+  };
+  core.notifyTurn = function (key) {
+    if (spoken[key]) return;
+    spoken[key] = true;
+    core.say('Sıra sende yaprak kafalı');
+  };
+  // iOS: sesin çalışması için ilk dokunuşta konuşma motorunu aç
+  document.addEventListener('click', function unlock() {
+    document.removeEventListener('click', unlock, true);
+    try { if (window.speechSynthesis && !core.muted()) { var u = new SpeechSynthesisUtterance(' '); u.volume = 0; speechSynthesis.speak(u); } } catch (e) {}
+  }, true);
+
+  // ---------- hesaplar ----------
+  function slug(name) {
+    return String(name || '').toLocaleLowerCase('tr-TR')
+      .replace(/ç/g, 'c').replace(/ğ/g, 'g').replace(/ı/g, 'i').replace(/i̇/g, 'i').replace(/ö/g, 'o').replace(/ş/g, 's').replace(/ü/g, 'u')
+      .replace(/[^a-z0-9]/g, '');
+  }
+  function emailOf(name) { return slug(name) + '@ruspokeri-masa.com'; }
+  function authMsg(e) {
+    var c = (e && e.code) || '';
+    if (/invalid-credential|wrong-password|user-not-found|invalid-login/.test(c)) return 'İsim ya da şifre yanlış.';
+    if (/email-already-in-use/.test(c)) return 'Bu isim alınmış. Başka bir isim dene ya da giriş yap.';
+    if (/weak-password/.test(c)) return 'Şifre en az 6 karakter olmalı.';
+    if (/network-request-failed/.test(c)) return 'İnternet bağlantısı yok.';
+    if (/too-many-requests/.test(c)) return 'Çok fazla deneme yapıldı, biraz bekleyip tekrar dene.';
+    if (/operation-not-allowed|configuration-not-found/.test(c)) return 'Firebase\'de İsim/Şifre girişi henüz açılmamış (admin ayarı).';
+    if (/api-key|invalid-api-key/.test(c)) return 'Site ayarı hatalı: Firebase anahtarı geçersiz.';
+    if (/unauthorized-domain/.test(c)) return 'Bu adres Firebase\'de izinli değil (admin ayarı).';
+    return 'Giriş yapılamadı. Tekrar dene.';
+  }
+  core.register = function (name, pass) {
+    name = String(name || '').trim().replace(/\s+/g, ' ').slice(0, 16);
+    if (!slug(name)) return Promise.reject({ message: 'İsimde en az bir harf ya da rakam olmalı.' });
+    core.pendingName = name;
+    return core.auth.createUserWithEmailAndPassword(emailOf(name), pass).then(function (cred) {
+      var uid = cred.user.uid;
+      return core.db.ref('rp/users/' + uid).set({ name: name, slug: slug(name), createdAt: Date.now() });
+    }).catch(function (e) { core.pendingName = null; throw { message: e && e.message && !e.code ? e.message : authMsg(e) }; });
+  };
+  core.login = function (name, pass) {
+    if (!slug(name)) return Promise.reject({ message: 'İsmini yaz.' });
+    return core.auth.signInWithEmailAndPassword(emailOf(name), pass).catch(function (e) { throw { message: authMsg(e) }; });
+  };
+  core.logout = function () {
+    var me = core.db && core.pid ? core.db.ref('rp/online/' + core.pid) : null;
+    var p = me ? me.remove().catch(function () {}) : Promise.resolve();
+    return p.then(function () { return core.auth.signOut(); }).then(function () { location.hash = ''; location.reload(); });
   };
 
   // ---------- oyun: 3 / 5 / 7 / 11 ellik bölümler ----------
@@ -1307,19 +1628,69 @@ window.CORE = (function () {
       (w.length ? '<div class="hint" style="text-align:left">' + o.scoreWord + ': ' + o.fmt(sc[w[0]] || 0) + '</div>' : '') + '</div>';
   };
 
+  // ---------- admin araçları ----------
+  function btnA(pre, op, id, label, cls) {
+    return '<button type="button" class="btn sm ' + (cls || '') + '" data-act="' + pre + '-adm" data-op="' + op + '" data-id="' + id + '">' + label + '</button>';
+  }
+  core.adminHTML = function (seats, o) {
+    var ids = Object.keys(seats).filter(function (id) { return seats[id] && seats[id].name; });
+    if (!ids.length) return '';
+    return '<h4>Yönetim · sadece admin</h4><div class="adm">' + ids.map(function (id) {
+      var s = seats[id], b = '';
+      if (s.banned) b += btnA(o.pre, 'unban', id, 'Geri al');
+      else {
+        if (o.sit && !s.sit) b += btnA(o.pre, 'seat', id, 'Oturt');
+        b += btnA(o.pre, 'kick', id, 'Masadan at', 'danger');
+      }
+      if (o.chips) b += btnA(o.pre, 'add', id, '+500') + btnA(o.pre, 'sub', id, '−500') + btnA(o.pre, 'rebuy', id, '1.000 yükle');
+      var tag = s.banned ? ' <span class="tag loss">Atıldı</span>' : o.sit ? (s.sit ? ' <span class="tag gold">Oturuyor</span>' : ' <span class="tag">İzliyor</span>') : '';
+      return '<div class="adm-row"><div class="adm-name">' + o.esc(s.name) + tag + (o.info ? ' <span class="adm-info">' + o.info(id) + '</span>' : '') + '</div><div class="adm-btns">' + b + '</div></div>';
+    }).join('') + '</div>';
+  };
+  core.adminOp = function (ref, seats, op, id) {
+    var s = seats[id] || {}, patch = null;
+    if (!core.isAdmin()) return Promise.resolve();
+    if (op === 'kick') patch = { banned: true, sit: false, anteRound: 0 };
+    else if (op === 'unban') patch = { banned: false };
+    else if (op === 'seat') patch = { sit: true, sitAt: Date.now() };
+    else if (op === 'add') patch = { adj: (s.adj || 0) + 500 };
+    else if (op === 'sub') patch = { adj: (s.adj || 0) - 500 };
+    else if (op === 'rebuy') patch = { rebuys: (s.rebuys || 0) + 1 };
+    return patch ? ref.child(id).update(patch) : Promise.resolve();
+  };
+
+  // Hesap sistemi öncesinden kalan oyuncu kayıtlarını sil (sadece admin)
+  core.cleanupOld = function () {
+    var db = core.db;
+    if (!core.isAdmin()) return Promise.resolve(0);
+    return db.ref('rp/users').once('value').then(function (us) {
+      var users = us.val() || {};
+      var paths = ['rp/seats', 'rp/okey/seats', 'rp/holdem/seats', 'rp/pisti/seats', 'rp/esli/seats'];
+      return Promise.all(paths.map(function (p) {
+        return db.ref(p).once('value').then(function (s) {
+          var v = s.val() || {}, upd = {}, n = 0;
+          Object.keys(v).forEach(function (id) { if (!users[id]) { upd[id] = null; n++; } });
+          return n ? db.ref(p).update(upd).then(function () { return n; }) : 0;
+        });
+      }));
+    }).then(function (arr) { return arr.reduce(function (a, b) { return a + b; }, 0); });
+  };
+
   function setPresence() {
-    if (!core.db || !core.connected) return;
+    if (!core.db || !core.connected || !core.pid) return;
     var me = core.db.ref('rp/online/' + core.pid);
     me.onDisconnect().remove();
     me.set(core.view).catch(function () {});
   }
+  function showOnly(id) {
+    VIEWS.concat(['login']).forEach(function (v) { var el = document.getElementById(v + 'View'); if (el) el.hidden = v !== id; });
+  }
   function route() {
+    if (!core.ready) { showOnly(core.authKnown ? 'login' : 'lobby'); core.emit(); return; }
     var h = (location.hash || '').replace('#', '');
-    core.view = h === 'poker' || h === 'okey' || h === 'holdem' ? h : 'lobby';
-    ['lobby', 'poker', 'okey', 'holdem'].forEach(function (v) {
-      var el = document.getElementById(v + 'View'); if (el) el.hidden = v !== core.view;
-    });
-    document.title = { poker: 'Rus Pokeri Masası', okey: 'Okey Masası', holdem: 'Texas Hold\'em Masası' }[core.view] || 'Arkadaş Masası';
+    core.view = VIEWS.indexOf(h) > 0 ? h : 'lobby';
+    showOnly(core.view);
+    document.title = TITLES[core.view] || 'Arkadaş Masası';
     var sh = document.getElementById('sheet'); if (sh && !sh.hidden) { sh.hidden = true; document.getElementById('sheetPanel').innerHTML = ''; }
     window.scrollTo(0, 0);
     setPresence();
@@ -1327,29 +1698,97 @@ window.CORE = (function () {
   }
   core.start = function () { window.addEventListener('hashchange', route); route(); };
 
+  function onReady() {
+    core.ready = true;
+    var db = core.db;
+    db.ref('rp/online').on('value', function (s) { core.online = s.val() || {}; core.emit(); }, function () {});
+    db.ref('rp/admin').on('value', function (s) { core.ownerId = s.val(); core.emit(); }, function () {});
+    db.ref('rp/admin').transaction(function (cur) { return cur == null ? core.pid : undefined; }).catch(function () {});
+    db.ref('.info/connected').on('value', function (s) { core.connected = !!s.val(); setPresence(); core.emit(); });
+    readyFns.splice(0).forEach(function (fn) { try { fn(); } catch (e) { console.error(e); } });
+    route();
+  }
+
   (function init() {
-    var url = window.VERITABANI || '';
-    if (!/^https:\/\/[^\s]+$/.test(url) || url.indexOf('__') >= 0) { core.error = 'config'; return; }
-    if (!window.firebase || !firebase.initializeApp) { core.error = 'nolib'; return; }
-    try { firebase.initializeApp({ databaseURL: url.replace(/\/+$/, '') }); core.db = firebase.database(); }
-    catch (e) { console.error(e); core.error = 'config'; return; }
-    core.db.ref('rp/online').on('value', function (s) { core.online = s.val() || {}; core.emit(); }, function () {});
-    core.db.ref('rp/owner').on('value', function (s) { core.ownerId = s.val(); core.emit(); }, function () {});
-    core.db.ref('.info/connected').on('value', function (s) { core.connected = !!s.val(); setPresence(); core.emit(); });
+    var cfg = window.FB_CONFIG || {};
+    if (!/^https:\/\//.test(cfg.databaseURL || '') || !cfg.apiKey || cfg.apiKey.indexOf('__') >= 0) { core.error = 'config'; return; }
+    if (!window.firebase || !firebase.initializeApp || !firebase.auth) { core.error = 'nolib'; return; }
+    try {
+      firebase.initializeApp(cfg);
+      core.db = firebase.database(); core.auth = firebase.auth();
+    } catch (e) { console.error(e); core.error = 'config'; return; }
+    core.auth.onAuthStateChanged(function (u) {
+      core.authKnown = true;
+      if (!u) { core.user = null; route(); return; }
+      if (core.ready) return;
+      core.user = u; core.pid = u.uid;
+      core.db.ref('rp/users/' + u.uid).once('value').then(function (s) {
+        var prof = s.val();
+        core.me = { name: (prof && prof.name) || core.pendingName || (u.email || '').split('@')[0] };
+        if (!prof && core.pendingName) core.db.ref('rp/users/' + u.uid).set({ name: core.pendingName, createdAt: Date.now() }).catch(function () {});
+        onReady();
+      }, function (e) { console.warn(e); core.error = 'perm'; core.me = core.me || { name: (u.email || '').split('@')[0] }; onReady(); });
+    });
   })();
   return core;
 })();
 
-/* Lobi */
+/* Giriş ekranı ve lobi */
 (function () {
   'use strict';
+  var mode = 'in', busy = false;
+  function $(id) { return document.getElementById(id); }
+  function setMode(m) {
+    mode = m;
+    $('lgTabIn').classList.toggle('on', m === 'in'); $('lgTabUp').classList.toggle('on', m === 'up');
+    $('lgTabIn').setAttribute('aria-selected', m === 'in'); $('lgTabUp').setAttribute('aria-selected', m === 'up');
+    $('lgPass2Wrap').hidden = m !== 'up';
+    $('lgPass2').required = m === 'up';
+    $('lgPass').setAttribute('autocomplete', m === 'up' ? 'new-password' : 'current-password');
+    $('lgSubmit').textContent = m === 'up' ? 'Hesap aç' : 'Giriş yap';
+    $('lgMsg').textContent = '';
+  }
+  document.addEventListener('click', function (e) {
+    var t = e.target.closest('[data-act]'); if (!t) return;
+    var act = t.getAttribute('data-act');
+    if (act === 'lg-tab') setMode(t.getAttribute('data-tab'));
+    else if (act === 'mute') CORE.setMuted(!CORE.muted());
+    else if (act === 'logout') CORE.logout();
+    else if (act === 'adm-clean') {
+      if (t.getAttribute('data-sure') !== '1') { t.setAttribute('data-sure', '1'); t.textContent = 'Emin misin? Tekrar bas'; return; }
+      t.disabled = true; t.textContent = 'Temizleniyor…';
+      CORE.cleanupOld().then(function (n) { t.textContent = n ? n + ' eski kayıt silindi' : 'Silinecek eski kayıt yok'; }, function () { t.textContent = 'Silinemedi'; t.disabled = false; });
+    }
+  });
+  document.addEventListener('submit', function (e) {
+    if (e.target.id !== 'loginForm') return;
+    e.preventDefault();
+    if (busy) return;
+    var name = $('lgName').value, pass = $('lgPass').value, msg = $('lgMsg');
+    if (mode === 'up' && pass !== $('lgPass2').value) { msg.textContent = 'Şifreler aynı değil.'; return; }
+    if (pass.length < 6) { msg.textContent = 'Şifre en az 6 karakter olmalı.'; return; }
+    busy = true; $('lgSubmit').disabled = true; msg.textContent = mode === 'up' ? 'Hesap açılıyor…' : 'Giriş yapılıyor…';
+    (mode === 'up' ? CORE.register(name, pass) : CORE.login(name, pass)).then(function () {
+      msg.textContent = '';
+    }, function (err) { msg.textContent = (err && err.message) || 'Olmadı, tekrar dene.'; })
+      .then(function () { busy = false; $('lgSubmit').disabled = false; });
+  });
   function render() {
-    [['poker', 'lobbyPoker'], ['okey', 'lobbyOkey'], ['holdem', 'lobbyHoldem']].forEach(function (x) {
+    [['poker', 'lobbyPoker'], ['okey', 'lobbyOkey'], ['holdem', 'lobbyHoldem'], ['pisti', 'lobbyPisti'], ['esli', 'lobbyEsli']].forEach(function (x) {
       var n = CORE.countOnline(x[0]), el = document.getElementById(x[1]);
       if (el) el.textContent = n ? n + ' kişi masada' : 'Masa boş';
     });
-    var b = document.getElementById('lobbyBanner');
-    if (b) { var t = CORE.bannerText(true); b.innerHTML = t ? '<div class="banner"></div>' : ''; if (t) b.firstChild.textContent = t; }
+    var u = $('lobbyUser');
+    if (u) u.textContent = CORE.me ? CORE.me.name + (CORE.isAdmin() ? ' · Admin' : '') : 'Bir oyun seç';
+    var mb = $('muteBtn'); if (mb) mb.textContent = CORE.muted() ? 'Ses kapalı' : 'Ses açık';
+    var la = $('lobbyAdmin');
+    if (la && CORE.isAdmin() && !la.innerHTML) la.innerHTML = '<div class="prev"><div class="label">Admin</div><p class="lobby-note">Hesap sistemi gelmeden önce oyuna girenlerin eski kayıtları masalarda tekrar görünebilir. Bir kere temizlemen yeter.</p><button type="button" class="btn" data-act="adm-clean">Eski oyuncu kayıtlarını temizle</button></div>';
+    if (la && !CORE.isAdmin()) la.innerHTML = '';
+    ['lobbyBanner', 'loginBanner'].forEach(function (id) {
+      var b = $(id); if (!b) return;
+      var t = CORE.error ? CORE.bannerText(true) : '';
+      b.innerHTML = t ? '<div class="banner"></div>' : ''; if (t) b.firstChild.textContent = t;
+    });
   }
   CORE.onChange(render);
 })();
@@ -1369,7 +1808,7 @@ window.CORE = (function () {
   function cls(n) { return n > 0 ? 'pos' : n < 0 ? 'neg' : 'zero'; }
   function clone(o) { return o == null ? o : JSON.parse(JSON.stringify(o)); }
 
-  var CORE = window.CORE, R = {}, pid = CORE.pid;
+  var CORE = window.CORE, R = {}, pid = null;
   var stateDoc = null, seats = {};
   var loaded = { state: false, seats: false };
   var selected = [], selKey = '';
@@ -1401,7 +1840,7 @@ window.CORE = (function () {
   }
   function chipsFromBank(id, bank) {
     var s = seats[id] || {};
-    return START * (1 + (s.rebuys || 0) - ((bank.rebuyBase || {})[id] || 0)) + ((bank.net || {})[id] || 0);
+    return START * (1 + (s.rebuys || 0) - ((bank.rebuyBase || {})[id] || 0)) + ((bank.net || {})[id] || 0) + (s.adj || 0) - ((bank.adjBase || {})[id] || 0);
   }
   function chipsOf(id, v) {
     var b = bankOf(stateDoc);
@@ -1421,6 +1860,7 @@ window.CORE = (function () {
   }
   function gameDisp(v) { return CORE.gameDisplay((stateDoc || {}).game, pendingDeltas(v), v.st.no); }
   function gOpts() { return { lowerBetter: false, fmt: sfmt, esc: esc, nameOf: nameOf, me: pid, scoreWord: 'Kâr' }; }
+  function currentAdj() { var o = {}; Object.keys(seats).forEach(function (id) { o[id] = (seats[id] && seats[id].adj) || 0; }); return o; }
   function currentRebuys() { var o = {}; Object.keys(seats).forEach(function (id) { o[id] = (seats[id] && seats[id].rebuys) || 0; }); return o; }
   function nextGameNo(c) { return (c.game ? c.game.n : (c.lastGames && c.lastGames.length ? c.lastGames[c.lastGames.length - 1].n : 0)) + 1; }
   function joined() { return !!(pid && seats[pid] && seats[pid].name); }
@@ -1629,8 +2069,9 @@ window.CORE = (function () {
       return;
     }
     var chips = chipsOf(pid, v);
-    var ek = timerKey(v), ms = elapsed(v), late = ek && ms >= SKIP_AFTER;
-    if (late) skipShownKey = ek;
+    var ek = timerKey(v), ms = elapsed(v), late = ek && (ms >= SKIP_AFTER || CORE.isAdmin());
+    if (ek && ms >= SKIP_AFTER) skipShownKey = ek;
+    if (seats[pid] && seats[pid].banned) { el.innerHTML = '<div class="msg">Admin seni bu masadan çıkardı. Oyunu izleyebilirsin.</div>'; return; }
 
     if (!sim) {
       var mySeat = seats[pid], iAnted = mySeat.anteRound === st.no && ANTES.indexOf(mySeat.ante) >= 0;
@@ -1645,8 +2086,7 @@ window.CORE = (function () {
         h += '<div class="msg">Ante\'n masada: <b>' + fmt(mySeat.ante) + '</b>. Herkes ante koyunca kartları dağıt.</div>';
         h += '<div class="row2">' + btn('unante', 'Ante\'yi geri çek') + btn('deal', 'Kartları dağıt', { cls: 'primary', small: n + ' oyuncu' }) + '</div>';
       } else if (chips < 5 * ANTES[0]) {
-        h += '<div class="msg">Fişin bitti (' + fmt(chips) + '). Yeniden ' + fmt(START) + ' fiş yükleyebilirsin; fiş tablosunda yükleme sayın görünür.</div>';
-        h += btn('rebuy', fmt(START) + ' fiş yükle', { cls: 'primary' });
+        h += '<div class="msg">Fişin bitti (' + fmt(chips) + '). Admin sana fiş yükleyebilir; yüklemeler tabloda görünür.</div>';
       } else if (v.anted.length >= MAX_SEATS) {
         h += '<div class="msg">Masa dolu (6 kutu). Bir sonraki eli bekle.</div>';
       } else {
@@ -1664,6 +2104,7 @@ window.CORE = (function () {
     if (sim.phase === 'play') {
       var cur = sim.players[sim.turn];
       if (me && cur === me) {
+        CORE.notifyTurn('poker:' + st.no + ':' + st.seed + ':play');
         if (!me.draw) {
           var k = selected.length;
           h += '<div class="row2">' + btn('fold', 'Pas', { cls: 'danger', small: 'Ante gider (' + fmt(A) + ')' }) +
@@ -1683,6 +2124,7 @@ window.CORE = (function () {
     } else if (sim.phase === 'buy') {
       var waiting = sim.waitingBuy || [];
       if (me && waiting.indexOf(pid) >= 0) {
+        CORE.notifyTurn('poker:' + st.no + ':' + st.seed + ':buy');
         var E = me.draw ? A : 0, gain = A - E;
         h += '<div class="msg">Krupiyenin oyunu yok. Beklersen ante 1:1 ödenir (<b>' + sfmt(gain) + '</b>). Oyun satın alırsan krupiye en yüksek kartını değiştirir; oyunu çıkarsa elin karşılaştırılır.</div>';
         h += '<div class="row2">' + btn('nobuy', 'Ante\'yi al', { small: sfmt(gain) + ' fiş' }) +
@@ -1766,7 +2208,7 @@ window.CORE = (function () {
         var no = (cur && cur.no) || 1, bank = bankOf(cur), list = [];
         Object.keys(seats).forEach(function (id) {
           var x = seats[id];
-          if (x && x.anteRound === no && ANTES.indexOf(x.ante) >= 0 && chipsFromBank(id, bank) >= 5 * x.ante) list.push({ id: id, ante: x.ante, at: x.anteAt || 0 });
+          if (x && !x.banned && x.anteRound === no && ANTES.indexOf(x.ante) >= 0 && chipsFromBank(id, bank) >= 5 * x.ante) list.push({ id: id, ante: x.ante, at: x.anteAt || 0 });
         });
         list.sort(function (a, b) { return a.at - b.at; });
         var players = list.slice(0, MAX_SEATS).map(function (x) { return { id: x.id, ante: x.ante }; });
@@ -1800,7 +2242,7 @@ window.CORE = (function () {
         var st2 = { no: cur.no || 1, seed: cur.seed, players: cur.players, skipPlay: cur.skipPlay || {}, skipBuy: cur.skipBuy || {} };
         var res = RP.simulate(st2, localDecs());
         if (res.phase !== 'done') { reason = 'El henüz bitmedi.'; return; }
-        var bank = bankOf(cur), net = clone(bank.net || {}), rebuyBase = clone(bank.rebuyBase || {});
+        var bank = bankOf(cur), net = clone(bank.net || {}), rebuyBase = clone(bank.rebuyBase || {}), adjBase = clone(bank.adjBase || {});
         var game = clone(cur.game) || null, archive = clone(cur.lastGames) || [];
         if ((bank.applied || 0) < st2.no) {
           var d = {};
@@ -1811,9 +2253,9 @@ window.CORE = (function () {
           if (game && !game.over) { reason = 'Oyun devam ediyor.'; return; }
           if (game && game.over) archive = CORE.archive(archive, game, false);
           game = CORE.newGame(len, nextGameNo(cur));
-          net = {}; rebuyBase = currentRebuys();
+          net = {}; rebuyBase = currentRebuys(); adjBase = currentAdj();
         } else if (!game || game.over) { reason = 'Önce kaç ellik oyun oynanacağını seç.'; return; }
-        return clone({ no: st2.no + 1, bank: { applied: Math.max(bank.applied || 0, st2.no), net: net, rebuyBase: rebuyBase }, prev: summarize(res), game: game, lastGames: archive });
+        return clone({ no: st2.no + 1, bank: { applied: Math.max(bank.applied || 0, st2.no), net: net, rebuyBase: rebuyBase, adjBase: adjBase }, prev: summarize(res), game: game, lastGames: archive });
       }).then(function (r) { if (!r.committed && reason) toast(reason); });
     });
   }
@@ -1829,7 +2271,7 @@ window.CORE = (function () {
         var next = clone(c);
         if (c.game && c.game.over) next.lastGames = CORE.archive(c.lastGames, c.game, false);
         next.game = CORE.newGame(len, nextGameNo(c));
-        next.bank = { applied: bankOf(c).applied || 0, net: {}, rebuyBase: currentRebuys() };
+        next.bank = { applied: bankOf(c).applied || 0, net: {}, rebuyBase: currentRebuys(), adjBase: currentAdj() };
         next.no = c.no || 1;
         return clone(next);
       }).then(function (r) { if (!r.committed && reason) toast(reason); });
@@ -1886,7 +2328,7 @@ window.CORE = (function () {
     var ids = Object.keys(seats).filter(function (id) { return seats[id] && seats[id].name; });
     ids.sort(function (a, c) { return chipsOf(c, v) - chipsOf(a, v); });
     var rows = ids.map(function (id, i) {
-      var s = seats[id], rb = (s.rebuys || 0) - ((b.rebuyBase || {})[id] || 0), c = chipsOf(id, v), profit = c - START * (1 + rb);
+      var s = seats[id], rb = (s.rebuys || 0) - ((b.rebuyBase || {})[id] || 0), c = chipsOf(id, v), profit = c - START * (1 + rb) - ((s.adj || 0) - ((b.adjBase || {})[id] || 0));
       return '<tr><td>' + (i + 1) + '. ' + dot(id) + esc(s.name) + (id === pid ? ' <span class="tag gold">sen</span>' : '') + (rb ? ' <span class="tag">+' + rb + ' yükleme</span>' : '') + '</td>' +
         '<td class="n">' + fmt(c) + '</td><td class="n"><span class="amt ' + cls(profit) + '">' + sfmt(profit) + '</span></td></tr>';
     }).join('');
@@ -1900,8 +2342,9 @@ window.CORE = (function () {
     h += ids.length ? '<table><thead><tr><th>Oyuncu</th><th class="n">Fiş</th><th class="n">Kâr</th></tr></thead><tbody>' + rows + '</tbody></table>'
       : '<p>Henüz masaya oturan yok.</p>';
     h += '<p style="color:var(--muted);font-size:13px">Kâr, başlangıç fişi ve yüklemeler düşülerek hesaplanır. Yeşil nokta şu an masada olanları gösterir.</p>';
+    h += CORE.lastGamesHTML((stateDoc || {}).lastGames, gOpts());
     if (isOwner()) {
-      h += CORE.lastGamesHTML((stateDoc || {}).lastGames, gOpts());
+      h += CORE.adminHTML(seats, { pre: 'p', esc: esc, chips: true, info: function (id) { return fmt(chipsOf(id, v)) + ' fiş'; } });
       if (gdB && !gdB.over) h += '<h4>Masa sahibi</h4>' + btn('askreset', 'Oyunu iptal et', { cls: 'danger', disabled: !!v.sim, small: v.sim ? 'Sadece eller arasında yapılabilir' : 'Kazanan ilan edilmez' });
     }
     return h;
@@ -1924,7 +2367,7 @@ window.CORE = (function () {
       case 'rules': openSheet(rulesHTML()); break;
       case 'board': openSheet(boardHTML()); break;
       case 'close': closeSheet(); break;
-      case 'join': openSheet(joinHTML()); setTimeout(function () { var i = $('nameInput'); if (i) i.focus(); }, 50); break;
+      case 'join': write(function () { var base = seats[pid] || {}; return saveSeat({ name: CORE.me.name, rebuys: base.rebuys || 0, joinedAt: base.joinedAt || Date.now() }); }); break;
       case 'chip': anteChoice = +t.getAttribute('data-v'); render(); break;
       case 'p-len': lenChoice = +t.getAttribute('data-len'); render(); break;
       case 'begingame': beginGame(lenChoice); break;
@@ -1934,7 +2377,7 @@ window.CORE = (function () {
         write(function () { return saveSeat({ anteRound: v.st.no, ante: anteChoice, anteAt: Date.now() }); }); break;
       case 'unante': write(function () { return saveSeat({ anteRound: 0 }); }); break;
       case 'deal': deal(); break;
-      case 'rebuy': write(function () { return saveSeat({ rebuys: (seats[pid].rebuys || 0) + 1 }); }); break;
+      case 'p-adm': if (CORE.isAdmin()) write(function () { return CORE.adminOp(R.seats, seats, t.getAttribute('data-op'), t.getAttribute('data-id')); }).then(function () { openSheet(boardHTML()); }); break;
       case 'sel':
         if (!canSelect(v)) break;
         var i = +t.getAttribute('data-i'), at = selected.indexOf(i);
@@ -1990,6 +2433,7 @@ window.CORE = (function () {
 
   // ---------- başlatma ----------
   function boot() {
+    pid = CORE.pid;
     var rs = rulesSplit();
     $('pokerRulesL').innerHTML = '<h3>Rus Pokeri nasıl oynanır</h3>' + rs.play;
     $('pokerRulesR').innerHTML = '<h3>Ödeme tablosu</h3>' + rs.pay.replace('<h4>Ödeme tablosu</h4>', '');
@@ -2001,7 +2445,7 @@ window.CORE = (function () {
     R.state.on('value', function (s) { stateDoc = s.val(); loaded.state = true; render(); }, onErr);
     R.seats.on('value', function (s) { seats = s.val() || {}; loaded.seats = true; render(); }, onErr);
   }
-  boot();
+  CORE.whenReady(boot);
 })();
 
 </script>
@@ -2010,7 +2454,7 @@ window.CORE = (function () {
 (function () {
   'use strict';
   var OKE = window.OK, CORE = window.CORE;
-  var pid = CORE.pid, R = {}, st = null, seats = {}, loaded = { st: false, seats: false };
+  var pid = null, R = {}, st = null, seats = {}, loaded = { st: false, seats: false };
   var busy = false, sel = null, V = null, turnSeen = {}, autoShownKey = '', lenChoice = 5;
   var AUTO_AFTER = 90000, MAX = 4;
   var CC = ['y', 'b', 'k', 'r'];
@@ -2023,7 +2467,7 @@ window.CORE = (function () {
   function joined() { return !!(seats[pid] && seats[pid].name); }
   function norm(c) { return { no: c.no, seed: c.seed, players: c.players, starter: c.starter || 0, actions: c.actions || [] }; }
   function seated() {
-    return Object.keys(seats).filter(function (id) { return seats[id] && seats[id].sit && seats[id].name; })
+    return Object.keys(seats).filter(function (id) { return seats[id] && seats[id].sit && !seats[id].banned && seats[id].name; })
       .sort(function (a, b) { return (seats[a].sitAt || 0) - (seats[b].sitAt || 0); });
   }
   function dot(id) { return CORE.online[id] === 'okey' ? '<span class="on-dot" title="Çevrimiçi"></span>' : ''; }
@@ -2221,8 +2665,9 @@ window.CORE = (function () {
     s.players.forEach(function (id, i) {
       var hand = r.hands[i], p = r.penalties[i], isW = !e.draw && i === e.winner, tilesHtml;
       if (isW && e.kind === 'cift') tilesHtml = groupsHTML(pairGroups(hand, r.g), [], r.g);
+      else if (p.byPairs) { var pa = OKE.pairArrange(hand, r.g); tilesHtml = groupsHTML(pa.groups, pa.left, r.g); }
       else { var a = OKE.arrange(hand, r.g); tilesHtml = groupsHTML(a.groups, a.left, r.g); }
-      var line = isW ? 'Bitiren · <b class="pos">' + fmt(p.pen) + '</b>' : e.draw ? 'Ceza yok' : p.noPer ? 'Per yok · ' + r.g.mult + ' × 100' + (p.factor > r.g.mult * 100 ? ' × ' + (p.factor / (r.g.mult * 100)) : '') + ' = <b>' + fmt(p.pen) + '</b>' : 'Kalan ' + p.base + ' × ' + p.factor + ' = <b>' + fmt(p.pen) + '</b>';
+      var line = isW ? 'Bitiren · <b class="pos">' + fmt(p.pen) + '</b>' : e.draw ? 'Ceza yok' : p.byPairs ? 'Çift sayıldı · kalan ' + p.base + ' × ' + p.factor + ' = <b>' + fmt(p.pen) + '</b>' : p.noPer ? 'Per yok · ' + r.g.mult + ' × 100' + (p.factor > r.g.mult * 100 ? ' × ' + (p.factor / (r.g.mult * 100)) : '') + ' = <b>' + fmt(p.pen) + '</b>' : 'Kalan ' + p.base + ' × ' + p.factor + ' = <b>' + fmt(p.pen) + '</b>';
       out += '<div class="res-row' + (id === pid ? ' mine' : '') + '"><div class="res-head"><span class="who">' + esc(nameOf(id)) + (id === pid ? ' · sen' : '') + '</span>' +
         '<span class="res-pen' + (p.pen > 0 ? ' neg' : '') + '">' + line + '</span></div><div class="res-tiles">' + tilesHtml + '</div></div>';
     });
@@ -2277,6 +2722,7 @@ window.CORE = (function () {
     if (CORE.error) { el.innerHTML = '<div class="msg">Masa şu an açılamıyor.</div>'; return; }
     if (!(loaded.st && loaded.seats)) { el.innerHTML = '<div class="msg">Masaya bağlanılıyor…</div>'; return; }
     if (!joined()) { el.innerHTML = '<div class="msg">Oynamak için masaya otur.</div>' + btn('ok-join', 'Masaya otur', { cls: 'primary' }); return; }
+    if (seats[pid].banned) { el.innerHTML = '<div class="msg">Admin seni bu masadan çıkardı. Oyunu izleyebilirsin.</div>'; return; }
     var list = seated(), iSit = !!seats[pid].sit;
     if (!r || r.end) {
       var gd = gameDisp(v), needGame = !gd || gd.over;
@@ -2291,9 +2737,17 @@ window.CORE = (function () {
           small: list.length < 2 ? 'En az 2 kişi gerekli' : needGame ? lenChoice + ' el · ' + list.length + ' oyuncu' : 'El ' + (gd.played + 1) + '/' + gd.len }) + '</div>';
       el.innerHTML = h; return;
     }
-    var ms = elapsed(v), k = timerKey(v), late = ms >= AUTO_AFTER;
-    if (late) autoShownKey = k;
+    var ms = elapsed(v), k = timerKey(v), late = ms >= AUTO_AFTER || CORE.isOwner();
+    if (ms >= AUTO_AFTER) autoShownKey = k;
     var myTurn = v.me >= 0 && r.turn === v.me;
+    var vote = v.s.vote && v.s.vote.seed === v.s.seed ? v.s.vote : null;
+    if (vote) {
+      var yes = Object.keys(vote.yes || {}).length;
+      h += '<div class="vote"><div class="msg"><b>' + esc(nameOf(vote.by)) + '</b> eli bozmak istiyor · ' + yes + '/' + r.n + ' kabul</div>' +
+        (v.me >= 0 && !(vote.yes || {})[pid] ? '<div class="row2">' + btn('ok-vote-no', 'Ret', { cls: 'danger' }) + btn('ok-vote-yes', 'Kabul', { cls: 'primary', small: 'Herkes kabul ederse yeniden dağıtılır' }) + '</div>' : '<div class="msg" style="color:var(--muted)">Diğerlerinin oyu bekleniyor.</div>') + '</div>';
+    } else if (v.s.voteResult && v.s.voteResult.seed === v.s.seed && Date.now() - (v.s.voteResult.at || 0) < 15000) {
+      h += '<div class="msg" style="color:var(--loss)">' + esc(nameOf(v.s.voteResult.by)) + ' el bozmayı reddetti.</div>';
+    }
     if (myTurn && r.phase === 'draw') {
       var prev = (v.me - 1 + r.n) % r.n, has = r.discards[prev].length > 0;
       h += '<div class="msg">Sıra sende: <b>taş çek</b>.</div>';
@@ -2312,6 +2766,8 @@ window.CORE = (function () {
       else h += '<div class="row2">' + btn('ok-seri', 'Seri diz') + btn('ok-cift', 'Çift diz') + '</div>';
       if (late && v.me !== r.turn && joined()) h += btn('ok-auto', esc(nameOf(cur)) + ' yerine otomatik oynat', { small: 'Ortadan çekip çektiği taşı atar' });
     }
+    if (!vote && v.me >= 0) h += btn('ok-vote', 'El boz', { cls: 'sm', small: 'Herkes kabul ederse el yeniden dağıtılır' });
+    if (myTurn && (r.phase === 'draw' || r.actionCount === 0)) CORE.notifyTurn('okey:' + v.s.no + ':' + v.s.seed + ':' + r.actionCount);
     el.innerHTML = h;
   }
   function finishHint(opts) {
@@ -2369,6 +2825,36 @@ window.CORE = (function () {
         var next = clone(cur); next.actions = (cur.actions || []).concat([a]);
         return clone(next);
       }).then(function (res) { if (!res.committed && why) toast(why); return res; });
+    });
+  }
+  function voteTx(kind) {
+    var expectNo = V.s.no, expectSeed = V.s.seed, why = '';
+    return write(function () {
+      return R.st.transaction(function (cur) {
+        why = '';
+        if (cur === null) return null;
+        if (!cur.players || cur.no !== expectNo || cur.seed !== expectSeed) { why = 'El değişti.'; return; }
+        if (OKE.replay(norm(cur)).end) { why = 'El bitti.'; return; }
+        if (cur.players.indexOf(pid) < 0) return;
+        var next = clone(cur), vote = cur.vote && cur.vote.seed === cur.seed ? clone(cur.vote) : null;
+        if (kind === 'propose') {
+          if (vote) return;
+          vote = { by: pid, seed: cur.seed, yes: {}, at: Date.now() }; vote.yes[pid] = true;
+        } else if (kind === 'yes') {
+          if (!vote) return;
+          vote.yes = vote.yes || {}; vote.yes[pid] = true;
+        } else {
+          if (!vote) return;
+          delete next.vote; next.voteResult = { by: pid, seed: cur.seed, at: Date.now() };
+          return clone(next);
+        }
+        var all = cur.players.every(function (id) { return vote.yes[id]; });
+        if (all) {
+          next.seed = CORE.rnd(); delete next.actions; delete next.vote; delete next.voteResult;
+          next.redeals = (cur.redeals || 0) + 1;
+        } else next.vote = vote;
+        return clone(next);
+      }).then(function (res) { if (!res.committed && why) toast(why); });
     });
   }
   function summarize(c, rr) {
@@ -2442,6 +2928,8 @@ window.CORE = (function () {
       '<p><b>Hiç peri olmayan</b> çarpan × 100 ceza yer (Mavi\'de 1.000).</p>' +
       '<p>Çiftle biterse cezalar 2 katı, okeyi atarak biterse 2 katı, ikisi birden 4 katı olur. Elde kalan okey ceza yazmaz; sahte okey okeyin sayısı kadar yazar. Ortada taş kalmazsa el berabere biter.</p>' +
       '<h4>Biten</h4><p>Biten oyuncu gösterge çarpanı × 10 puan siler: Mavi −100, Siyah −50, Kırmızı −40, Sarı −30, sahte okey −200. Çiftle biterse 2 katı siler. <b>Okeyle biterse</b> çarpan × 100 siler (Mavi\'de −1.000).</p>' +
+      '<h4>4 çift</h4><p>Kaybedenin elinde en az 4 çift varsa çiftler ceza yazmaz, çift dışında kalan taşlar toplanır (perle saymak daha az ceza çıkarıyorsa o kullanılır).</p>' +
+      '<h4>El boz</h4><p>Eldeki biri "El boz" der, masadaki herkes kabul ederse el ceza yazılmadan yeniden dağıtılır. Bir kişi reddederse el devam eder.</p>' +
       '<h4>Süre</h4><p>Sırası gelen 1,5 dakika oynamazsa masadakiler onun yerine otomatik oynatabilir: ortadan çekip çektiği taşı atar.</p>' +
       '<h4>Puan ve oyun</h4><p>Oyun başlarken 3, 5, 7 ya da 11 el seçilir. Cezalar ve silinen puanlar el el yazılır; el sayısı dolunca toplam cezası en az olan oyunu kazanır.</p>';
   }
@@ -2459,6 +2947,7 @@ window.CORE = (function () {
       h += CORE.scoreTable(gd, Object.assign(gOpts(), { extra: seated() }));
     } else h += '<p>Henüz oyun başlamadı. Masaya oturup kaç el oynanacağını seçerek başlatın.</p>';
     h += CORE.lastGamesHTML(v.s.lastGames, gOpts());
+    if (CORE.isOwner()) h += CORE.adminHTML(seats, { pre: 'ok', esc: esc, sit: true });
     if (CORE.isOwner()) {
       var active = v.r && !v.r.end;
       h += '<h4>Masa sahibi</h4>' + (active ? btn('ok-askcancel', 'Bu eli iptal et', { cls: 'danger', small: 'Ceza yazılmaz' }) : gd && !gd.over ? btn('ok-askreset', 'Oyunu iptal et', { cls: 'danger', small: 'Kazanan ilan edilmez' }) : '');
@@ -2482,13 +2971,20 @@ window.CORE = (function () {
     switch (act) {
       case 'ok-rules': openSheet(rulesHTML()); break;
       case 'ok-board': openSheet(boardHTML()); break;
-      case 'ok-join': openSheet(joinHTML()); setTimeout(function () { var i = $('okNameInput'); if (i) i.focus(); }, 50); break;
+      case 'ok-join':
+        var fullJ = seated().length >= MAX;
+        write(function () { var base = seats[pid] || {}; return saveSeat({ name: CORE.me.name, sit: !fullJ, sitAt: Date.now(), joinedAt: base.joinedAt || Date.now() }); })
+          .then(function (ok) { if (ok && fullJ) toast('Masa dolu; izleyici olarak girdin.'); }); break;
+      case 'ok-adm': if (CORE.isOwner()) write(function () { return CORE.adminOp(R.seats, seats, t.getAttribute('data-op'), t.getAttribute('data-id')); }).then(function () { openSheet(boardHTML()); }); break;
       case 'ok-sit':
         if (seated().length >= MAX) { toast('Masa dolu.'); break; }
         write(function () { return saveSeat({ sit: true, sitAt: Date.now() }); }); break;
       case 'ok-stand': write(function () { return saveSeat({ sit: false }); }); break;
       case 'ok-start': var gdS = gameDisp(v); startHand(!gdS || gdS.over ? lenChoice : 0); break;
       case 'ok-len': lenChoice = +t.getAttribute('data-len'); render(); break;
+      case 'ok-vote': voteTx('propose'); break;
+      case 'ok-vote-yes': voteTx('yes'); break;
+      case 'ok-vote-no': voteTx('no'); break;
       case 'ok-undo': pushAction({ p: v.me, t: 'u' }, function (rr) { return rr.phase === 'discard' && rr.locked != null; }); break;
       case 'ok-tile':
         var id = +t.getAttribute('data-id');
@@ -2557,6 +3053,7 @@ window.CORE = (function () {
 
   window.__okDebug = function () { return V; };
   function boot() {
+    pid = CORE.pid;
     var rs = rulesSplit();
     $('okeyRulesL').innerHTML = '<h3>Okey nasıl oynanır</h3>' + rs.play;
     $('okeyRulesR').innerHTML = '<h3>Ceza · Renk</h3>' + rs.pay;
@@ -2570,7 +3067,7 @@ window.CORE = (function () {
     R.st.on('value', function (s) { st = s.val(); loaded.st = true; render(); }, onErr);
     R.seats.on('value', function (s) { seats = s.val() || {}; loaded.seats = true; render(); }, onErr);
   }
-  boot();
+  CORE.whenReady(boot);
 })();
 
 </script>
@@ -2579,7 +3076,7 @@ window.CORE = (function () {
 (function () {
   'use strict';
   var HE = window.HE, RP = window.RP, CORE = window.CORE;
-  var pid = CORE.pid, R = {}, st = null, seats = {}, loaded = { st: false, seats: false };
+  var pid = null, R = {}, st = null, seats = {}, loaded = { st: false, seats: false };
   var busy = false, V = null, turnSeen = {}, autoShownKey = '', raiseTo = 0, raiseKey = '', lenChoice = 5;
   var START = 1000, SB = 10, BB = 20, MAX = 8, AUTO_AFTER = 60000;
   var SUITS = ['♠', '♥', '♦', '♣'];
@@ -2594,7 +3091,7 @@ window.CORE = (function () {
   function nameOf(id) { var s = seats[id]; return (s && s.name) || 'Oyuncu'; }
   function joined() { return !!(seats[pid] && seats[pid].name); }
   function seated() {
-    return Object.keys(seats).filter(function (id) { return seats[id] && seats[id].sit && seats[id].name; })
+    return Object.keys(seats).filter(function (id) { return seats[id] && seats[id].sit && !seats[id].banned && seats[id].name; })
       .sort(function (a, b) { return (seats[a].sitAt || 0) - (seats[b].sitAt || 0); });
   }
   function dot(id) { return CORE.online[id] === 'holdem' ? '<span class="on-dot" title="Çevrimiçi"></span>' : ''; }
@@ -2608,7 +3105,7 @@ window.CORE = (function () {
   }
   function chipsOf(id, v) {
     var s = v.s, stacks = s.stacks || {}, rbA = s.rbApplied || {}, seat = seats[id] || {};
-    var pending = START * Math.max(0, (seat.rebuys || 0) - (rbA[id] || 0));
+    var pending = START * Math.max(0, (seat.rebuys || 0) - (rbA[id] || 0)) + ((seat.adj || 0) - ((s.adjApplied || {})[id] || 0));
     if (v.r) {
       var i = v.r.P.map(function (p) { return p.id; }).indexOf(id);
       if (i >= 0) return (v.r.end ? v.r.P[i].final : v.r.P[i].stack) + pending;
@@ -2623,6 +3120,7 @@ window.CORE = (function () {
   function gameDisp(v) { return CORE.gameDisplay(v.s.game, pendingDeltas(v), v.s.no); }
   function gOpts() { return { lowerBetter: false, fmt: sfmt, esc: esc, nameOf: nameOf, me: pid, scoreWord: 'Kâr' }; }
   function nextGameNo(c) { return (c.game ? c.game.n : (c.lastGames && c.lastGames.length ? c.lastGames[c.lastGames.length - 1].n : 0)) + 1; }
+  function adjOf(id, v) { var seat = seats[id] || {}; return (seat.adj || 0) - ((v.s.adjBase || {})[id] || 0); }
   function rebuysOf(id, v) { var seat = seats[id] || {}; return (seat.rebuys || 0) - ((v.s.rbBase || {})[id] || 0); }
 
   function cardHTML(c, extra) {
@@ -2757,6 +3255,7 @@ window.CORE = (function () {
     if (CORE.error) { el.innerHTML = '<div class="msg">Masa şu an açılamıyor.</div>'; return; }
     if (!(loaded.st && loaded.seats)) { el.innerHTML = '<div class="msg">Masaya bağlanılıyor…</div>'; return; }
     if (!joined()) { el.innerHTML = '<div class="msg">Oynamak için masaya otur.</div>' + btn('he-join', 'Masaya otur', { cls: 'primary' }); return; }
+    if (seats[pid].banned) { el.innerHTML = '<div class="msg">Admin seni bu masadan çıkardı. Oyunu izleyebilirsin.</div>'; return; }
     var list = seated(), iSit = !!seats[pid].sit, chips = chipsOf(pid, v);
     if (!r || r.end) {
       if (r && r.end && v.me >= 0) h += '<div class="result"><div class="big ' + cls(r.P[v.me].net) + '">' + sfmt(r.P[v.me].net) + '</div></div>';
@@ -2767,18 +3266,19 @@ window.CORE = (function () {
         h += '<div class="row2">' + (iSit ? btn('he-stand', 'Masadan kalk', { small: 'İzlemeye geç' }) : btn('he-sit', 'Masaya otur', { disabled: list.length >= MAX, small: list.length >= MAX ? 'Masa dolu' : list.length + ' / ' + MAX })) +
           btn('he-start', gdA ? 'Yeni oyun' : 'Oyunu başlat', { cls: 'primary', disabled: !iSit || list.length < 2, small: list.length < 2 ? 'En az 2 kişi gerekli' : lenChoice + ' el · ' + list.length + ' oyuncu' }) + '</div>';
       } else if (iSit && chips <= 0) {
-        h += '<div class="msg">Fişin bitti. Yeniden ' + fmt(START) + ' fiş yükleyebilirsin; tabloda yükleme sayın görünür.</div>';
-        h += '<div class="row2">' + btn('he-stand', 'Masadan kalk') + btn('he-rebuy', fmt(START) + ' fiş yükle', { cls: 'primary' }) + '</div>';
+        h += '<div class="msg">Fişin bitti. Admin sana fiş yükleyebilir; yüklemeler tabloda görünür.</div>';
+        h += btn('he-stand', 'Masadan kalk');
       } else {
         h += '<div class="row2">' + (iSit ? btn('he-stand', 'Masadan kalk', { small: 'İzlemeye geç' }) : btn('he-sit', 'Masaya otur', { disabled: list.length >= MAX, small: list.length >= MAX ? 'Masa dolu' : list.length + ' / ' + MAX })) +
           btn('he-start', 'Yeni el', { cls: 'primary', disabled: !iSit || able < 2, small: able < 2 ? 'Fişi olan en az 2 kişi gerekli' : 'El ' + (gdA.played + 1) + '/' + gdA.len }) + '</div>';
       }
       el.innerHTML = h; return;
     }
-    var ms = elapsed(v), k = timerKey(v), late = ms >= AUTO_AFTER;
-    if (late) autoShownKey = k;
+    var ms = elapsed(v), k = timerKey(v), late = ms >= AUTO_AFTER || CORE.isAdmin();
+    if (ms >= AUTO_AFTER) autoShownKey = k;
     if (v.me >= 0 && r.turn === v.me) {
       var op = HE.options(r);
+      CORE.notifyTurn('holdem:' + v.s.no + ':' + v.s.seed + ':' + r.actionCount);
       if (raiseKey !== k) { raiseKey = k; raiseTo = op.minTo; }
       raiseTo = clampTo(raiseTo, op);
       if (op.maxTo <= op.minTo) raiseTo = op.maxTo;
@@ -2858,7 +3358,7 @@ window.CORE = (function () {
         why = '';
         var c = cur || {}, active = !!(c.players && c.seed), rr = null;
         if (active) { rr = HE.replay(norm(c)); if (!rr.end) { why = 'El devam ediyor.'; return; } }
-        var stacks = clone(c.stacks || {}), rbA = clone(c.rbApplied || {}), rbBase = clone(c.rbBase || {}), applied = c.applied || 0, prev = c.prev || null;
+        var stacks = clone(c.stacks || {}), rbA = clone(c.rbApplied || {}), rbBase = clone(c.rbBase || {}), adjA = clone(c.adjApplied || {}), adjBase = clone(c.adjBase || {}), applied = c.applied || 0, prev = c.prev || null;
         var game = clone(c.game) || null, archive = clone(c.lastGames) || [];
         if (active && applied < c.no) {
           var d = {};
@@ -2872,10 +3372,13 @@ window.CORE = (function () {
           game = CORE.newGame(len, nextGameNo(c));
           var rb = {}; Object.keys(seats).forEach(function (id) { rb[id] = (seats[id] && seats[id].rebuys) || 0; });
           stacks = {}; rbA = clone(rb); rbBase = clone(rb);
+          var aj = {}; Object.keys(seats).forEach(function (id) { aj[id] = (seats[id] && seats[id].adj) || 0; }); adjA = clone(aj); adjBase = clone(aj);
         } else if (!game || game.over) { why = 'Önce oyunun kaç el süreceğini seç.'; return; }
         Object.keys(seats).forEach(function (id) {
           var rb2 = (seats[id] && seats[id].rebuys) || 0, ap = rbA[id] || 0;
           if (rb2 > ap) { stacks[id] = (stacks[id] == null ? START : stacks[id]) + START * (rb2 - ap); rbA[id] = rb2; }
+          var aj2 = (seats[id] && seats[id].adj) || 0, aa = adjA[id] || 0;
+          if (aj2 !== aa) { stacks[id] = Math.max(0, (stacks[id] == null ? START : stacks[id]) + aj2 - aa); adjA[id] = aj2; }
         });
         var order = seated();
         var players = order.filter(function (id) { return (stacks[id] == null ? START : stacks[id]) > 0; }).slice(0, MAX);
@@ -2886,7 +3389,7 @@ window.CORE = (function () {
           for (var k = 1; k <= order.length; k++) { var cand = order[(pi + k + order.length) % order.length]; if (players.indexOf(cand) >= 0) { di = players.indexOf(cand); break; } }
         }
         return clone({ no: (c.no || 0) + 1, seed: CORE.rnd(), players: players.map(function (id) { return { id: id, stack: stacks[id] }; }),
-          dealer: di, button: players[di], sb: SB, bb: BB, stacks: stacks, rbApplied: rbA, rbBase: rbBase, applied: applied, prev: prev,
+          dealer: di, button: players[di], sb: SB, bb: BB, stacks: stacks, rbApplied: rbA, rbBase: rbBase, adjApplied: adjA, adjBase: adjBase, applied: applied, prev: prev,
           game: game, lastGames: archive, startedAt: Date.now() });
       }).then(function (res) { if (!res.committed && why) toast(why); });
     });
@@ -2951,14 +3454,15 @@ window.CORE = (function () {
       h += CORE.scoreTable(gdB, gOpts()) + '<h4>Fişler</h4>';
     }
     h += ids.length ? '<table><thead><tr><th>Oyuncu</th><th class="n">Fiş</th><th class="n">Kâr</th></tr></thead><tbody>' + ids.map(function (id, i) {
-      var rb = rebuysOf(id, v), c = chipsOf(id, v), profit = c - START * (1 + rb);
+      var rb = rebuysOf(id, v), c = chipsOf(id, v), profit = c - START * (1 + rb) - adjOf(id, v);
       return '<tr><td>' + (i + 1) + '. ' + dot(id) + esc(nameOf(id)) + (id === pid ? ' <span class="tag gold">sen</span>' : '') + (rb ? ' <span class="tag">+' + rb + ' yükleme</span>' : '') + '</td>' +
         '<td class="n">' + fmt(c) + '</td><td class="n"><span class="amt ' + cls(profit) + '">' + sfmt(profit) + '</span></td></tr>';
     }).join('') + '</tbody></table>' : '<p>Henüz masaya oturan yok.</p>';
     h += '<p style="color:var(--muted);font-size:13px">Kâr, başlangıç fişi ve yüklemeler düşülerek hesaplanır.</p>';
+    h += CORE.lastGamesHTML(v.s.lastGames, gOpts());
     if (CORE.isOwner()) {
       var active = v.r && !v.r.end;
-      h += CORE.lastGamesHTML(v.s.lastGames, gOpts());
+      h += CORE.adminHTML(seats, { pre: 'he', esc: esc, sit: true, chips: true, info: function (id) { return fmt(chipsOf(id, v)) + ' fiş'; } });
       h += '<h4>Masa sahibi</h4>' + (active ? btn('he-askcancel', 'Bu eli iptal et', { cls: 'danger', small: 'Fişler el başındaki gibi kalır' }) : gdB && !gdB.over ? btn('he-askreset', 'Oyunu iptal et', { cls: 'danger', small: 'Kazanan ilan edilmez' }) : '');
     }
     return h;
@@ -2980,12 +3484,15 @@ window.CORE = (function () {
     switch (act) {
       case 'he-rules': openSheet(rulesHTML()); break;
       case 'he-board': openSheet(boardHTML()); break;
-      case 'he-join': openSheet(joinHTML()); setTimeout(function () { var i = $('heNameInput'); if (i) i.focus(); }, 50); break;
+      case 'he-join':
+        var fullJ = seated().length >= MAX;
+        write(function () { var base = seats[pid] || {}; return saveSeat({ name: CORE.me.name, sit: !fullJ, sitAt: Date.now(), rebuys: base.rebuys || 0, joinedAt: base.joinedAt || Date.now() }); })
+          .then(function (ok) { if (ok && fullJ) toast('Masa dolu; izleyici olarak girdin.'); }); break;
       case 'he-sit':
         if (seated().length >= MAX) { toast('Masa dolu.'); break; }
         write(function () { return saveSeat({ sit: true, sitAt: Date.now() }); }); break;
       case 'he-stand': write(function () { return saveSeat({ sit: false }); }); break;
-      case 'he-rebuy': write(function () { return saveSeat({ rebuys: ((seats[pid] && seats[pid].rebuys) || 0) + 1 }); }); break;
+      case 'he-adm': if (CORE.isAdmin()) write(function () { return CORE.adminOp(R.seats, seats, t.getAttribute('data-op'), t.getAttribute('data-id')); }).then(function () { openSheet(boardHTML()); }); break;
       case 'he-start': var gdS2 = gameDisp(v); startHand(!gdS2 || gdS2.over ? lenChoice : 0); break;
       case 'he-len': lenChoice = +t.getAttribute('data-len'); render(); break;
       case 'he-fold': if (op) pushAction({ p: v.me, t: 'fold' }); break;
@@ -3033,6 +3540,7 @@ window.CORE = (function () {
 
   window.__heDebug = function () { return V; };
   function boot() {
+    pid = CORE.pid;
     $('holdemRulesL').innerHTML = '<h3>Texas Hold\'em nasıl oynanır</h3>' + rulesPlay();
     $('holdemRulesR').innerHTML = '<h3>El sıralaması</h3>' + rulesRank();
     render();
@@ -3043,7 +3551,379 @@ window.CORE = (function () {
     R.st.on('value', function (s) { st = s.val(); loaded.st = true; render(); }, onErr);
     R.seats.on('value', function (s) { seats = s.val() || {}; loaded.seats = true; render(); }, onErr);
   }
-  boot();
+  CORE.whenReady(boot);
+})();
+
+</script>
+<script>
+/* Pişti ve Eşli Pişti masaları (aynı kod, iki ayar) */
+(function () {
+  'use strict';
+  var PI = window.PI, RP = window.RP, CORE = window.CORE;
+  var SUITS = ['♠', '♥', '♦', '♣'];
+
+  function makeTable(cfg) {
+    var pre = cfg.pre, pid = null, R = {}, st = null, seats = {}, loaded = { st: false, seats: false };
+    var busy = false, V = null, turnSeen = {}, autoShownKey = '', lenChoice = 5, sel = null;
+    var AUTO_AFTER = 60000, MAX = cfg.max, MIN = cfg.min;
+
+    function $(id) { return document.getElementById(pre + id); }
+    function g$(id) { return document.getElementById(id); }
+    function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+    function fmt(n) { n = Number(n || 0); return (n < 0 ? '−' : '') + Math.abs(n).toLocaleString('tr-TR'); }
+    function clone(o) { return o == null ? o : JSON.parse(JSON.stringify(o)); }
+    function nameOf(id) { var s = seats[id]; return (s && s.name) || 'Oyuncu'; }
+    function joined() { return !!(pid && seats[pid] && seats[pid].name); }
+    function seated() {
+      return Object.keys(seats).filter(function (id) { return seats[id] && seats[id].sit && !seats[id].banned && seats[id].name; })
+        .sort(function (a, b) { return (seats[a].sitAt || 0) - (seats[b].sitAt || 0); });
+    }
+    function dot(id) { return CORE.online[id] === cfg.key ? '<span class="on-dot" title="Çevrimiçi"></span>' : ''; }
+    function norm(c) { return { no: c.no, seed: c.seed, players: c.players, dealer: c.dealer || 0, team: cfg.team, actions: c.actions || [] }; }
+    function view() {
+      var s = st || {}, r = null;
+      if (s.players && s.players.length >= MIN && s.seed) { try { r = PI.replay(norm(s)); } catch (e) { console.error(e); } }
+      return { s: s, r: r, me: r ? s.players.indexOf(pid) : -1 };
+    }
+    function pendingDeltas(v) {
+      if (!(v.r && v.r.end && (v.s.applied || 0) < v.s.no)) return null;
+      var d = {}; v.s.players.forEach(function (id, i) { d[id] = v.r.points[i]; });
+      return d;
+    }
+    function gameDisp(v) { return CORE.gameDisplay(v.s.game, pendingDeltas(v), v.s.no); }
+    function gOpts() { return { lowerBetter: false, fmt: fmt, esc: esc, nameOf: nameOf, me: pid, scoreWord: 'Puan' }; }
+    function teamName(players, t) { return players.filter(function (_, i) { return i % 2 === t; }).map(function (id) { return esc(nameOf(id)); }).join(' & '); }
+    function cardName(c) { return RP.RANKS[c % 13] + SUITS[Math.floor(c / 13)] + '︎'; }
+    function cardHTML(c, extra, attrs) {
+      extra = extra || ''; attrs = attrs || '';
+      if (c === 'empty') return '<div class="card empty" aria-hidden="true"></div>';
+      if (c == null) return '<div class="card back ' + extra + '" aria-label="kapalı kart"></div>';
+      var r = RP.RANKS[c % 13], s = Math.floor(c / 13), red = s === 1 || s === 2, g = SUITS[s] + '︎';
+      var tag = attrs ? 'button type="button"' : 'div', close = attrs ? 'button' : 'div';
+      return '<' + tag + ' class="card ' + (red ? 'red ' : '') + extra + '" ' + attrs + ' aria-label="' + r + ' ' + ['maça', 'kupa', 'karo', 'sinek'][s] + '">' +
+        '<span class="r">' + r + '</span><span class="s1">' + g + '</span><span class="s">' + g + '</span></' + close + '>';
+    }
+
+    // ---------- çizim ----------
+    function render() {
+      V = view();
+      var v = V, r = v.r;
+      $('Round').textContent = gameDisp(v) ? CORE.gameLabel(gameDisp(v), !!(r && !r.end)) : 'Oyun yok';
+      var bt = CORE.bannerText(loaded.st);
+      $('Banner').innerHTML = bt ? '<div class="banner">' + esc(bt) + '</div>' : '';
+      renderTable(v); renderSeats(v); renderMine(v); renderActions(v);
+    }
+    function eventText(r, players) {
+      var e = r.events[r.events.length - 1];
+      if (!e) return r.dealRound === 1 ? 'Yerde 4 kart var, biri açık. İlk kartı ' + esc(nameOf(players[r.first])) + ' atar.' : '';
+      var who = esc(nameOf(players[e.p])) + (e.auto ? ' (otomatik)' : '');
+      if (e.type === 'pisti') return '<b class="pisti">' + who + ' PİŞTİ yaptı! +' + e.pts + '</b>';
+      if (e.type === 'take') return who + ' ' + cardName(e.card) + ' ile ' + e.count + ' kart aldı.';
+      return who + ' ' + cardName(e.card) + ' attı.';
+    }
+    function renderTable(v) {
+      var r = v.r, el = $('Table');
+      if (!r) { el.innerHTML = '<div class="pile-wrap"><div class="cards">' + cardHTML('empty') + '</div><div class="dstatus">Yeni el için masaya oturun</div></div>'; return; }
+      var pile = r.pile, top = pile.length ? pile[pile.length - 1] : null;
+      var under = Math.min(pile.length - 1, 3), stack = '';
+      for (var i = 0; i < under; i++) stack += '<span class="pile-under" style="--i:' + (i + 1) + '"></span>';
+      el.innerHTML = '<div class="pile-wrap"><div class="label">Yer</div>' +
+        '<div class="pile">' + stack + (top != null ? cardHTML(top) : cardHTML('empty')) + '</div>' +
+        '<div class="dstatus">' + (pile.length ? 'Yerde ' + pile.length + ' kart' + (r.hidden ? ' (' + r.hidden + ' kapalı)' : '') : 'Yer boş') +
+        ' · Destede ' + r.restCount + ' · Dağıtım ' + r.dealRound + '/' + r.totalDeals + '</div>' +
+        '<div class="event">' + (r.end ? 'El bitti' + (r.leftoverTo >= 0 && r.leftover ? ': yerde kalan ' + r.leftover + ' kart son alan ' + esc(nameOf(v.s.players[r.leftoverTo])) + '\'e gitti.' : '.') : eventText(r, v.s.players)) + '</div></div>';
+    }
+    function renderSeats(v) {
+      var r = v.r, s = v.s, out = '';
+      if (!r) {
+        var list = seated(), gd = gameDisp(v);
+        if (gd && gd.over) out += CORE.gameOverHTML(gd, gOpts());
+        if (gd && gd.played) out += '<div class="section-head"><h2>Oyun ' + gd.n + ' puanları</h2><span>' + gd.played + ' / ' + gd.len + ' el</span></div>' + CORE.scoreTable(gd, gOpts());
+        $('SeatsTitle').textContent = 'Masada oturanlar';
+        $('SeatsCount').textContent = list.length + ' / ' + MAX;
+        if (!list.length) out += '<div class="empty-note">Henüz kimse oturmadı. ' + (cfg.team ? '4 kişi oturunca başlanır; 1. ile 3., 2. ile 4. oturan eş olur.' : '2–4 kişi oturunca başlanır.') + '</div>';
+        list.forEach(function (id, i) {
+          out += '<div class="seat' + (id === pid ? ' mine' : '') + '"><div class="who">' + dot(id) + esc(nameOf(id)) + '</div><div class="amt zero">' +
+            (cfg.team ? '<span class="team t' + (i % 2) + '">Takım ' + (i % 2 ? 'B' : 'A') + '</span>' : '') + '</div><div class="sub"><span class="tag gold">Oturuyor</span> Sıra ' + (i + 1) + '</div></div>';
+        });
+        $('Seats').innerHTML = out; return;
+      }
+      $('SeatsTitle').textContent = r.end ? 'El sonucu' : 'Bu el';
+      $('SeatsCount').textContent = r.n + ' oyuncu';
+      var gdE = r.end ? gameDisp(v) : null;
+      if (gdE && gdE.over) out += CORE.gameOverHTML(gdE, gOpts()) + CORE.scoreTable(gdE, gOpts());
+      if (r.end) out += breakdownHTML(v);
+      s.players.forEach(function (id, i) {
+        var turn = !r.end && r.turn === i, tags = [];
+        if (turn) tags.push('<span class="tag gold">Sırası · <span data-' + pre + 'timer>0:00</span></span>');
+        tags.push('<span class="tag">Aldığı ' + r.caps[i] + '</span>');
+        if (r.pistiCount[i]) tags.push('<span class="tag win">Pişti ' + r.pistiCount[i] + '</span>');
+        var cards = !r.end && i !== v.me ? r.hands[i].map(function () { return cardHTML(null); }).join('') : '';
+        out += '<div class="seat' + (turn ? ' turn' : '') + (i === v.me ? ' mine' : '') + '"><div class="who">' + dot(id) + esc(nameOf(id)) +
+          (cfg.team ? ' <span class="team t' + (i % 2) + '">' + (i % 2 ? 'B' : 'A') + '</span>' : '') + '</div>' +
+          '<div class="amt ' + (r.end ? 'pos' : 'zero') + '">' + (r.end ? fmt(r.points[i]) + ' puan' : r.hands[i].length + ' kart') + '</div>' +
+          '<div class="sub">' + (cards ? '<span class="mini">' + cards + '</span>' : '') + tags.join('') + '</div></div>';
+      });
+      $('Seats').innerHTML = out;
+    }
+    function breakdownHTML(v) {
+      var r = v.r, players = v.s.players;
+      var cols = cfg.team ? [0, 1] : players.map(function (_, i) { return i; });
+      var head = cols.map(function (c) { return '<th class="n">' + (cfg.team ? teamName(players, c) : esc(nameOf(players[c]))) + '</th>'; }).join('');
+      function row(label, f) { return '<tr><td>' + label + '</td>' + cols.map(function (c) { return '<td class="n">' + f(c) + '</td>'; }).join('') + '</tr>'; }
+      function sum(c, key) { return r.detail.reduce(function (t, d, i) { return t + ((cfg.team ? i % 2 : i) === c ? (typeof d[key] === 'boolean' ? (d[key] ? 1 : 0) : d[key]) : 0); }, 0); }
+      var html = '<div class="scroll-x"><table class="scoretbl"><thead><tr><th></th>' + head + '</tr></thead><tbody>' +
+        row('Kart sayısı', function (c) { return r.sides[c].cards; }) +
+        row('As + vale', function (c) { return sum(c, 'aces') + sum(c, 'jacks'); }) +
+        row('Sinek 2 (2)', function (c) { return sum(c, 'c2') ? '✓' : '—'; }) +
+        row('Karo 10 (3)', function (c) { return sum(c, 'd10') ? '✓' : '—'; }) +
+        row('Pişti', function (c) { return r.sides[c].pisti ? '+' + r.sides[c].pisti : '—'; }) +
+        row('Çok kart (3)', function (c) { return r.sides[c].majority ? '+3' : '—'; }) +
+        '<tr class="win"><td><b>Toplam</b></td>' + cols.map(function (c) { return '<td class="n tot">' + r.sides[c].total + '</td>'; }).join('') + '</tr>' +
+        '</tbody></table></div>';
+      return html;
+    }
+    function renderMine(v) {
+      var r = v.r, el = $('Mine');
+      if (!r || r.end || v.me < 0) { el.innerHTML = ''; el.hidden = true; return; }
+      el.hidden = false;
+      var hand = r.hands[v.me], myTurn = r.turn === v.me;
+      if (sel != null && hand.indexOf(sel) < 0) sel = null;
+      var cards = hand.map(function (c) { return cardHTML(c, sel === c ? 'sel' : '', myTurn ? 'data-act="' + pre + '-card" data-c="' + c + '"' : ''); }).join('');
+      var top = r.pile.length ? r.pile[r.pile.length - 1] : null, hint;
+      if (!myTurn) hint = 'Sıran gelince bir kart seçip at.';
+      else if (top == null) hint = 'Yer boş; atacağın kart yere açılır.';
+      else hint = 'Yerdeki ' + cardName(top) + '. Aynı sayıyla ya da valeyle yeri alırsın' + (r.pile.length === 1 ? '; aynı sayıyla alırsan PİŞTİ!' : '.');
+      el.innerHTML = '<div class="label">Senin elin' + (cfg.team ? ' · Takım ' + (v.me % 2 ? 'B' : 'A') : '') + '</div><div class="cards">' + cards + '</div><div class="hint">' + hint + '</div>';
+    }
+    function timerKey(v) { return v.r && !v.r.end ? v.s.no + ':' + v.s.seed + ':' + v.r.actionCount : null; }
+    function elapsed(v) { var k = timerKey(v); if (!k) return 0; if (!turnSeen[k]) turnSeen[k] = Date.now(); return Date.now() - turnSeen[k]; }
+    function mmss(ms) { var s = Math.floor(ms / 1000); return Math.floor(s / 60) + ':' + ('0' + (s % 60)).slice(-2); }
+    function btn(act, label, o) {
+      o = o || {};
+      return '<button type="button" class="btn ' + (o.cls || '') + '" data-act="' + act + '"' + (o.data || '') + (o.disabled || busy ? ' disabled' : '') + '>' +
+        label + (o.small ? '<small>' + o.small + '</small>' : '') + '</button>';
+    }
+    function renderActions(v) {
+      var el = $('Actions'), r = v.r, h = '';
+      if (CORE.error) { el.innerHTML = '<div class="msg">Masa şu an açılamıyor.</div>'; return; }
+      if (!(loaded.st && loaded.seats)) { el.innerHTML = '<div class="msg">Masaya bağlanılıyor…</div>'; return; }
+      if (!joined()) { el.innerHTML = '<div class="msg">Oynamak için masaya otur.</div>' + btn(pre + '-join', 'Masaya otur', { cls: 'primary' }); return; }
+      if (seats[pid].banned) { el.innerHTML = '<div class="msg">Admin seni bu masadan çıkardı. Oyunu izleyebilirsin.</div>'; return; }
+      var list = seated(), iSit = !!seats[pid].sit, enough = cfg.team ? list.length === 4 : list.length >= MIN;
+      if (!r || r.end) {
+        var gd = gameDisp(v), needGame = !gd || gd.over;
+        if (r && r.end && v.me >= 0) h += '<div class="result"><div class="big pos">' + fmt(r.points[v.me]) + '</div><div class="msg">Bu elde ' + (cfg.team ? 'takımının' : 'senin') + ' puanın</div></div>';
+        if (needGame) h += '<div class="lenpick-label">' + (gd ? 'Yeni oyun' : 'Oyun') + ' kaç el sürsün? Her el bir deste.</div>' + CORE.lenPicker(pre + '-len', lenChoice);
+        var need = cfg.team ? 'Tam 4 kişi gerekli' : 'En az 2 kişi gerekli';
+        h += '<div class="row2">' + (iSit ? btn(pre + '-stand', 'Masadan kalk', { small: 'İzlemeye geç' }) : btn(pre + '-sit', 'Masaya otur', { disabled: list.length >= MAX, small: list.length >= MAX ? 'Masa dolu' : list.length + ' / ' + MAX })) +
+          btn(pre + '-start', needGame ? (gd ? 'Yeni oyun' : 'Oyunu başlat') : 'Yeni el', { cls: 'primary', disabled: !iSit || !enough,
+            small: !enough ? need : needGame ? lenChoice + ' el · ' + list.length + ' oyuncu' : 'El ' + (gd.played + 1) + '/' + gd.len }) + '</div>';
+        el.innerHTML = h; return;
+      }
+      var ms = elapsed(v), k = timerKey(v), late = ms >= AUTO_AFTER || CORE.isAdmin();
+      if (ms >= AUTO_AFTER) autoShownKey = k;
+      if (v.me >= 0 && r.turn === v.me) {
+        CORE.notifyTurn(cfg.key + ':' + v.s.no + ':' + v.s.seed + ':' + r.actionCount);
+        h += btn(pre + '-play', sel != null ? cardName(sel) + ' at' : 'Atacağın kartı seç', { cls: 'primary', disabled: sel == null, small: sel != null ? 'Ya da karta tekrar dokun' : '' });
+      } else {
+        var cur = v.s.players[r.turn];
+        h += '<div class="msg">Sıra <b>' + esc(nameOf(cur)) + '</b>\'de · <span data-' + pre + 'timer>' + mmss(ms) + '</span></div>';
+        if (v.me < 0) h += '<div class="msg" style="color:var(--muted)">Bu eli izliyorsun.</div>';
+        if (late && joined()) h += btn(pre + '-auto', esc(nameOf(cur)) + ' yerine otomatik oynat', { small: 'Alabiliyorsa alır, yoksa en değersiz kartı atar' });
+      }
+      el.innerHTML = h;
+    }
+
+    // ---------- yazma ----------
+    function toast(t) { var el = g$('toast'); el.textContent = t; el.hidden = false; clearTimeout(toast._t); toast._t = setTimeout(function () { el.hidden = true; }, 3200); }
+    function write(fn) {
+      if (busy) return Promise.resolve(false);
+      busy = true; render();
+      var slow = new Promise(function (res) { setTimeout(function () { res('slow'); }, 8000); });
+      var work = Promise.resolve().then(fn).then(function () { return true; });
+      return Promise.race([work, slow]).then(function (x) {
+        if (x === 'slow') toast('Bağlantı yavaş; hamlen bağlantı gelince gönderilecek.');
+        return x === true;
+      }, function (e) {
+        console.warn(e);
+        if (/PERMISSION/i.test(String((e && (e.code || e.message)) || ''))) { CORE.error = 'perm'; CORE.emit(); }
+        else toast('Kaydedilemedi. Bağlantını kontrol edip tekrar dene.');
+        return false;
+      }).then(function (ok) { busy = false; render(); return ok; });
+    }
+    function saveSeat(patch) {
+      var next = clone(seats[pid] || {});
+      Object.keys(patch).forEach(function (k) { next[k] = patch[k]; });
+      return R.seats.child(pid).set(clone(next));
+    }
+    function pushAction(a) {
+      var expectNo = V.s.no, why = '';
+      return write(function () {
+        return R.st.transaction(function (cur) {
+          why = '';
+          if (cur === null) return null;
+          if (!cur.players || !cur.seed || cur.no !== expectNo) { why = 'El değişti.'; return; }
+          var rr = PI.replay(norm(cur));
+          if (rr.end || rr.turn !== a.p) { why = 'Sıra sende değil.'; return; }
+          if (a.c != null && rr.hands[a.p].indexOf(a.c) < 0) { why = 'Bu kart elinde yok.'; return; }
+          var next = clone(cur); next.actions = (cur.actions || []).concat([a]);
+          return clone(next);
+        }).then(function (res) { if (!res.committed && why) toast(why); });
+      });
+    }
+    function startHand(len) {
+      var why = '';
+      return write(function () {
+        return R.st.transaction(function (cur) {
+          why = '';
+          var c = cur || {}, active = !!(c.players && c.seed), rr = null;
+          if (active) { rr = PI.replay(norm(c)); if (!rr.end) { why = 'El devam ediyor.'; return; } }
+          var players = seated().slice(0, MAX);
+          if (cfg.team ? players.length !== 4 : players.length < MIN) { why = cfg.team ? 'Eşli pişti için tam 4 kişi oturmalı.' : 'En az 2 kişi oturmalı.'; return; }
+          var game = clone(c.game) || null, archive = clone(c.lastGames) || [], applied = c.applied || 0;
+          if (active && applied < c.no) {
+            var d = {}; c.players.forEach(function (id, i) { d[id] = rr.points[i]; });
+            if (game && !game.over) game = CORE.applyHand(game, d, c.no);
+            applied = c.no;
+          }
+          if (len) {
+            if (game && !game.over) { why = 'Oyun devam ediyor.'; return; }
+            if (game && game.over) archive = CORE.archive(archive, game, false);
+            game = CORE.newGame(len, (game ? game.n : (c.lastGames && c.lastGames.length ? c.lastGames[c.lastGames.length - 1].n : 0)) + 1);
+          } else if (!game || game.over) { why = 'Önce oyunun kaç el süreceğini seç.'; return; }
+          var no = (c.no || 0) + 1;
+          return clone({ no: no, seed: CORE.rnd(), players: players, dealer: (no - 1) % players.length, applied: applied, game: game, lastGames: archive, startedAt: Date.now() });
+        }).then(function (res) { if (!res.committed && why) toast(why); });
+      });
+    }
+    function cancelHand() {
+      return write(function () {
+        return R.st.transaction(function (cur) {
+          if (cur === null) return null;
+          var next = clone(cur); delete next.players; delete next.seed; delete next.actions; next.applied = cur.no || 0;
+          return clone(next);
+        }).then(function (res) { if (res.committed) { closeSheet(); toast('El iptal edildi.'); } });
+      });
+    }
+    function cancelGame() {
+      var why = '';
+      return write(function () {
+        return R.st.transaction(function (cur) {
+          why = '';
+          var c = cur || {};
+          if (c.players && c.seed && !PI.replay(norm(c)).end) { why = 'Önce devam eden eli iptal et.'; return; }
+          var next = clone(c); delete next.game;
+          if (c.players && c.seed) next.applied = c.no || 0;
+          return clone(next);
+        }).then(function (res) { if (res.committed) { closeSheet(); toast('Oyun iptal edildi.'); } else if (why) toast(why); });
+      });
+    }
+
+    // ---------- alt sayfalar ----------
+    function openSheet(html) { g$('sheetPanel').innerHTML = html; g$('sheet').hidden = false; }
+    function closeSheet() { g$('sheet').hidden = true; g$('sheetPanel').innerHTML = ''; }
+    function rulesPlay() {
+      return '<p>' + (cfg.team ? '4 kişi, iki takım: masaya 1. ve 3. oturan bir takım, 2. ve 4. oturan diğer takım. Takım arkadaşlarının aldığı kartlar ve piştiler birlikte sayılır.' : '2–4 kişi, herkes kendi için oynar.') + '</p>' +
+        '<h4>Dağıtım</h4><p>Yere 4 kart konur; 3\'ü kapalı, en üstteki açık (açık kart vale olmaz). Herkese 4 kart dağıtılır. Eller bitince deste bitene kadar herkese 4\'er kart daha dağıtılır.</p>' +
+        '<h4>Oynanış</h4><ol><li>Sıran gelince elinden bir kart atarsın.</li><li>Attığın kart yerdeki üst kartla aynı sayıdaysa yerdeki bütün kartları alırsın.</li>' +
+        '<li><b>Vale</b> her zaman yeri alır.</li><li>Yerde tek kart varken aynı sayıyla alırsan <b>pişti</b> olur.</li>' +
+        '<li>Deste bitince yerde kalan kartlar en son yeri alan oyuncuya gider.</li></ol>' +
+        '<h4>Oyun</h4><p>Oyun başlarken 3, 5, 7 ya da 11 el seçilir; her el bir destedir. Puanlar el el yazılır, el sayısı dolunca en çok puanı olan ' + (cfg.team ? 'takım' : 'oyuncu') + ' kazanır.</p>' +
+        '<h4>Süre</h4><p>Sırası gelen 1 dakika oynamazsa masadakiler onun yerine otomatik oynatabilir.</p>';
+    }
+    function rulesPay() {
+      return '<table><thead><tr><th>Ne</th><th class="n">Puan</th></tr></thead><tbody>' +
+        '<tr><td>Pişti</td><td class="n">10</td></tr><tr><td>Vale ile vale piştisi</td><td class="n">20</td></tr>' +
+        '<tr><td>Her as</td><td class="n">1</td></tr><tr><td>Her vale</td><td class="n">1</td></tr>' +
+        '<tr><td>Sinek ikilisi (♣2)</td><td class="n">2</td></tr><tr><td>Karo onlusu (♦10)</td><td class="n">3</td></tr>' +
+        '<tr><td>En çok kart alan' + (cfg.team ? ' takım' : '') + '</td><td class="n">3</td></tr></tbody></table>' +
+        '<p>Kart sayısı eşitse çoğunluk puanı kimseye verilmez. Valeyle tek kartı almak pişti sayılmaz; sadece vale üstüne vale atınca 20 puanlık pişti olur.</p>';
+    }
+    function rulesHTML() {
+      return '<div class="panel-head"><h3>' + cfg.title + '</h3><button class="ghost" type="button" data-act="close">Kapat</button></div>' + rulesPlay() + '<h4>Puanlar</h4>' + rulesPay();
+    }
+    function boardHTML() {
+      var v = V || view(), gd = gameDisp(v);
+      var h = '<div class="panel-head"><h3>' + cfg.title + ' puanları</h3><button class="ghost" type="button" data-act="close">Kapat</button></div>';
+      if (gd) {
+        h += '<p style="color:var(--muted);font-size:13px">Oyun ' + gd.n + ' · ' + gd.played + '/' + gd.len + ' el oynandı. En çok puanı olan kazanır' + (cfg.team ? '; takım arkadaşlarına aynı puan yazılır.' : '.') + '</p>';
+        if (gd.over) h += CORE.gameOverHTML(gd, gOpts());
+        h += CORE.scoreTable(gd, Object.assign(gOpts(), { extra: seated() }));
+      } else h += '<p>Henüz oyun başlamadı.</p>';
+      h += CORE.lastGamesHTML(v.s.lastGames, gOpts());
+      if (CORE.isAdmin()) {
+        var active = v.r && !v.r.end;
+        h += CORE.adminHTML(seats, { pre: pre, esc: esc, sit: true });
+        h += '<h4>Masa sahibi</h4>' + (active ? btn(pre + '-askcancel', 'Bu eli iptal et', { cls: 'danger', small: 'Puan yazılmaz' }) : gd && !gd.over ? btn(pre + '-askreset', 'Oyunu iptal et', { cls: 'danger', small: 'Kazanan ilan edilmez' }) : '');
+      }
+      return h;
+    }
+
+    // ---------- olaylar ----------
+    document.addEventListener('click', function (e) {
+      var t = e.target.closest('[data-act]');
+      if (!t || t.disabled) return;
+      var act = t.getAttribute('data-act');
+      if (act.indexOf(pre + '-') !== 0) return;
+      act = act.slice(pre.length + 1);
+      var v = V || view(), r = v.r;
+      switch (act) {
+        case 'rules': openSheet(rulesHTML()); break;
+        case 'board': openSheet(boardHTML()); break;
+        case 'join':
+          var full = seated().length >= MAX;
+          write(function () { var base = seats[pid] || {}; return saveSeat({ name: CORE.me.name, sit: !full, sitAt: Date.now(), joinedAt: base.joinedAt || Date.now() }); })
+            .then(function (ok) { if (ok && full) toast('Masa dolu; izleyici olarak girdin.'); }); break;
+        case 'sit':
+          if (seated().length >= MAX) { toast('Masa dolu.'); break; }
+          write(function () { return saveSeat({ sit: true, sitAt: Date.now() }); }); break;
+        case 'stand': write(function () { return saveSeat({ sit: false }); }); break;
+        case 'len': lenChoice = +t.getAttribute('data-len'); render(); break;
+        case 'start': var gdS = gameDisp(v); startHand(!gdS || gdS.over ? lenChoice : 0); break;
+        case 'card':
+          var c = +t.getAttribute('data-c');
+          if (sel === c) { sel = null; pushAction({ p: v.me, c: c }); }
+          else { sel = c; render(); }
+          break;
+        case 'play': if (sel != null) { var c2 = sel; sel = null; pushAction({ p: v.me, c: c2 }); } break;
+        case 'auto': if (r && !r.end) pushAction({ p: r.turn, t: 'auto', by: pid }); break;
+        case 'adm': if (CORE.isAdmin()) write(function () { return CORE.adminOp(R.seats, seats, t.getAttribute('data-op'), t.getAttribute('data-id')); }).then(function () { openSheet(boardHTML()); }); break;
+        case 'askcancel':
+          openSheet('<h3>Bu el iptal edilsin mi?</h3><p>El hiç oynanmamış sayılır, puan yazılmaz.</p><div class="row2">' + btn('close', 'Vazgeç') + btn(pre + '-cancel', 'İptal et', { cls: 'danger' }) + '</div>'); break;
+        case 'cancel': if (CORE.isAdmin()) cancelHand(); break;
+        case 'askreset':
+          openSheet('<h3>Oyun iptal edilsin mi?</h3><p>Bu oyunun puanları silinir, kazanan ilan edilmez.</p><div class="row2">' + btn('close', 'Vazgeç') + btn(pre + '-reset', 'Oyunu iptal et', { cls: 'danger' }) + '</div>'); break;
+        case 'reset': if (CORE.isAdmin()) cancelGame(); break;
+      }
+    });
+
+    setInterval(function () {
+      if (CORE.view !== cfg.key || !V) return;
+      if (!V.r || V.r.end) { if (!loaded.st || !CORE.connected) render(); return; }
+      var ms = elapsed(V), k = timerKey(V);
+      var els = document.querySelectorAll('[data-' + pre + 'timer]');
+      for (var i = 0; i < els.length; i++) els[i].textContent = mmss(ms);
+      if (ms >= AUTO_AFTER && autoShownKey !== k) render();
+    }, 1000);
+
+    window['__' + pre + 'Debug'] = function () { return V; };
+    CORE.whenReady(function () {
+      pid = CORE.pid;
+      $('RulesL').innerHTML = '<h3>' + cfg.title + ' nasıl oynanır</h3>' + rulesPlay();
+      $('RulesR').innerHTML = '<h3>Puanlar</h3>' + rulesPay();
+      render();
+      CORE.onChange(render);
+      if (!CORE.db) return;
+      R.st = CORE.db.ref(cfg.path + '/state'); R.seats = CORE.db.ref(cfg.path + '/seats');
+      function onErr(e) { console.warn(e); CORE.error = 'perm'; CORE.emit(); }
+      R.st.on('value', function (s) { st = s.val(); loaded.st = true; render(); }, onErr);
+      R.seats.on('value', function (s) { seats = s.val() || {}; loaded.seats = true; render(); }, onErr);
+    });
+  }
+
+  makeTable({ key: 'pisti', pre: 'pi', path: 'rp/pisti', title: 'Pişti', team: false, min: 2, max: 4 });
+  makeTable({ key: 'esli', pre: 'pe', path: 'rp/esli', title: 'Eşli Pişti', team: true, min: 4, max: 4 });
 })();
 
 </script>
