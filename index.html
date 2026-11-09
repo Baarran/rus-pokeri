@@ -3209,10 +3209,22 @@ var FB_CONFIG = { apiKey: "AIzaSyBsP1VNPJpt1Y6MN0FwDCmvuHeZxaDoTGU", authDomain:
 (function (root) {
   'use strict';
   var RP = (typeof module !== 'undefined' && module.exports) ? require('./engine.js') : root.RP;
-  var CATS = ['İsim', 'Şehir', 'Hayvan', 'Bitki', 'Eşya'];
-  var HINTS = ['Ali, Zeynep…', 'Ankara, Rize…', 'Kedi, Aslan…', 'Gül, Çam…', 'Masa, Kalem…'];
+  var POOL = [['İsim', 'Ali, Zeynep…'], ['Şehir', 'Ankara, Rize…'], ['Hayvan', 'Kedi, Aslan…'], ['Bitki', 'Gül, Çam…'],
+    ['Eşya', 'Masa, Kalem…'], ['Ülke', 'Almanya, Mısır…'], ['Meslek', 'Doktor, Berber…'], ['Yiyecek', 'Pilav, Baklava…'], ['Meyve/Sebze', 'Elma, Pırasa…'],
+    ['Ünlü', 'Tarkan, Sezen…'], ['Renk', 'Mavi, Turuncu…'], ['Spor/Oyun', 'Tenis, Tavla…'], ['Araba/Marka', 'Opel, Nike…'], ['Kuş/Balık', 'Kartal, Levrek…'],
+    ['Giysi', 'Gömlek, Çorap…'], ['Film/Dizi', 'Yeşilçam, Leyla…']];
+  var CATS = POOL.map(function (c) { return c[0]; }), HINTS = POOL.map(function (c) { return c[1]; });
+  var BASE = 4, EXTRA = 2;
+  // her tur: İsim-Şehir-Hayvan-Bitki sabit + 2 rastgele ek kategori (havuz indeksleri)
+  function catsFor(seed, no) {
+    var rng = RP.makeRng('isimc:' + seed + ':' + no), rest = [];
+    for (var i = BASE; i < POOL.length; i++) rest.push(i);
+    var out = [0, 1, 2, 3];
+    for (var k = 0; k < EXTRA; k++) out.push(rest.splice(Math.floor(rng() * rest.length), 1)[0]);
+    return out;
+  }
   var LETTERS = 'ABCÇDEFGHİIJKLMNOÖPRSŞTUÜVYZ'.split('');
-  var PLAY_MS = 100000, COUNT_MS = 4000, FINISH_MS = 10000, GRACE_MS = 3000, REVIEW_MS = 25000;
+  var PLAY_MS = 120000, COUNT_MS = 4000, FINISH_MS = 10000, GRACE_MS = 3000, REVIEW_MS = 25000;
 
   function norm(s) { return String(s == null ? '' : s).replace(/\s+/g, ' ').trim().toLocaleLowerCase('tr-TR'); }
   function letterFor(seed, no) { var rng = RP.makeRng('isim:' + seed + ':' + no); return LETTERS[Math.floor(rng() * LETTERS.length)]; }
@@ -3222,7 +3234,7 @@ var FB_CONFIG = { apiKey: "AIzaSyBsP1VNPJpt1Y6MN0FwDCmvuHeZxaDoTGU", authDomain:
   function score(o) {
     var pts = {}, detail = {}, ps = o.players;
     ps.forEach(function (u) { pts[u] = 0; detail[u] = []; });
-    CATS.forEach(function (_, ci) {
+    for (var ci = 0; ci < (o.n || BASE + EXTRA); ci++) (function (ci) {
       var info = {}, groups = {};
       ps.forEach(function (u) {
         var raw = ((o.ans || {})[u] || [])[ci], n = norm(raw), st = 'empty';
@@ -3242,7 +3254,7 @@ var FB_CONFIG = { apiKey: "AIzaSyBsP1VNPJpt1Y6MN0FwDCmvuHeZxaDoTGU", authDomain:
         if (info[u].st === 'ok') p = groups[info[u].n].length > 1 ? 5 : (okCount === 1 ? 15 : 10);
         info[u].p = p; pts[u] += p; detail[u].push({ a: info[u].a, st: info[u].st, p: p });
       });
-    });
+    })(ci);
     return { pts: pts, detail: detail };
   }
   // aşamalar (sunucu saatine göre)
@@ -3257,7 +3269,7 @@ var FB_CONFIG = { apiKey: "AIzaSyBsP1VNPJpt1Y6MN0FwDCmvuHeZxaDoTGU", authDomain:
     if (now < e + GRACE_MS + REVIEW_MS) return 'review';
     return 'final';
   }
-  var api = { CATS: CATS, HINTS: HINTS, PLAY_MS: PLAY_MS, COUNT_MS: COUNT_MS, FINISH_MS: FINISH_MS, GRACE_MS: GRACE_MS, REVIEW_MS: REVIEW_MS, norm: norm, letterFor: letterFor, valid: valid, score: score, phase: phase, endAt: endAt };
+  var api = { catsFor: catsFor, NCAT: BASE + EXTRA, CATS: CATS, HINTS: HINTS, PLAY_MS: PLAY_MS, COUNT_MS: COUNT_MS, FINISH_MS: FINISH_MS, GRACE_MS: GRACE_MS, REVIEW_MS: REVIEW_MS, norm: norm, letterFor: letterFor, valid: valid, score: score, phase: phase, endAt: endAt };
   if (typeof module !== 'undefined' && module.exports) module.exports = api; else root.IS = api;
 })(typeof window !== 'undefined' ? window : globalThis);
 
@@ -9142,7 +9154,8 @@ window.CORE = (function () {
   function gameDisp(s) { return s && s.game ? CORE.gameDisplay(s.game, pendingDeltas(s), s.no) : null; }
   function view() { var s = st || {}; return { s: s, ph: IS.phase(s, now()), me: s.players ? s.players.indexOf(pid) : -1 }; }
   function gOpts() { return { lowerBetter: false, fmt: fmt, esc: esc, nameOf: nameOf, me: pid, scoreWord: 'Puan' }; }
-  function myAns(no) { return mine[no] || (mine[no] = CATS.map(function () { return ''; })); }
+  function myAns(no) { return mine[no] || (mine[no] = CATS.slice(0, IS.NCAT).map(function () { return ''; })); }
+  function rc(s) { return (s.cats || [0, 1, 2, 3, 4]).map(function (i) { return { n: CATS[i], h: IS.HINTS[i] }; }); }
 
   // ---------- çizim ----------
   function render() {
@@ -9197,8 +9210,8 @@ window.CORE = (function () {
       $('BodyTitle').textContent = 'Yaz!';
       if (v.me < 0) { el.innerHTML = '<div class="empty-note">Bu turu izliyorsun.</div>'; return; }
       var a = myAns(s.no);
-      el.innerHTML = '<div class="is-form">' + CATS.map(function (c, i) {
-        return '<label class="is-f"><span>' + esc(c) + '</span><input data-ci="' + i + '" value="' + esc(a[i]) + '" placeholder="' + esc(s.letter + ' ile · ' + IS.HINTS[i]) + '" autocomplete="off" autocapitalize="words" maxlength="40"></label>';
+      el.innerHTML = '<div class="is-form">' + rc(s).map(function (c, i) {
+        return '<label class="is-f"><span>' + esc(c.n) + '</span><input data-ci="' + i + '" value="' + esc(a[i]) + '" placeholder="' + esc(s.letter + ' ile · ' + c.h) + '" autocomplete="off" autocapitalize="words" maxlength="40"></label>';
       }).join('') + '</div>';
       el.setAttribute('data-form', String(s.no));
       var first = el.querySelector('input'); if (first && !first.value) try { first.focus(); } catch (e) {}
@@ -9215,7 +9228,7 @@ window.CORE = (function () {
   }
   function reviewHTML(v) {
     var s = v.s, ps = s.players, h = '<div class="msg" style="color:var(--muted)">Geçersiz ya da uydurma bir cevap görürsen <b>İtiraz</b> et. Çoğunluk itiraz ederse puan almaz.</div>';
-    CATS.forEach(function (c, ci) {
+    rc(s).forEach(function (c0, ci) { var c = c0.n;
       var rows = '';
       ps.forEach(function (u) {
         var raw = ((ans[u] || [])[ci] || '').trim();
@@ -9231,7 +9244,7 @@ window.CORE = (function () {
   function resultHTML(v) {
     var s = v.s, f = s.final, ps = s.players, h = '';
     if (!f) return '';
-    CATS.forEach(function (c, ci) {
+    rc(s).forEach(function (c0, ci) { var c = c0.n;
       var rows = ps.map(function (u) {
         var d = (f.detail[u] || [])[ci] || { a: '', st: 'empty', p: 0 };
         var tag = d.st === 'ok' ? '' : d.st === 'empty' ? '' : d.st === 'wrong' ? ' <em>(harf yok)</em>' : ' <em>(itiraz)</em>';
@@ -9356,7 +9369,7 @@ window.CORE = (function () {
           if (players.length < MIN) { why = 'Oyuncu sayısı yetmiyor.'; return; }
         }
         var no = (c.no || 0) + 1, seed = CORE.rnd(), startAt = now() + IS.COUNT_MS;
-        return clone({ no: no, seed: seed, letter: IS.letterFor(seed, no), players: players, startAt: startAt, hardEnd: startAt + IS.PLAY_MS, applied: applied, game: game, lastGames: archive });
+        return clone({ no: no, seed: seed, letter: IS.letterFor(seed, no), players: players, startAt: startAt, hardEnd: startAt + IS.PLAY_MS, applied: applied, game: game, lastGames: archive, cats: IS.catsFor(seed, no) });
       }).then(function (res) { if (!res.committed && why) toast(why); });
     });
   }
@@ -9395,7 +9408,7 @@ window.CORE = (function () {
   function openSheet(html) { g$('sheetPanel').innerHTML = html; g$('sheet').hidden = false; }
   function closeSheet() { g$('sheet').hidden = true; g$('sheetPanel').innerHTML = ''; }
   function rulesPlay() {
-    return '<p>2–8 kişi. Her turda rastgele bir harf çıkar; <b>İsim, Şehir, Hayvan, Bitki, Eşya</b> kutularına o harfle başlayan cevaplar yazılır. Süre ' + Math.round(IS.PLAY_MS / 1000) + ' saniye; biri hepsini bitirince diğerlerine 10 saniye kalır.</p>' +
+    return '<p>2–8 kişi. Her turda rastgele bir harf çıkar; <b>İsim, Şehir, Hayvan, Bitki</b> ve her turda değişen 2 ek kategoriye (Ülke, Meslek, Yiyecek, Ünlü, Renk, Kuş/Balık…) o harfle başlayan cevaplar yazılır. Süre ' + Math.round(IS.PLAY_MS / 1000) + ' saniye; biri hepsini bitirince diğerlerine 10 saniye kalır.</p>' +
       '<h4>Puan</h4><ul><li>Başka kimsenin yazmadığı tek cevap: <b>15</b></li><li>Farklı cevaplar: <b>10</b></li><li>Aynı cevabı yazanlar: <b>5</b></li><li>Boş ya da harfi tutmayan: 0</li></ul>' +
       '<h4>İtiraz</h4><p>Süre bitince herkesin cevabı görünür (' + Math.round(IS.REVIEW_MS / 1000) + ' sn). Uydurma cevaba itiraz edilir; diğer oyuncuların yarısından fazlası itiraz ederse cevap 0 puandır (iki kişide tek itiraz yeter).</p>' +
       '<h4>Oyun ve çip</h4><p>3, 5, 7 ya da 11 tur ve giriş çipi seçilir; herkes koyar, sonunda en çok puanı olan potu alır, beraberlikte pot bölüşülür. Oyun iptal edilirse giriş çipleri iade edilir.</p>';
