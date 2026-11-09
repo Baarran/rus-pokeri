@@ -505,7 +505,7 @@
   setInterval(refreshRooms, 4000);
   auth.onAuthStateChanged(function (u) {
     if (!u) { G.uid = null; $('menuMsg').innerHTML = 'Önce <a href="../" style="color:#9cf">ana sayfadan</a> giriş yap, sonra buraya dön.'; return; }
-    G.uid = u.uid; db.ref('rp/users/' + u.uid + '/name').once('value').then(function (s) { G.name = s.val() || 'Oyuncu'; $('menuMsg').textContent = 'Merhaba ' + G.name + '!'; refreshRooms(); });
+    G.uid = u.uid; try { var pr = db.ref('rp/online/' + u.uid); pr.onDisconnect().remove(); pr.set('cs'); } catch (e) {} db.ref('rp/users/' + u.uid + '/name').once('value').then(function (s) { G.name = s.val() || 'Oyuncu'; $('menuMsg').textContent = 'Merhaba ' + G.name + '!'; refreshRooms(); });
   });
   window.__cs = { me: me, G: G, WP: WP, hostTick: hostTick, shoot: shoot, ents: function () { return G.ents; }, rayWorld: rayWorld, los: los };
   requestAnimationFrame(frame);

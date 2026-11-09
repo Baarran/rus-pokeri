@@ -636,6 +636,10 @@ body.sl-lock { overflow: hidden; overscroll-behavior: none; }
 
 #chatFab { position: fixed; right: 12px; bottom: 38%; z-index: 30; width: 46px; height: 46px; border-radius: 50%; border: 1px solid rgba(217,180,91,.6); background: rgba(20,40,30,.92); font-size: 22px; box-shadow: 0 6px 16px rgba(0,0,0,.4); }
 #chatFab span { position: absolute; top: -4px; right: -4px; min-width: 20px; height: 20px; padding: 0 5px; border-radius: 10px; background: #e5484d; color: #fff; font-size: 12px; font-weight: 800; display: grid; place-items: center; }
+#readyBar { display: flex; gap: 10px; align-items: center; padding: 8px 10px; border-radius: 12px; background: rgba(217,180,91,.14); border: 1px solid rgba(217,180,91,.4); font-size: 13.5px; }
+#readyBar span { flex: 1; }
+#idleWarn { position: fixed; left: 8px; right: 8px; top: 8px; z-index: 60; display: flex; gap: 10px; align-items: center; justify-content: space-between; padding: 10px 12px; border-radius: 12px; background: #7a2a22; border: 1px solid #ff8a80; box-shadow: 0 8px 22px rgba(0,0,0,.5); font-size: 14px; }
+#socToast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); z-index: 61; background: rgba(0,0,0,.85); color: #fff; padding: 10px 16px; border-radius: 12px; max-width: 90%; text-align: center; font-size: 14px; }
 #voiceFab { position: fixed; right: 12px; bottom: calc(38% - 56px); z-index: 30; width: 46px; height: 46px; border-radius: 50%; border: 1px solid rgba(217,180,91,.6); background: rgba(20,40,30,.92); font-size: 21px; box-shadow: 0 6px 16px rgba(0,0,0,.4); }
 #voiceFab.on { background: #1f6b3a; border-color: #5fd35f; } #voiceFab.muted { background: #6b2420; border-color: #ff8a80; }
 #voiceFab span { position: absolute; top: -4px; right: -4px; min-width: 20px; height: 20px; padding: 0 5px; border-radius: 10px; background: #2a7fdc; color: #fff; font-size: 12px; font-weight: 800; display: grid; place-items: center; }
@@ -3908,16 +3912,16 @@ window.CORE = (function () {
     var ids = userIds().sort(function (a, b) { return CORE.balance(b) - CORE.balance(a); });
     if (!ids.length) return '';
     return '<div class="section-head"><h2>Oyuncular</h2><a class="ghost" href="#kayit">Kayıtlar</a></div>' +
-      '<div class="scroll-x"><table class="scoretbl players"><thead><tr><th>Oyuncu</th><th>Son giriş</th><th class="n">Çip</th></tr></thead><tbody>' + ids.map(function (id, i) {
+      '<div class="scroll-x"><table class="scoretbl players"><thead><tr><th>Oyuncu</th><th>Nerede / Son giriş</th><th class="n">Çip</th></tr></thead><tbody>' + ids.map(function (id, i) {
         return '<tr><td>' + (i + 1) + '. ' + (CORE.online[id] ? '<span class="on-dot"></span>' : '') + esc(CORE.userName(id)) + (id === CORE.pid ? ' <span class="tag gold">sen</span>' : '') + '</td>' +
-          '<td>' + lastSeen(id) + '</td><td class="n tot">' + fmt(CORE.balance(id)) + '</td></tr>';
+          '<td>' + (CORE.online[id] ? '<b class="where">' + esc(whereOf(id)) + '</b>' : lastSeen(id)) + '</td><td class="n tot">' + fmt(CORE.balance(id)) + '</td></tr>';
       }).join('') + '</tbody></table></div>';
   }
   function whereOf(uid) {
     var v = String(CORE.online[uid] || ''); if (!v) return '';
     var p = v.split('/'), g = p[0];
     if (CORE.GAME_NAMES[g] && p[1]) return CORE.GAME_NAMES[g] + ' · Masa ' + p[1];
-    return { lobby: 'Lobide', chat: 'Sohbette', kayit: 'Kayıtlarda', admin: 'Admin panelinde' }[g] || 'Sitede';
+    return { lobby: 'Lobide', chat: 'Sohbette', kayit: 'Kayıtlarda', admin: 'Admin panelinde', cs: 'Buz Operasyonu (3B)' }[g] || 'Sitede';
   }
 
   // ---------- giriş ----------
@@ -9788,6 +9792,95 @@ window.CORE = (function () {
     fab();
   });
   window.__voice = { pcs: function () { return pcs; }, status: function () { return status; } };
+})();
+
+</script>
+<script>
+/* Masa yardımcıları: (1) hareketsiz oyuncuyu lobiye gönder, (2) "Hazırım" onayı — herkes hazır demeden yeni oyun/tur başlamaz. */
+(function () {
+  'use strict';
+  var CORE = window.CORE, IDLE_MS = 180000, WARN_MS = 150000, lastAct = Date.now(), warnEl = null, toastEl = null, toastT = null;
+  var READY_GAMES = ['okey', 'pisti', 'esli', 'flip7', 'isim', 'emlak', 'tombala'];
+  var START_TXT = /^(Oyunu başlat|Yeni oyun|Turu başlat|Yeni tur)/;
+  function $(id) { return document.getElementById(id); }
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  function toast(msg) {
+    if (!toastEl) { toastEl = document.createElement('div'); toastEl.id = 'socToast'; document.body.appendChild(toastEl); }
+    toastEl.textContent = msg; toastEl.hidden = false; clearTimeout(toastT); toastT = setTimeout(function () { toastEl.hidden = true; }, 3500);
+  }
+  function inGame() { return CORE.GAMES && CORE.GAMES.indexOf(CORE.view) >= 0; }
+
+  /* ---------- hareketsizlik ---------- */
+  function act() { lastAct = Date.now(); if (warnEl && !warnEl.hidden) warnEl.hidden = true; }
+  ['pointerdown', 'keydown', 'touchstart', 'wheel', 'mousemove'].forEach(function (ev) { window.addEventListener(ev, act, { passive: true, capture: true }); });
+  setInterval(function () {
+    if (!CORE.ready || !CORE.user) return;
+    if (!inGame() || (window.__voice && window.__voice.status() === 'on')) { lastAct = Date.now(); if (warnEl) warnEl.hidden = true; return; }
+    var idle = Date.now() - lastAct;
+    if (idle >= IDLE_MS) { try { sessionStorage.setItem('rp_idleMsg', '1'); } catch (e) {} lastAct = Date.now(); if (warnEl) warnEl.hidden = true; location.hash = ''; return; }
+    if (idle >= WARN_MS) {
+      if (!warnEl) { warnEl = document.createElement('div'); warnEl.id = 'idleWarn'; warnEl.innerHTML = '<span id="idleTxt"></span><button type="button" class="btn sm primary">Buradayım</button>'; warnEl.querySelector('button').onclick = act; document.body.appendChild(warnEl); }
+      warnEl.hidden = false; $('idleTxt').textContent = 'Hareketsiz kaldın — ' + Math.max(0, Math.ceil((IDLE_MS - idle) / 1000)) + ' sn içinde lobiye alınacaksın.';
+    }
+  }, 1000);
+  CORE.whenReady(function () {
+    CORE.onChange(function () {
+      if (CORE.view === 'lobby') { try { if (sessionStorage.getItem('rp_idleMsg')) { sessionStorage.removeItem('rp_idleMsg'); toast('Uzun süre hareketsiz kaldığın için lobiye alındın.'); } } catch (e) {} }
+    });
+  });
+
+  /* ---------- hazırım ---------- */
+  var cur = null, seats = {}, ready = {}, sRef = null, rRef = null, bar = null;
+  function key() { return READY_GAMES.indexOf(CORE.view) >= 0 ? CORE.view + '/' + CORE.table : null; }
+  function detach() { if (sRef) sRef.off(); if (rRef) rRef.off(); sRef = rRef = null; seats = {}; ready = {}; }
+  function attach(k) {
+    detach(); cur = k; if (!k || !CORE.db) return;
+    sRef = CORE.db.ref('rp/t/' + k + '/seats'); rRef = CORE.db.ref('rp/t/' + k + '/ready');
+    sRef.on('value', function (s) { seats = s.val() || {}; render(); }, function () {});
+    rRef.on('value', function (s) { ready = s.val() || {}; render(); }, function () {});
+  }
+  // oturanlar: masada oturan ve şu an bu masada çevrimiçi olanlar
+  function seated() {
+    var k = cur, out = [];
+    Object.keys(seats).forEach(function (id) { var s = seats[id]; if (s && s.sit && s.name && !s.banned && CORE.online[id] === k) out.push(id); });
+    return out;
+  }
+  function isReady(id) { var r = ready[id]; return !!(r && CORE.serverNow() - (r.at || 0) < 900000); }
+  function startBtn() {
+    var v = $(CORE.view + 'View'); if (!v) return null; var bs = v.querySelectorAll('button[data-act$="-start"]');
+    for (var i = 0; i < bs.length; i++) if (START_TXT.test((bs[i].firstChild && bs[i].firstChild.textContent || bs[i].textContent).trim())) return bs[i];
+    return null;
+  }
+  function render() {
+    var k = key(); if (!k) { if (bar) bar.hidden = true; return; }
+    var sb = startBtn(), list = seated(), me = CORE.pid, iSit = list.indexOf(me) >= 0;
+    if (!bar) { bar = document.createElement('div'); bar.id = 'readyBar'; bar.onclick = function (e) { if (e.target.closest('button')) toggle(); }; }
+    var host = $(CORE.view + 'View'); var top = host && host.querySelector('.game-col > header.top');
+    if (!host || !top) { bar.hidden = true; return; }
+    if (bar.parentNode !== top.parentNode || bar.previousSibling !== top) top.parentNode.insertBefore(bar, top.nextSibling);
+    if (!sb || !iSit || list.length < 2) { bar.hidden = true; return; }
+    var rd = list.filter(function (id) { return id === me ? isReady(id) : isReady(id); }), wait = list.filter(function (id) { return !isReady(id); });
+    bar.hidden = false;
+    bar.innerHTML = '<button type="button" class="btn sm ' + (isReady(me) ? '' : 'primary') + '">' + (isReady(me) ? '✓ Hazırsın (iptal)' : '✋ Hazırım') + '</button><span>Hazır <b>' + rd.length + '/' + list.length + '</b>' + (wait.length ? ' · bekleyen: ' + wait.map(function (id) { return esc(CORE.userName(id)); }).join(', ') : ' · herkes hazır!') + '</span>';
+  }
+  function toggle() {
+    if (!cur) return; var ref = CORE.db.ref('rp/t/' + cur + '/ready/' + CORE.pid);
+    (isReady(CORE.pid) ? ref.remove() : ref.set({ at: CORE.serverNow() })).catch(function () {});
+  }
+  // yeni oyun/tur başlatma düğmesini engelle (herkes hazır değilse)
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest && e.target.closest('button[data-act$="-start"]'); if (!b || !cur || !key() || window.__skipReady) return;
+    if (!START_TXT.test((b.firstChild && b.firstChild.textContent || b.textContent).trim())) return;
+    var list = seated(); if (list.length < 2) return;
+    var wait = list.filter(function (id) { return id !== CORE.pid && !isReady(id); });
+    if (wait.length) { e.preventDefault(); e.stopImmediatePropagation(); toast('Herkes "Hazırım" demeli. Bekleyen: ' + wait.map(function (id) { return CORE.userName(id); }).join(', ')); return; }
+    setTimeout(function () { if (CORE.db && cur) CORE.db.ref('rp/t/' + cur + '/ready').remove().catch(function () {}); }, 1500);
+  }, true);
+
+  CORE.whenReady(function () {
+    CORE.onChange(function () { var k = key(); if (k !== cur) attach(k); render(); });
+    setInterval(render, 800);
+  });
 })();
 
 </script>
