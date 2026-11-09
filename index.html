@@ -566,6 +566,32 @@ body.sl-lock { overflow: hidden; overscroll-behavior: none; }
 .f7-bad { color: var(--loss); }
 .f7-gold { color: var(--gold); }
 .f7-targets { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 8px; }
+
+/* slot */
+.sx-chips { display: grid; text-align: right; line-height: 1.1; margin-right: 6px; }
+.sx-chips small { font-size: 10px; color: var(--muted); letter-spacing: .12em; text-transform: uppercase; }
+.sx-chips b { font-family: var(--display); font-size: 18px; color: var(--gold); }
+.sx-board { padding: 8px; border-radius: 18px; background: linear-gradient(160deg, #5b2a86, #2a1650); border: 2px solid #d9b45b; box-shadow: 0 10px 30px rgba(0,0,0,.35); margin-top: 6px; }
+.sx-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 3px; }
+.sx-c { aspect-ratio: 1; display: grid; place-items: center; font-size: clamp(24px, 8.4vw, 40px); background: rgba(255,255,255,.1); border-radius: 10px; position: relative; user-select: none; }
+.sx-c.drop { animation: sxDrop .42s cubic-bezier(.3,1.3,.5,1) both; animation-delay: calc(var(--col) * 45ms); }
+.sx-c.win { animation: sxPulse .45s ease-in-out infinite alternate; background: rgba(242,193,78,.45); box-shadow: 0 0 0 2px #f2c14e; z-index: 1; }
+.sx-c.sc { background: rgba(255,120,200,.22); }
+.sx-bomb { display: grid; place-items: center; position: relative; }
+.sx-bomb b { position: absolute; font-size: 13px; color: #fff; text-shadow: 0 1px 2px #000; top: 30%; }
+@keyframes sxDrop { from { transform: translateY(-140%); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes sxPulse { from { transform: scale(1); } to { transform: scale(1.12); } }
+.sx-winbar { display: flex; justify-content: space-between; align-items: baseline; padding: 6px 4px 0; }
+.sx-winbar span { font-size: 11px; font-weight: 700; letter-spacing: .18em; text-transform: uppercase; color: var(--gold); }
+.sx-winbar b { font-family: var(--display); font-size: 26px; }
+.sx-msg { min-height: 40px; text-align: center; padding: 4px; }
+.sx-big { color: var(--gold); font-size: 20px; }
+.sx-mult { color: #ff8ad1; font-size: 18px; }
+.sx-fs { text-align: center; background: linear-gradient(90deg, #8b3dd6, #d64590); border-radius: 10px; padding: 6px; font-weight: 700; margin-top: 4px; }
+.sx-bet { display: grid; grid-template-columns: 56px 1fr 56px; gap: 8px; align-items: center; text-align: center; }
+.sx-bet small { display: block; font-size: 10px; color: var(--muted); letter-spacing: .12em; text-transform: uppercase; }
+.sx-bet b { font-family: var(--display); font-size: 22px; }
+.sx-spin { min-height: 56px; font-size: 20px; letter-spacing: .08em; }
 </style>
 </head>
 <body>
@@ -671,6 +697,12 @@ body.sl-lock { overflow: hidden; overscroll-behavior: none; }
       <div class="gc-title">Flip 7</div>
       <div class="gc-sub">2–8 kişi · batmadan çek, 7 farklı sayıya ulaş · 200 puan · giriş çipi</div>
       <div class="tbls" id="tbls-flip7"></div>
+    </div>
+    <div class="game-card">
+      <div class="gc-art" style="font-size:34px;line-height:48px;letter-spacing:4px">🍭🍬🧁</div>
+      <div class="gc-title">Tatlı Yağmur</div>
+      <div class="gc-sub">Slot · 6×5 her yerde öde · bedava dönüş ve çarpan balonları</div>
+      <div class="tbls" id="tbls-slot"></div>
     </div>
   </div>
   <div id="lobbyBoard"></div>
@@ -816,6 +848,26 @@ body.sl-lock { overflow: hidden; overscroll-behavior: none; }
   <footer class="actions" id="f7Actions" aria-live="polite"></footer>
   </main>
   <aside class="rules-side panel" id="f7RulesR" aria-label="Deste"></aside>
+</div>
+
+<div class="view game-view" id="slotView" hidden>
+  <aside class="rules-side panel" id="sxRulesL" aria-label="Kurallar"></aside>
+  <main class="game-col">
+  <header class="top">
+    <a class="ghost back" href="#" aria-label="Lobiye dön">‹</a>
+    <div class="brand">Tatlı Yağmur<small id="sxRound">Masa</small></div>
+    <div class="spacer"></div>
+    <div class="sx-chips"><small>Çip</small><b id="sxBal">0</b></div>
+    <button class="ghost rules-btn" type="button" data-act="sx-rules">Kurallar</button>
+  </header>
+  <div id="sxBanner"></div>
+  <div class="sx-fs" id="sxFS" hidden></div>
+  <section class="sx-board" aria-label="Slot"><div class="sx-grid" id="sxGrid"></div></section>
+  <div class="sx-winbar"><span>Kazanç</span><b id="sxWin">0</b></div>
+  <div class="sx-msg" id="sxMsg" aria-live="polite"></div>
+  <footer class="actions" id="sxActions"></footer>
+  </main>
+  <aside class="rules-side panel" id="sxRulesR" aria-label="Ödemeler"></aside>
 </div>
 
 <div class="view game-view" id="esliView" hidden>
@@ -2879,16 +2931,97 @@ var FB_CONFIG = { apiKey: "AIzaSyBsP1VNPJpt1Y6MN0FwDCmvuHeZxaDoTGU", authDomain:
 
 </script>
 <script>
+/* Tatlı Yağmur — 6×5 "her yerde öde" tombul slot motoru (deterministik: seed + bahis) */
+(function (root) {
+  'use strict';
+  var RP = (typeof module !== 'undefined' && module.exports) ? require('./engine.js') : root.RP;
+  var COLS = 6, ROWS = 5, N = 30, SCATTER = 9, BOMB = 10, MAXWIN = 5000, FS_START = 10, FS_RETRIG = 5, FS_MAX = 40;
+  var EMOJI = ['🍌', '🍇', '🍉', '🍑', '🍎', '🍬', '🍫', '🍩', '🧁', '🍭', '🎈'];
+  // 8-9 / 10-11 / 12+ aynı sembol (bahsin katı)
+  var PAY = [[0.25, 0.75, 2], [0.4, 0.9, 4], [0.5, 1, 5], [0.8, 1.2, 8], [1, 1.5, 10], [1.5, 2, 12], [2, 5, 15], [2.5, 10, 25], [10, 25, 50]];
+  var SCAT_PAY = { 4: 3, 5: 5, 6: 100 };
+  var W = { reg: [18, 15, 12.5, 10, 8.5, 6.5, 4.5, 3.5, 2.5], scatter: 1.7, bomb: 1.5 };
+  var BOMBS = [[2, 30], [3, 22], [4, 16], [5, 12], [6, 9], [8, 7], [10, 5], [12, 3.5], [15, 2.5], [20, 1.6], [25, 1], [50, 0.5], [100, 0.2]];
+  function cfg(o) { if (o) { if (o.reg) W.reg = o.reg; if (o.scatter != null) W.scatter = o.scatter; if (o.bomb != null) W.bomb = o.bomb; } return W; }
+
+  function pickW(rng, arr, tot) { var x = rng() * tot, i = 0; for (; i < arr.length - 1; i++) { x -= arr[i]; if (x < 0) return i; } return i; }
+  function cell(rng, fs) {
+    var regT = W.reg.reduce(function (a, b) { return a + b; }, 0), tot = regT + W.scatter + (fs ? W.bomb : 0), x = rng() * tot;
+    if (x < regT) return { s: pickW(rng, W.reg, regT) };
+    x -= regT;
+    if (x < W.scatter) return { s: SCATTER };
+    var bt = BOMBS.reduce(function (a, b) { return a + b[1]; }, 0), y = rng() * bt, i = 0;
+    for (; i < BOMBS.length - 1; i++) { y -= BOMBS[i][1]; if (y < 0) break; }
+    return { s: BOMB, v: BOMBS[i][0] };
+  }
+  function tier(c) { return c >= 12 ? 2 : c >= 10 ? 1 : 0; }
+
+  // tek dönüş (tumble zinciri). Hücre düzeni sütun sütun: idx = col*ROWS + row (row 0 = üst)
+  function oneSpin(rng, bet, fs) {
+    var grid = [], i, steps = [], mult = 0, win = 0;
+    for (i = 0; i < N; i++) grid.push(cell(rng, fs));
+    function bombsIn(g) { var t = 0; g.forEach(function (c) { if (c.s === BOMB && !c.counted) { t += c.v; c.counted = true; } }); return t; }
+    mult += bombsIn(grid);
+    for (var guard = 0; guard < 60; guard++) {
+      var cnt = {}, wins = [];
+      grid.forEach(function (c, k) { if (c.s < 9) (cnt[c.s] = cnt[c.s] || []).push(k); });
+      Object.keys(cnt).forEach(function (s) { if (cnt[s].length >= 8) wins.push({ s: +s, n: cnt[s].length, cells: cnt[s], pay: PAY[s][tier(cnt[s].length)] * bet }); });
+      var snap = grid.map(function (c) { return c.s === BOMB ? { s: BOMB, v: c.v } : { s: c.s }; });
+      if (!wins.length) { steps.push({ grid: snap, wins: [] }); break; }
+      var stepWin = wins.reduce(function (a, w) { return a + w.pay; }, 0);
+      win += stepWin;
+      steps.push({ grid: snap, wins: wins.map(function (w) { return { s: w.s, n: w.n, cells: w.cells, pay: w.pay }; }), win: stepWin });
+      // patlat: kazanan hücreler + balonlar
+      var gone = {};
+      wins.forEach(function (w) { w.cells.forEach(function (k) { gone[k] = 1; }); });
+      grid.forEach(function (c, k) { if (c.s === BOMB) gone[k] = 1; });
+      var ng = [];
+      for (var col = 0; col < COLS; col++) {
+        var keep = [];
+        for (var r = 0; r < ROWS; r++) { var k = col * ROWS + r; if (!gone[k]) keep.push(grid[k]); }
+        var fresh = []; while (fresh.length + keep.length < ROWS) fresh.push(cell(rng, fs));
+        fresh.forEach(function (c) { ng.push(c); }); keep.forEach(function (c) { ng.push(c); });
+      }
+      grid = ng;
+      mult += bombsIn(grid);
+    }
+    var scat = grid.filter(function (c) { return c.s === SCATTER; }).length;
+    var finalWin = win * (fs && win > 0 && mult > 0 ? mult : 1);
+    return { steps: steps, base: win, mult: fs ? mult : 0, win: finalWin, scat: scat };
+  }
+
+  // tam oyun: ana dönüş + (varsa) bedava dönüşler
+  function play(seed, bet) {
+    var rng = RP.makeRng('slot:' + seed), main = oneSpin(rng, bet, false), total = main.win, scatPay = 0, free = null;
+    if (main.scat >= 4) {
+      scatPay = (SCAT_PAY[Math.min(main.scat, 6)] || 0) * bet; total += scatPay;
+      var left = FS_START, spins = [], played = 0;
+      while (left > 0 && played < FS_MAX) {
+        left--; played++;
+        var sp = oneSpin(rng, bet, true); spins.push(sp); total += sp.win;
+        if (sp.scat >= 3 && played + left < FS_MAX) left += FS_RETRIG, sp.retrig = FS_RETRIG;
+      }
+      free = { spins: spins };
+    }
+    var capped = total > MAXWIN * bet; if (capped) total = MAXWIN * bet;
+    return { main: main, scatPay: scatPay, free: free, total: Math.round(total * 100) / 100, capped: capped, bet: bet };
+  }
+  var api = { COLS: COLS, ROWS: ROWS, EMOJI: EMOJI, PAY: PAY, SCAT_PAY: SCAT_PAY, SCATTER: SCATTER, BOMB: BOMB, FS_START: FS_START, FS_RETRIG: FS_RETRIG, MAXWIN: MAXWIN, play: play, cfg: cfg };
+  if (typeof module !== 'undefined' && module.exports) module.exports = api; else root.SLOT = api;
+})(typeof window !== 'undefined' ? window : globalThis);
+
+</script>
+<script>
 /* Ortak bağlantı: Firebase, hesaplar, admin, çevrimiçi durumu, ses, lobi yönlendirme */
 window.CORE = (function () {
   'use strict';
-  var VIEWS = ['lobby', 'poker', 'okey', 'holdem', 'pisti', 'esli', 'bj', 'slither', 'tombala', 'emlak', 'futbol', 'flip7', 'kayit', 'admin'];
-  var GAMES = ['poker', 'okey', 'holdem', 'pisti', 'esli', 'bj', 'slither', 'tombala', 'emlak', 'futbol', 'flip7'];
-  var TITLES = { poker: 'Rus Pokeri', okey: 'Okey', holdem: 'Texas Hold\'em', pisti: 'Pişti', esli: 'Eşli Pişti', bj: 'Blackjack', slither: 'Slither', tombala: 'Tombala', emlak: 'Emlak', futbol: 'Futbol Ligi', flip7: 'Flip 7', kayit: 'Kayıtlar', admin: 'Admin paneli' };
+  var VIEWS = ['lobby', 'poker', 'okey', 'holdem', 'pisti', 'esli', 'bj', 'slither', 'tombala', 'emlak', 'futbol', 'flip7', 'slot', 'kayit', 'admin'];
+  var GAMES = ['poker', 'okey', 'holdem', 'pisti', 'esli', 'bj', 'slither', 'tombala', 'emlak', 'futbol', 'flip7', 'slot'];
+  var TITLES = { poker: 'Rus Pokeri', okey: 'Okey', holdem: 'Texas Hold\'em', pisti: 'Pişti', esli: 'Eşli Pişti', bj: 'Blackjack', slither: 'Slither', tombala: 'Tombala', emlak: 'Emlak', futbol: 'Futbol Ligi', flip7: 'Flip 7', slot: 'Tatlı Yağmur', kayit: 'Kayıtlar', admin: 'Admin paneli' };
   var core = { db: null, auth: null, user: null, me: null, pid: null, connected: false, online: {}, ownerId: null, error: null,
     view: 'lobby', table: 1, TABLES: 3, bootAt: Date.now(), ready: false, authKnown: false,
-    ledger: {}, users: {}, requests: {}, bans: {}, deleted: {}, weekly: {}, weeklyLoaded: false, ledgerLoaded: false, START_CHIPS: 1000, GAMES: ['poker', 'okey', 'holdem', 'pisti', 'esli', 'bj', 'slither', 'tombala', 'emlak', 'futbol', 'flip7'] };
-  core.GAME_NAMES = { poker: 'Rus Pokeri', okey: 'Okey', holdem: 'Hold\'em', pisti: 'Pişti', esli: 'Eşli Pişti', bj: 'Blackjack', slither: 'Slither', tombala: 'Tombala', emlak: 'Emlak', futbol: 'Futbol Ligi', flip7: 'Flip 7', admin: 'Admin', start: 'Başlangıç', prize: 'Haftalık ödül' };
+    ledger: {}, users: {}, requests: {}, bans: {}, deleted: {}, weekly: {}, weeklyLoaded: false, ledgerLoaded: false, START_CHIPS: 1000, GAMES: ['poker', 'okey', 'holdem', 'pisti', 'esli', 'bj', 'slither', 'tombala', 'emlak', 'futbol', 'flip7', 'slot'] };
+  core.GAME_NAMES = { poker: 'Rus Pokeri', okey: 'Okey', holdem: 'Hold\'em', pisti: 'Pişti', esli: 'Eşli Pişti', bj: 'Blackjack', slither: 'Slither', tombala: 'Tombala', emlak: 'Emlak', futbol: 'Futbol Ligi', flip7: 'Flip 7', slot: 'Tatlı Yağmur', admin: 'Admin', start: 'Başlangıç', prize: 'Haftalık ödül' };
   var subs = [], readyFns = [];
   core.onChange = function (fn) { subs.push(fn); };
   core.emit = function () { subs.forEach(function (f) { try { f(); } catch (e) { console.error(e); } }); };
@@ -3437,7 +3570,7 @@ window.CORE = (function () {
     if (!t) return '—';
     try { return new Date(t).toLocaleString('tr-TR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }); } catch (e) { return '—'; }
   }
-  var GAMES = ['poker', 'okey', 'holdem', 'pisti', 'esli', 'bj', 'slither', 'tombala', 'emlak', 'futbol', 'flip7'];
+  var GAMES = ['poker', 'okey', 'holdem', 'pisti', 'esli', 'bj', 'slither', 'tombala', 'emlak', 'futbol', 'flip7', 'slot'];
   var GDESC = {
     poker: 'Krupiyeye karşı · 1–6 kişi · kart değiştir, 6. kart al',
     okey: '2–4 kişi · giriş çipi, kazanan potu alır',
@@ -3595,7 +3728,7 @@ window.CORE = (function () {
   function groupEntries(uid) {
     var l = CORE.ledger[uid] || {}, groups = {};
     Object.keys(l).forEach(function (k) {
-      var e = l[k], i = k.lastIndexOf('-'), grp = /^(poker|okey|holdem|pisti|esli|bj|slither|tombala|emlak|futbol|flip7)-/.test(k) && i > 0 ? k.slice(0, i) : k, suf = k.slice(i + 1);
+      var e = l[k], i = k.lastIndexOf('-'), grp = /^(poker|okey|holdem|pisti|esli|bj|slither|tombala|emlak|futbol|flip7|slot)-/.test(k) && i > 0 ? k.slice(0, i) : k, suf = k.slice(i + 1);
       var g = groups[grp] = groups[grp] || { d: 0, at: 0, g: e.g, tb: e.tb, notes: [], open: false, closed: false };
       g.d += Number(e.d) || 0; g.at = Math.max(g.at, e.at || 0);
       if (e.n && g.notes.indexOf(e.n) < 0) g.notes.push(e.n);
@@ -8393,6 +8526,175 @@ window.CORE = (function () {
     $('RulesR').innerHTML = '<h3>Deste</h3>' + rulesPay();
     CORE.onChange(function () { if (tb) render(); });
     CORE.onTable(KEY, attach);
+  });
+})();
+
+</script>
+<script>
+/* Tatlı Yağmur slotu: krupiyeye karşı tek kişilik; her dönüş deftere bahis + sonuç olarak yazılır */
+(function () {
+  'use strict';
+  var SLOT = window.SLOT, CORE = window.CORE, KEY = 'slot';
+  var BETS = [10, 20, 50, 100, 250, 500, 1000], PEND_KEY = 'rp_slot_pending';
+  var pid = null, tb = 0, bet = 50, busy = false, fast = false, auto = 0, lastWin = null, token = 0, grid = null, status = '';
+
+  function $(id) { return document.getElementById(id); }
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  function fmt(n) { n = Number(n || 0); return (n < 0 ? '−' : '') + Math.abs(n).toLocaleString('tr-TR'); }
+  function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms * (fast ? 0.4 : 1)); }); }
+  function winOf(res) { return Math.round(res.total); }
+
+  // ---------- defter ----------
+  function gid(id) { return KEY + '-' + tb + '-' + id; }
+  function holdEntry(id, b) { return { uid: pid, key: gid(id) + '-h', d: -b, g: KEY, tb: tb, n: 'Dönüş · bahis ' + fmt(b) }; }
+  function resultEntry(id, b, res) {
+    var w = winOf(res);
+    return { uid: pid, key: gid(id) + '-r', d: w, g: KEY, tb: tb, n: w > b ? 'Kazandı ×' + (Math.round(w * 10 / b) / 10) + (res.free ? ' · bedava dönüş' : '') : w > 0 ? 'Küçük kazanç' : 'Kazanç yok' };
+  }
+  function getPending() { try { return JSON.parse(localStorage.getItem(PEND_KEY) || 'null'); } catch (e) { return null; } }
+  function setPending(p) { try { if (p) localStorage.setItem(PEND_KEY, JSON.stringify(p)); else localStorage.removeItem(PEND_KEY); } catch (e) {} }
+  // sayfa dönüş sırasında kapandıysa sonucu yaz; başka cihazda kalmış eski açık dönüşleri iade et
+  function recover() {
+    if (!CORE.ledgerLoaded || !pid || busy) return;
+    var p = getPending();
+    if (p && p.uid === pid) {
+      var res = SLOT.play(p.id, p.bet), old = tb; tb = p.tb || tb;
+      CORE.ensureEntries([holdEntry(p.id, p.bet), resultEntry(p.id, p.bet, res)]); tb = old; setPending(null);
+    }
+    var l = CORE.ledger[pid] || {}, list = [];
+    Object.keys(l).forEach(function (k) {
+      if (k.indexOf(KEY + '-') !== 0 || k.slice(-2) !== '-h') return;
+      var g = k.slice(0, -2);
+      if (l[g + '-r'] || l[g + '-x'] || Date.now() - (l[k].at || 0) < 10 * 60000) return;
+      list.push({ uid: pid, key: g + '-x', d: -(Number(l[k].d) || 0), g: KEY, tb: l[k].tb || 0, n: 'İptal: bahis iade edildi' });
+    });
+    if (list.length) CORE.ensureEntries(list);
+  }
+
+  // ---------- çizim ----------
+  function cellHTML(c, k, cls) {
+    var col = Math.floor(k / SLOT.ROWS), body = c.s === SLOT.BOMB ? '<span class="sx-bomb">🎈<b>×' + c.v + '</b></span>' : SLOT.EMOJI[c.s];
+    return '<div class="sx-c' + (c.s === SLOT.SCATTER ? ' sc' : '') + (cls ? ' ' + cls : '') + '" data-k="' + k + '" style="--col:' + col + '">' + body + '</div>';
+  }
+  function drawGrid(g, anim, winCells) {
+    grid = g; var h = '';
+    for (var r = 0; r < SLOT.ROWS; r++) for (var c = 0; c < SLOT.COLS; c++) {
+      var k = c * SLOT.ROWS + r;
+      h += cellHTML(g[k], k, (anim ? 'drop ' : '') + (winCells && winCells[k] ? 'win' : ''));
+    }
+    $('sxGrid').innerHTML = h;
+  }
+  function emptyGrid() { var g = []; for (var i = 0; i < SLOT.COLS * SLOT.ROWS; i++) g.push({ s: (i * 7 + 3) % 9 }); return g; }
+  function setMsg(h) { $('sxMsg').innerHTML = h; }
+  function render() {
+    if (!$('sxGrid')) return;
+    var bal = CORE.balance(pid);
+    if (bet > Math.max(BETS[0], bal)) { var ok = BETS.filter(function (b) { return b <= bal; }); bet = ok.length ? ok[ok.length - 1] : BETS[0]; }
+    $('sxBal').textContent = fmt(bal);
+    $('sxRound').textContent = 'Masa ' + tb;
+    var bt = CORE.bannerText(true); $('sxBanner').innerHTML = CORE.error && bt ? '<div class="banner">' + esc(bt) + '</div>' : '';
+    if (!grid) drawGrid(emptyGrid(), false);
+    var can = !busy && bal >= bet && !CORE.error;
+    $('sxActions').innerHTML =
+      '<div class="sx-bet"><button type="button" class="btn sm" data-act="sx-minus"' + (busy ? ' disabled' : '') + '>−</button><div><small>Bahis</small><b>' + fmt(bet) + '</b></div><button type="button" class="btn sm" data-act="sx-plus"' + (busy ? ' disabled' : '') + '>+</button></div>' +
+      '<div class="row2"><button type="button" class="btn' + (fast ? ' primary' : '') + '" data-act="sx-fast">Hızlı' + (fast ? ' ✓' : '') + '</button>' +
+      '<button type="button" class="btn" data-act="sx-auto">' + (auto > 0 ? 'Durdur (' + auto + ')' : 'Otomatik 10') + '</button></div>' +
+      '<button type="button" class="btn primary sx-spin" data-act="sx-spin"' + (can ? '' : ' disabled') + '>' + (busy ? 'Dönüyor…' : bal < bet ? 'Çipin yetmiyor' : 'ÇEVİR') + '</button>';
+  }
+
+  // ---------- dönüş animasyonu ----------
+  async function playSpin(sp, my, label, fs, running) {
+    var total = 0;
+    for (var i = 0; i < sp.steps.length; i++) {
+      if (my !== token) return running;
+      var st = sp.steps[i], wc = {};
+      drawGrid(st.grid, true); await sleep(i === 0 ? 650 : 520);
+      if (st.wins.length) {
+        st.wins.forEach(function (w) { w.cells.forEach(function (k) { wc[k] = 1; }); });
+        st.grid.forEach(function (c, k) { if (c.s === SLOT.BOMB) wc[k] = 1; });
+        drawGrid(st.grid, false, wc);
+        total += st.win; running += st.win;
+        setMsg('<b>' + st.wins.map(function (w) { return SLOT.EMOJI[w.s] + '×' + w.n; }).join(' ') + '</b> · +' + fmt(Math.round(st.win)) + ' çip');
+        $('sxWin').textContent = fmt(Math.round(running));
+        await sleep(900);
+      }
+    }
+    if (fs && sp.mult > 0 && sp.base > 0) {
+      var extra = sp.win - sp.base; running += extra;
+      setMsg('<b class="sx-mult">🎈 ×' + sp.mult + ' çarpan!</b> · +' + fmt(Math.round(extra)) + ' çip');
+      $('sxWin').textContent = fmt(Math.round(running)); await sleep(1100);
+    } else if (fs && sp.mult > 0) { setMsg('Kazanç yok, balonlar boşa gitti.'); await sleep(500); }
+    return running;
+  }
+  async function spin() {
+    if (busy) return;
+    var bal = CORE.balance(pid);
+    if (bal < bet) { auto = 0; render(); return; }
+    busy = true; var my = ++token;
+    var id = CORE.rnd().slice(0, 8), b = bet, res = SLOT.play(id, b);
+    setPending({ uid: pid, id: id, bet: b, tb: tb });
+    CORE.ensureEntries([holdEntry(id, b)]);
+    $('sxWin').textContent = '0'; setMsg(''); $('sxFS').hidden = true; render();
+    var running = 0;
+    running = await playSpin(res.main, my, '', false, running);
+    if (my !== token) return;
+    if (res.scatPay) { running += res.scatPay; $('sxWin').textContent = fmt(Math.round(running)); }
+    if (res.free) {
+      setMsg('<b class="sx-big">🍭 BEDAVA DÖNÜŞ!</b>' + (res.scatPay ? ' · saçıcı +' + fmt(Math.round(res.scatPay)) : '')); await sleep(1800);
+      var left = SLOT.FS_START, n = 0;
+      for (var i = 0; i < res.free.spins.length; i++) {
+        if (my !== token) return;
+        var sp = res.free.spins[i]; n++; left--;
+        $('sxFS').hidden = false; $('sxFS').innerHTML = 'Bedava dönüş <b>' + n + '</b> · kalan <b>' + (left + (sp.retrig ? sp.retrig : 0)) + '</b>';
+        running = await playSpin(sp, my, '', true, running);
+        if (sp.retrig) { left += sp.retrig; setMsg('<b class="sx-big">+' + sp.retrig + ' bedava dönüş!</b>'); await sleep(1100); }
+      }
+      $('sxFS').hidden = true;
+    }
+    if (my !== token) return;
+    var w = winOf(res), ratio = w / b;
+    $('sxWin').textContent = fmt(w);
+    CORE.ensureEntries([holdEntry(id, b), resultEntry(id, b, res)]); setPending(null);
+    lastWin = w;
+    setMsg(w === 0 ? 'Bu sefer olmadı.' : '<b class="' + (ratio >= 20 ? 'sx-big' : '') + '">' + (res.capped ? 'MAKSİMUM KAZANÇ! ' : ratio >= 100 ? 'SÜPER MEGA KAZANÇ! ' : ratio >= 50 ? 'MEGA KAZANÇ! ' : ratio >= 20 ? 'BÜYÜK KAZANÇ! ' : 'Kazandın ') + '+' + fmt(w) + ' çip</b>');
+    if (ratio >= 20) try { CORE.shout(ratio >= 100 ? 'Süper mega kazanç!' : 'Büyük kazanç!'); } catch (e) {}
+    busy = false; render();
+    if (auto > 0) { auto--; if (auto > 0 && CORE.balance(pid) >= bet) { await sleep(900); if (my === token && auto > 0) spin(); } else { auto = 0; render(); } }
+  }
+
+  // ---------- kurallar ----------
+  function payTable() {
+    var rows = '';
+    for (var s = 8; s >= 0; s--) rows += '<tr><td>' + SLOT.EMOJI[s] + '</td>' + SLOT.PAY[s].map(function (p) { return '<td class="n">' + p + '×</td>'; }).join('') + '</tr>';
+    return '<table><thead><tr><th></th><th class="n">8–9</th><th class="n">10–11</th><th class="n">12+</th></tr></thead><tbody>' + rows + '</tbody></table>';
+  }
+  function rulesPlay() {
+    return '<p>6×5 ızgarada <b>aynı sembolden 8 ya da fazlası</b> nerede olursa olsun kazandırır. Kazanan semboller patlar, üstündekiler düşer, yeni semboller gelir (tumble). Yeni kazanç olmayana kadar sürer.</p>' +
+      '<h4>Bedava dönüş</h4><p>Aynı anda <b>4 🍭</b> gelirse ' + SLOT.FS_START + ' bedava dönüş başlar (saçıcı ödemesi: 4 → 3×, 5 → 5×, 6 → 100×). Bedava dönüşte 3 🍭 daha gelirse +' + SLOT.FS_RETRIG + ' dönüş eklenir.</p>' +
+      '<h4>Çarpan balonları</h4><p>Sadece bedava dönüşte 🎈 ×2 … ×100 balonlar düşer. Bir dönüşteki tüm balonların toplamı, o dönüşün kazancı varsa onunla çarpılır.</p>' +
+      '<h4>Çip</h4><p>Her dönüşte seçtiğin bahis çipten düşer, kazanç animasyon bitince yazılır. Bir dönüşte en çok bahsin ' + SLOT.MAXWIN + ' katı kazanılır. Uzun vadede iade oranı yaklaşık %96\'dır; çipler sadece arkadaşlar arasındadır.</p>';
+  }
+  function rulesHTML() { return '<div class="panel-head"><h3>Tatlı Yağmur</h3><button class="ghost" type="button" data-act="close">Kapat</button></div>' + rulesPlay() + '<h4>Ödemeler (bahsin katı)</h4>' + payTable(); }
+
+  document.addEventListener('click', function (e) {
+    var t = e.target.closest('[data-act]'); if (!t || t.disabled) return;
+    var a = t.getAttribute('data-act'); if (a.indexOf('sx-') !== 0) return;
+    switch (a.slice(3)) {
+      case 'spin': spin(); break;
+      case 'plus': { var i = BETS.indexOf(bet); if (i < 0) i = 0; if (i < BETS.length - 1 && BETS[i + 1] <= CORE.balance(pid)) bet = BETS[i + 1]; render(); break; }
+      case 'minus': { var j = BETS.indexOf(bet); if (j > 0) bet = BETS[j - 1]; render(); break; }
+      case 'fast': fast = !fast; render(); break;
+      case 'auto': if (auto > 0) { auto = 0; render(); } else { auto = 10; spin(); } break;
+      case 'rules': $('sheetPanel').innerHTML = rulesHTML(); $('sheet').hidden = false; break;
+    }
+  });
+  window.__sxDebug = function () { return { bet: bet, busy: busy, lastWin: lastWin, tb: tb }; };
+  CORE.whenReady(function () {
+    pid = CORE.pid;
+    $('sxRulesL').innerHTML = '<h3>Nasıl oynanır</h3>' + rulesPlay();
+    $('sxRulesR').innerHTML = '<h3>Ödemeler</h3>' + payTable();
+    CORE.onChange(function () { if (tb) { render(); recover(); } });
+    CORE.onTable(KEY, function (t) { token++; busy = false; auto = 0; tb = t; grid = null; $('sxFS').hidden = true; $('sxWin').textContent = '0'; setMsg('Bahsi seç ve çevir.'); render(); recover(); });
   });
 })();
 
