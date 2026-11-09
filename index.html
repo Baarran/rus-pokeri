@@ -1626,8 +1626,11 @@ window.CORE = (function () {
   core.rnd = rnd;
   core.savedName = function () { return core.me ? core.me.name : ''; };
   core.saveName = function () {};
-  core.isOwner = function () { return !!core.pid && core.ownerId === core.pid; };
-  core.isAdmin = core.isOwner;
+  // Admin sadece "Baran" hesabıdır (isimden üretilen giriş adresiyle kontrol edilir; Firebase kuralları da aynısını ister)
+  core.ADMIN_NAME = 'Baran';
+  core.ADMIN_EMAIL = 'baran@ruspokeri-masa.com';
+  core.isAdmin = function () { return !!(core.user && String(core.user.email || '').toLowerCase() === core.ADMIN_EMAIL); };
+  core.isOwner = core.isAdmin;
   core.claimOwner = function () { return Promise.resolve(); };
   core.countOnline = function (view, table) {
     return Object.keys(core.online).filter(function (k) {
@@ -1784,8 +1787,10 @@ window.CORE = (function () {
       return core.db.ref('rp/users/' + uid).update({ name: name, slug: slug(name), createdAt: Date.now(), lastIn: Date.now() });
     }).catch(function (e) { core.pendingName = null; throw { message: e && e.message && !e.code ? e.message : authMsg(e) }; });
   };
-  core.login = function (name, pass) {
+  core.isAdminName = function (name) { return slug(name) === slug(core.ADMIN_NAME); };
+  core.login = function (name, pass, asAdmin) {
     if (!slug(name)) return Promise.reject({ message: 'İsmini yaz.' });
+    if (asAdmin && !core.isAdminName(name)) return Promise.reject({ message: 'Admin girişi sadece ' + core.ADMIN_NAME + ' içindir.' });
     return core.auth.signInWithEmailAndPassword(emailOf(name), pass).catch(function (e) { throw { message: authMsg(e) }; });
   };
   core.logout = function () {
@@ -1988,17 +1993,14 @@ window.CORE = (function () {
     var db = core.db;
     db.ref('rp/online').on('value', function (s) { core.online = s.val() || {}; core.emit(); }, function () {});
     db.ref('rp/admin').on('value', function (s) {
-      var first = core.ownerId === null && !core.adminKnown;
       core.ownerId = s.val(); core.adminKnown = true;
-      var want = false; try { want = sessionStorage.getItem('rp_wantAdmin') === '1'; if (core.ownerId != null) sessionStorage.removeItem('rp_wantAdmin'); } catch (e) {}
-      if (want && core.ownerId != null) {
-        if (core.isAdmin()) location.hash = '#admin';
-        else { try { sessionStorage.setItem('rp_loginMsg', 'Bu hesap admin değil.'); } catch (e) {} core.logout(); return; }
-      }
-      if (first && core.view === 'admin') route();
+      // admin hesabı girince kayıtlı admin kimliğini kendine çevirir (başkası daha önce yazdıysa düzelir)
+      if (core.isAdmin() && core.ownerId !== core.pid) db.ref('rp/admin').set(core.pid).catch(function () {});
       core.emit();
     }, function () {});
-    db.ref('rp/admin').transaction(function (cur) { return cur == null ? core.pid : undefined; }).catch(function () {});
+    var want = false; try { want = sessionStorage.getItem('rp_wantAdmin') === '1'; sessionStorage.removeItem('rp_wantAdmin'); } catch (e) {}
+    if (want && !core.isAdmin()) { try { sessionStorage.setItem('rp_loginMsg', 'Admin girişi sadece ' + core.ADMIN_NAME + ' içindir.'); } catch (e) {} core.logout(); return; }
+    if (want) location.hash = '#admin';
     db.ref('.info/connected').on('value', function (s) { core.connected = !!s.val(); setPresence(); core.emit(); });
     db.ref('rp/users').on('value', function (s) { core.users = s.val() || {}; core.emit(); }, function () {});
     db.ref('rp/requests').on('value', function (s) { core.requests = s.val() || {}; core.emit(); }, function () {});
@@ -2122,7 +2124,7 @@ window.CORE = (function () {
     if (pass.length < 6) { msg.textContent = 'Şifre en az 6 karakter olmalı.'; return; }
     busy = true; $('lgSubmit').disabled = true; msg.textContent = mode === 'up' ? 'Hesap açılıyor…' : 'Giriş yapılıyor…';
     if (mode === 'admin') { try { sessionStorage.setItem('rp_wantAdmin', '1'); } catch (er) {} }
-    (mode === 'up' ? CORE.register(name, pass) : CORE.login(name, pass)).then(function () { msg.textContent = ''; },
+    (mode === 'up' ? CORE.register(name, pass) : CORE.login(name, pass, mode === 'admin')).then(function () { msg.textContent = ''; },
       function (err) { msg.textContent = (err && err.message) || 'Olmadı, tekrar dene.'; try { sessionStorage.removeItem('rp_wantAdmin'); } catch (er) {} })
       .then(function () { busy = false; $('lgSubmit').disabled = false; });
   });
