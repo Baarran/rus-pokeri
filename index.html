@@ -594,6 +594,27 @@ body.sl-lock { overflow: hidden; overscroll-behavior: none; }
 .sx-buy { min-height: 46px; font-size: 14px; }
 .sx-buy.sup { background: linear-gradient(90deg, #8b3dd6, #d64590); color: #fff; border-color: transparent; }
 .sx-spin { min-height: 56px; font-size: 20px; letter-spacing: .08em; }
+
+/* at yarışı */
+.hr-phase { text-align: center; font-weight: 800; letter-spacing: .06em; padding: 8px; border-radius: 10px; background: rgba(243,234,215,.08); margin-top: 6px; }
+.hr-phase.bet { color: var(--gold); } .hr-phase.race { background: #b3261e; color: #fff; } .hr-phase.result { color: var(--win); }
+.hr-lanes { position: relative; margin-top: 8px; border-radius: 12px; overflow: hidden; background: #2d6a3a; border: 2px solid #d9b45b; }
+.hr-lane { display: grid; grid-template-columns: 30px 1fr; align-items: center; height: 36px; border-bottom: 1px dashed rgba(255,255,255,.35); background: repeating-linear-gradient(90deg, rgba(255,255,255,.04) 0 40px, transparent 40px 80px); }
+.hr-lane:last-of-type { border-bottom: 0; }
+.hr-num { display: grid; place-items: center; height: 100%; font-weight: 800; color: #fff; font-size: 14px; }
+.hr-run { position: relative; height: 100%; }
+.hr-horse { position: absolute; top: 2px; font-size: 26px; transform: scaleX(-1); transition: left .06s linear; line-height: 30px; }
+.hr-horse.win { filter: drop-shadow(0 0 6px #f2c14e); }
+.hr-finish { position: absolute; top: 0; bottom: 0; right: 7%; width: 6px; background: repeating-linear-gradient(0deg, #fff 0 6px, #111 6px 12px); }
+.hr-row { display: grid; grid-template-columns: 30px 1fr; gap: 4px 10px; align-items: center; padding: 8px 10px; border-radius: 12px; background: rgba(243,234,215,.06); margin-bottom: 6px; }
+.hr-dot { display: inline-grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; color: #fff; font-weight: 800; font-size: 14px; }
+.hr-dot.sm { width: 20px; height: 20px; font-size: 11px; vertical-align: middle; }
+.hr-name small { display: block; color: var(--gold); letter-spacing: 2px; font-size: 11px; }
+.hr-btns { grid-column: 1 / -1; display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.hr-podium { display: grid; gap: 4px; margin-bottom: 8px; }
+.hr-pl { padding: 6px 10px; border-radius: 10px; background: rgba(243,234,215,.06); }
+.hr-pl.first { background: rgba(242,193,78,.2); font-weight: 700; }
+.hr-pl b { display: inline-block; width: 24px; }
 </style>
 </head>
 <body>
@@ -705,6 +726,12 @@ body.sl-lock { overflow: hidden; overscroll-behavior: none; }
       <div class="gc-title">Tatlı Yağmur</div>
       <div class="gc-sub">Slot · 6×5 her yerde öde · bedava dönüş ve çarpan balonları</div>
       <div class="tbls" id="tbls-slot"></div>
+    </div>
+    <div class="game-card">
+      <div class="gc-art" style="font-size:36px;line-height:48px;letter-spacing:6px">🐎🏇🐎</div>
+      <div class="gc-title">At Yarışı</div>
+      <div class="gc-sub">Herkes aynı yarışa bahis oynar · kazanır / ilk 3 · her 80 saniyede yeni yarış</div>
+      <div class="tbls" id="tbls-yaris"></div>
     </div>
   </div>
   <div id="lobbyBoard"></div>
@@ -870,6 +897,29 @@ body.sl-lock { overflow: hidden; overscroll-behavior: none; }
   <footer class="actions" id="sxActions"></footer>
   </main>
   <aside class="rules-side panel" id="sxRulesR" aria-label="Ödemeler"></aside>
+</div>
+
+<div class="view game-view" id="yarisView" hidden>
+  <aside class="rules-side panel" id="hrRulesL" aria-label="Kurallar"></aside>
+  <main class="game-col">
+  <header class="top">
+    <a class="ghost back" href="#" aria-label="Lobiye dön">‹</a>
+    <div class="brand">At Yarışı<small id="hrRound">Masa</small></div>
+    <div class="spacer"></div>
+    <div class="sx-chips"><small>Çip</small><b id="hrBal">0</b></div>
+    <button class="ghost rules-btn" type="button" data-act="hr-rules">Kurallar</button>
+  </header>
+  <div id="hrBanner"></div>
+  <div class="hr-phase bet" id="hrPhase">…</div>
+  <section id="hrTrack" aria-label="Pist"></section>
+  <section aria-label="Bahisler">
+    <div class="section-head"><h2 id="hrHorsesTitle">Bahis yap</h2></div>
+    <div id="hrHorses"></div>
+  </section>
+  <section id="hrHist" style="padding:6px 2px"></section>
+  <footer class="actions" id="hrStake"></footer>
+  </main>
+  <aside class="rules-side panel" id="hrRulesR" aria-label=""></aside>
 </div>
 
 <div class="view game-view" id="esliView" hidden>
@@ -3017,16 +3067,82 @@ var FB_CONFIG = { apiKey: "AIzaSyBsP1VNPJpt1Y6MN0FwDCmvuHeZxaDoTGU", authDomain:
 
 </script>
 <script>
+/* At yarışı — sunucu saatine bağlı, deterministik yarışlar (masa + tur numarasından üretilir) */
+(function (root) {
+  'use strict';
+  var RP = (typeof module !== 'undefined' && module.exports) ? require('./engine.js') : root.RP;
+  var CYCLE = 80000, BET_MS = 45000, RACE_MS = 25000, N = 6, EDGE = 0.9;
+  var NAMES = ['Rüzgâr', 'Yıldırım', 'Karabulut', 'Şimşek', 'Fırtına', 'Tay Tay', 'Gümüş', 'Aslan Yürek', 'Çılgın Bora', 'Kara Şimşek', 'Sultan', 'Efsane', 'Kırat', 'Pamuk', 'Zeytin', 'Börek', 'Lokum', 'Kebap', 'Simit', 'Mıstık', 'Tosun', 'Cılız', 'Hızır', 'Poyraz'];
+  var COLORS = ['#e5484d', '#3e8ef7', '#2fb36a', '#f2c14e', '#a15df0', '#ff8a3d'];
+
+  function cycleOf(t) { return Math.floor(t / CYCLE); }
+  function phase(t) {
+    var c = cycleOf(t), at = t - c * CYCLE;
+    if (at < BET_MS) return { c: c, ph: 'bet', left: BET_MS - at, at: at };
+    if (at < BET_MS + RACE_MS) return { c: c, ph: 'race', left: BET_MS + RACE_MS - at, at: at, rt: at - BET_MS };
+    return { c: c, ph: 'result', left: CYCLE - at, at: at };
+  }
+  function raceEnd(c) { return c * CYCLE + BET_MS + RACE_MS; }
+
+  function race(tb, c) {
+    var rng = RP.makeRng('yaris:' + tb + ':' + c);
+    var names = RP.shuffle(NAMES.slice(), rng).slice(0, N), w = [], i;
+    for (i = 0; i < N; i++) { var s = (rng() + rng() + rng() - 1.5) * 1.3; w.push(Math.exp(s)); }
+    var tot = w.reduce(function (a, b) { return a + b; }, 0), pwin = w.map(function (x) { return x / tot; });
+    // Plackett-Luce ile bitiş sırası
+    var left = range(N), order = [];
+    while (left.length) {
+      var sum = left.reduce(function (a, k) { return a + w[k]; }, 0), x = rng() * sum, pick = left[left.length - 1];
+      for (var j = 0; j < left.length; j++) { x -= w[left[j]]; if (x < 0) { pick = left[j]; break; } }
+      order.push(pick); left.splice(left.indexOf(pick), 1);
+    }
+    // ilk 3'e girme olasılığı (tam sayım)
+    var p3 = range(N).map(function () { return 0; });
+    for (var a = 0; a < N; a++) for (var b = 0; b < N; b++) { if (b === a) continue; for (var d = 0; d < N; d++) {
+      if (d === a || d === b) continue;
+      var pa = w[a] / tot, pb = w[b] / (tot - w[a]), pd = w[d] / (tot - w[a] - w[b]), pr = pa * pb * pd;
+      p3[a] += pr; p3[b] += pr; p3[d] += pr;
+    } }
+    // bitirme süreleri ve hız profilleri
+    var T = [], gam = [], ph = [], rank = [];
+    order.forEach(function (h, r) { rank[h] = r; });
+    for (i = 0; i < N; i++) { T.push(19000 + rank[i] * 450 + Math.floor(rng() * 150)); gam.push(0.85 + rng() * 0.3); ph.push(rng() * 6.283); }
+    var horses = range(N).map(function (k) {
+      return { n: k, name: names[k], color: COLORS[k], pwin: pwin[k], p3: p3[k], form: Math.max(1, Math.min(5, Math.round(1 + pwin[k] * N * 2.2))),
+        oddsW: Math.min(30, Math.max(1.1, Math.round(EDGE / pwin[k] * 10) / 10)), oddsP: Math.max(1.05, Math.round(EDGE / p3[k] * 20) / 20) };
+    });
+    return { tb: tb, c: c, horses: horses, order: order, T: T, gam: gam, ph: ph, winner: order[0] };
+  }
+  // ms'deki ilerleme (0..1); bitiş çizgisinde tam 1
+  function progress(r, k, ms) {
+    var u = Math.max(0, Math.min(1, ms / r.T[k]));
+    if (u >= 1) return 1;
+    var p = Math.pow(u, r.gam[k]);
+    return Math.max(0, Math.min(1, p + 0.03 * Math.sin(6.283 * 2 * u + r.ph[k]) * Math.sin(Math.PI * u)));
+  }
+  // bahis: t = 'w' (kazanır) | 'p' (ilk 3), h = at numarası
+  function payout(r, t, h, amt) {
+    var hs = r.horses[h];
+    if (t === 'w') return r.winner === h ? Math.floor(amt * hs.oddsW) : 0;
+    return r.order.indexOf(h) < 3 ? Math.floor(amt * hs.oddsP) : 0;
+  }
+  function range(n) { var a = []; for (var i = 0; i < n; i++) a.push(i); return a; }
+  var api = { CYCLE: CYCLE, BET_MS: BET_MS, RACE_MS: RACE_MS, N: N, cycleOf: cycleOf, phase: phase, raceEnd: raceEnd, race: race, progress: progress, payout: payout };
+  if (typeof module !== 'undefined' && module.exports) module.exports = api; else root.HR = api;
+})(typeof window !== 'undefined' ? window : globalThis);
+
+</script>
+<script>
 /* Ortak bağlantı: Firebase, hesaplar, admin, çevrimiçi durumu, ses, lobi yönlendirme */
 window.CORE = (function () {
   'use strict';
-  var VIEWS = ['lobby', 'poker', 'okey', 'holdem', 'pisti', 'esli', 'bj', 'slither', 'tombala', 'emlak', 'futbol', 'flip7', 'slot', 'kayit', 'admin'];
-  var GAMES = ['poker', 'okey', 'holdem', 'pisti', 'esli', 'bj', 'slither', 'tombala', 'emlak', 'futbol', 'flip7', 'slot'];
-  var TITLES = { poker: 'Rus Pokeri', okey: 'Okey', holdem: 'Texas Hold\'em', pisti: 'Pişti', esli: 'Eşli Pişti', bj: 'Blackjack', slither: 'Slither', tombala: 'Tombala', emlak: 'Emlak', futbol: 'Futbol Ligi', flip7: 'Flip 7', slot: 'Tatlı Yağmur', kayit: 'Kayıtlar', admin: 'Admin paneli' };
+  var VIEWS = ['lobby', 'poker', 'okey', 'holdem', 'pisti', 'esli', 'bj', 'slither', 'tombala', 'emlak', 'futbol', 'flip7', 'slot', 'yaris', 'kayit', 'admin'];
+  var GAMES = ['poker', 'okey', 'holdem', 'pisti', 'esli', 'bj', 'slither', 'tombala', 'emlak', 'futbol', 'flip7', 'slot', 'yaris'];
+  var TITLES = { poker: 'Rus Pokeri', okey: 'Okey', holdem: 'Texas Hold\'em', pisti: 'Pişti', esli: 'Eşli Pişti', bj: 'Blackjack', slither: 'Slither', tombala: 'Tombala', emlak: 'Emlak', futbol: 'Futbol Ligi', flip7: 'Flip 7', slot: 'Tatlı Yağmur', yaris: 'At Yarışı', kayit: 'Kayıtlar', admin: 'Admin paneli' };
   var core = { db: null, auth: null, user: null, me: null, pid: null, connected: false, online: {}, ownerId: null, error: null,
     view: 'lobby', table: 1, TABLES: 3, bootAt: Date.now(), ready: false, authKnown: false,
-    ledger: {}, users: {}, requests: {}, bans: {}, deleted: {}, weekly: {}, weeklyLoaded: false, ledgerLoaded: false, START_CHIPS: 1000, GAMES: ['poker', 'okey', 'holdem', 'pisti', 'esli', 'bj', 'slither', 'tombala', 'emlak', 'futbol', 'flip7', 'slot'] };
-  core.GAME_NAMES = { poker: 'Rus Pokeri', okey: 'Okey', holdem: 'Hold\'em', pisti: 'Pişti', esli: 'Eşli Pişti', bj: 'Blackjack', slither: 'Slither', tombala: 'Tombala', emlak: 'Emlak', futbol: 'Futbol Ligi', flip7: 'Flip 7', slot: 'Tatlı Yağmur', admin: 'Admin', start: 'Başlangıç', prize: 'Haftalık ödül' };
+    ledger: {}, users: {}, requests: {}, bans: {}, deleted: {}, weekly: {}, weeklyLoaded: false, ledgerLoaded: false, START_CHIPS: 1000, GAMES: ['poker', 'okey', 'holdem', 'pisti', 'esli', 'bj', 'slither', 'tombala', 'emlak', 'futbol', 'flip7', 'slot', 'yaris'] };
+  core.GAME_NAMES = { poker: 'Rus Pokeri', okey: 'Okey', holdem: 'Hold\'em', pisti: 'Pişti', esli: 'Eşli Pişti', bj: 'Blackjack', slither: 'Slither', tombala: 'Tombala', emlak: 'Emlak', futbol: 'Futbol Ligi', flip7: 'Flip 7', slot: 'Tatlı Yağmur', yaris: 'At Yarışı', admin: 'Admin', start: 'Başlangıç', prize: 'Haftalık ödül' };
   var subs = [], readyFns = [];
   core.onChange = function (fn) { subs.push(fn); };
   core.emit = function () { subs.forEach(function (f) { try { f(); } catch (e) { console.error(e); } }); };
@@ -3575,7 +3691,7 @@ window.CORE = (function () {
     if (!t) return '—';
     try { return new Date(t).toLocaleString('tr-TR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }); } catch (e) { return '—'; }
   }
-  var GAMES = ['poker', 'okey', 'holdem', 'pisti', 'esli', 'bj', 'slither', 'tombala', 'emlak', 'futbol', 'flip7', 'slot'];
+  var GAMES = ['poker', 'okey', 'holdem', 'pisti', 'esli', 'bj', 'slither', 'tombala', 'emlak', 'futbol', 'flip7', 'slot', 'yaris'];
   var GDESC = {
     poker: 'Krupiyeye karşı · 1–6 kişi · kart değiştir, 6. kart al',
     okey: '2–4 kişi · giriş çipi, kazanan potu alır',
@@ -3733,7 +3849,7 @@ window.CORE = (function () {
   function groupEntries(uid) {
     var l = CORE.ledger[uid] || {}, groups = {};
     Object.keys(l).forEach(function (k) {
-      var e = l[k], i = k.lastIndexOf('-'), grp = /^(poker|okey|holdem|pisti|esli|bj|slither|tombala|emlak|futbol|flip7|slot)-/.test(k) && i > 0 ? k.slice(0, i) : k, suf = k.slice(i + 1);
+      var e = l[k], i = k.lastIndexOf('-'), grp = /^(poker|okey|holdem|pisti|esli|bj|slither|tombala|emlak|futbol|flip7|slot|yaris)-/.test(k) && i > 0 ? k.slice(0, i) : k, suf = k.slice(i + 1);
       var g = groups[grp] = groups[grp] || { d: 0, at: 0, g: e.g, tb: e.tb, notes: [], open: false, closed: false };
       g.d += Number(e.d) || 0; g.at = Math.max(g.at, e.at || 0);
       if (e.n && g.notes.indexOf(e.n) < 0) g.notes.push(e.n);
@@ -8707,6 +8823,159 @@ window.CORE = (function () {
     $('sxRulesR').innerHTML = '<h3>Ödemeler</h3>' + payTable();
     CORE.onChange(function () { if (tb) { render(); recover(); } });
     CORE.onTable(KEY, function (t) { token++; busy = false; auto = 0; tb = t; grid = null; $('sxFS').hidden = true; $('sxWin').textContent = '0'; setMsg('Bahsi seç ve çevir.'); render(); recover(); });
+  });
+})();
+
+</script>
+<script>
+/* At yarışı: sunucu saatiyle dönen yarışlar; bahis deftere yazılır, sonuç deterministik hesaplanıp ödenir */
+(function () {
+  'use strict';
+  var HR = window.HR, CORE = window.CORE, KEY = 'yaris';
+  var STAKES = [10, 50, 100, 250, 500];
+  var pid = null, tb = 0, stake = 50, shownKey = '', race = null, lastSpoken = '', raf = null, toastT = null;
+
+  function $(id) { return document.getElementById(id); }
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  function fmt(n) { n = Number(n || 0); return (n < 0 ? '−' : '') + Math.abs(n).toLocaleString('tr-TR'); }
+  function now() { return CORE.serverNow(); }
+  function odd(x) { return '×' + String(x).replace('.', ','); }
+  function gkey(c, t, h) { return KEY + '-' + tb + '-c' + c + t + h; }
+
+  // bu masadaki açık / kapanmış bahislerim (defterden)
+  function myBets(c) {
+    var l = CORE.ledger[pid] || {}, pre = KEY + '-' + tb + '-c' + c, out = [];
+    Object.keys(l).forEach(function (k) {
+      if (k.indexOf(pre) !== 0 || k.slice(-2) !== '-h') return;
+      var m = /^yaris-\d+-c(\d+)([wp])(\d)-h$/.exec(k);
+      if (!m || +m[1] !== c) return;
+      var g = k.slice(0, -2), res = l[g + '-r'];
+      out.push({ t: m[2], h: +m[3], amt: -(Number(l[k].d) || 0), done: !!res, win: res ? Number(res.d) || 0 : null, key: g });
+    });
+    return out;
+  }
+  // bitmiş yarışlardaki kapanmamış bahisleri öde (ben yokken biten yarışlar dahil)
+  function settle() {
+    if (!CORE.ledgerLoaded || !pid) return;
+    var l = CORE.ledger[pid] || {}, list = [], t = now();
+    Object.keys(l).forEach(function (k) {
+      var m = /^yaris-(\d+)-c(\d+)([wp])(\d)-h$/.exec(k);
+      if (!m) return;
+      var g = k.slice(0, -2), c = +m[2];
+      if (l[g + '-r'] || l[g + '-x'] || t < HR.raceEnd(c) + 500) return;
+      var r = HR.race(+m[1], c), amt = -(Number(l[k].d) || 0), w = HR.payout(r, m[3], +m[4], amt);
+      list.push({ uid: pid, key: g + '-r', d: w, g: KEY, tb: +m[1], n: (m[3] === 'w' ? 'Kazanır · ' : 'Yer · ') + r.horses[+m[4]].name + (w > 0 ? ' · kazandı' : ' · kaybetti') });
+    });
+    if (list.length) CORE.ensureEntries(list);
+  }
+
+  function toast(t) { var el = $('toast'); el.textContent = t; el.hidden = false; clearTimeout(toastT); toastT = setTimeout(function () { el.hidden = true; }, 2600); }
+  function bet(t, h) {
+    var p = HR.phase(now());
+    if (p.ph !== 'bet' || p.left < 1500) { toast('Bahis süresi bitti.'); return; }
+    if (CORE.balance(pid) < stake) { toast('Çipin yetmiyor.'); return; }
+    var key = gkey(p.c, t, h);
+    if ((CORE.ledger[pid] || {})[key + '-h']) { toast('Bu ata bu bahsi zaten oynadın.'); return; }
+    var r = HR.race(tb, p.c);
+    CORE.ensureEntries([{ uid: pid, key: key + '-h', d: -stake, g: KEY, tb: tb, n: (t === 'w' ? 'Kazanır' : 'Yer') + ' bahsi · ' + r.horses[h].name }]);
+    shownKey = ''; setTimeout(draw, 30);
+  }
+
+  // ---------- çizim ----------
+  function horseRows(r, p) {
+    var mine = myBets(r.c), open = p.ph === 'bet';
+    return r.horses.map(function (h) {
+      var stars = '★★★★★'.slice(0, h.form) + '☆☆☆☆☆'.slice(0, 5 - h.form);
+      function b(t, od) {
+        var has = mine.some(function (x) { return x.t === t && x.h === h.n; });
+        return '<button type="button" class="btn sm' + (has ? ' primary' : '') + '" data-act="hr-bet" data-t="' + t + '" data-h="' + h.n + '"' + (open && !has ? '' : ' disabled') + '>' + (t === 'w' ? 'Kazanır ' : 'İlk 3 ') + odd(od) + (has ? ' ✓' : '') + '</button>';
+      }
+      return '<div class="hr-row"><div class="hr-dot" style="background:' + h.color + '">' + (h.n + 1) + '</div><div class="hr-name"><b>' + esc(h.name) + '</b><small>' + stars + '</small></div><div class="hr-btns">' + b('w', h.oddsW) + b('p', h.oddsP) + '</div></div>';
+    }).join('');
+  }
+  function track(r) {
+    return '<div class="hr-lanes">' + r.horses.map(function (h) {
+      return '<div class="hr-lane"><span class="hr-num" style="background:' + h.color + '">' + (h.n + 1) + '</span><div class="hr-run"><span class="hr-horse" id="hrH' + h.n + '" style="left:0%">🐎</span></div></div>';
+    }).join('') + '<div class="hr-finish"></div></div>';
+  }
+  function resultHTML(r) {
+    var mine = myBets(r.c), tot = 0, h = '<div class="hr-podium">' + r.order.map(function (k, i) {
+      return '<div class="hr-pl' + (i === 0 ? ' first' : '') + '"><b>' + (i + 1) + '.</b><span class="hr-dot sm" style="background:' + r.horses[k].color + '">' + (k + 1) + '</span> ' + esc(r.horses[k].name) + '</div>';
+    }).join('') + '</div>';
+    if (mine.length) {
+      h += '<div class="prev">' + mine.map(function (x) {
+        var w = HR.payout(r, x.t, x.h, x.amt); tot += w - x.amt;
+        return '<div class="row"><b>' + (x.t === 'w' ? 'Kazanır' : 'İlk 3') + ' · ' + esc(r.horses[x.h].name) + '</b><span class="amt ' + (w ? 'pos' : 'neg') + '">' + (w ? '+' + fmt(w - x.amt) : '−' + fmt(x.amt)) + '</span></div>';
+      }).join('') + '</div><div class="msg">Bu yarışta toplam <b class="amt ' + (tot >= 0 ? 'pos' : 'neg') + '">' + (tot > 0 ? '+' : '') + fmt(tot) + '</b> çip</div>';
+    } else h += '<div class="msg" style="color:var(--muted)">Bu yarışa bahis oynamadın.</div>';
+    return h;
+  }
+  function history(c) {
+    var out = [];
+    for (var i = 1; i <= 6; i++) { var r = HR.race(tb, c - i), w = r.horses[r.winner]; out.push('<span class="tag"><span class="hr-dot sm" style="background:' + w.color + '">' + (w.n + 1) + '</span> ' + esc(w.name) + ' ' + odd(w.oddsW) + '</span>'); }
+    return out.join(' ');
+  }
+  // ağır çizim: tur / aşama değişince
+  function draw() {
+    if (!$('hrTrack')) return;
+    var p = HR.phase(now()), key = p.c + ':' + p.ph + ':' + CORE.balance(pid) + ':' + stake + ':' + myBets(p.c).length + ':' + (CORE.ledgerLoaded ? 1 : 0);
+    $('hrBal').textContent = fmt(CORE.balance(pid)); $('hrRound').textContent = 'Masa ' + tb;
+    var bt = CORE.bannerText(true); $('hrBanner').innerHTML = CORE.error && bt ? '<div class="banner">' + esc(bt) + '</div>' : '';
+    if (key === shownKey) return;
+    var cyc = shownKey.split(':')[0] !== String(p.c); shownKey = key;
+    race = HR.race(tb, p.c);
+    if (cyc || !$('hrH0')) $('hrTrack').innerHTML = track(race);
+    $('hrHorses').innerHTML = p.ph === 'result' ? resultHTML(race) : horseRows(race, p);
+    $('hrHorsesTitle').textContent = p.ph === 'bet' ? 'Bahis yap' : p.ph === 'race' ? 'Yarış sürüyor' : 'Sonuç';
+    $('hrStake').innerHTML = '<div class="lenpick-label">Bahis miktarı</div><div class="lenpick">' + STAKES.map(function (x) { return '<button type="button" class="lenbtn' + (x === stake ? ' on' : '') + '" data-act="hr-stake" data-stake="' + x + '">' + x + '</button>'; }).join('') + '</div>';
+    $('hrHist').innerHTML = '<div class="label" style="margin-bottom:6px">Son kazananlar</div>' + history(p.c);
+  }
+  // hafif çizim: atların konumu ve geri sayım (saniyede ~20 kez)
+  function tick() {
+    raf = null;
+    if (CORE.view !== KEY) return;
+    var t = now(), p = HR.phase(t);
+    draw();
+    var txt = p.ph === 'bet' ? 'Bahis açık · ' + Math.ceil(p.left / 1000) + ' sn' : p.ph === 'race' ? 'YARIŞ BAŞLADI!' : 'Sonuç · yeni yarış ' + Math.ceil(p.left / 1000) + ' sn sonra';
+    $('hrPhase').textContent = txt; $('hrPhase').className = 'hr-phase ' + p.ph;
+    if (race && race.c === p.c) {
+      for (var k = 0; k < HR.N; k++) {
+        var el = $('hrH' + k); if (!el) continue;
+        var pr = p.ph === 'bet' ? 0 : p.ph === 'race' ? HR.progress(race, k, p.rt) : 1;
+        el.style.left = (pr * 88) + '%';
+        el.classList.toggle('win', p.ph === 'result' && race.winner === k);
+      }
+    }
+    if (p.ph === 'result') {
+      var sk = tb + ':' + p.c;
+      if (lastSpoken !== sk) { lastSpoken = sk; settle(); try { if (p.left > 6000) CORE.say(race.horses[race.winner].name + ' kazandı'); } catch (e) {} }
+    }
+    raf = setTimeout(tick, p.ph === 'race' ? 50 : 250);
+  }
+  function start() { if (raf) clearTimeout(raf); tick(); }
+
+  function rulesPlay() {
+    return '<p>Her ' + Math.round(HR.CYCLE / 1000) + ' saniyede yeni bir yarış koşulur; masadaki herkes aynı yarışı izler. 6 at yarışır.</p>' +
+      '<h4>Bahis</h4><ul><li><b>Kazanır</b>: atın 1. gelirse bahsin oranla çarpılır.</li><li><b>İlk 3</b>: at ilk üçe girerse ödenir (oran daha düşük).</li></ul>' +
+      '<p>Bahis ilk ' + Math.round(HR.BET_MS / 1000) + ' saniyede açıktır. Aynı ata aynı türden bir bahis oynanır; farklı atlara ve iki türe de oynayabilirsin. Yıldızlar atın formudur; formu iyi atın oranı düşük, zayıf atın yüksektir.</p>' +
+      '<h4>Çip</h4><p>Bahis oynayınca çipin hemen düşer, yarış bitince kazanç yazılır. Yarış bitmeden sayfadan çıksan da sonuç açılışta ödenir. Oranlar yaklaşık %90 iade verir.</p>';
+  }
+  document.addEventListener('click', function (e) {
+    var t = e.target.closest('[data-act]'); if (!t || t.disabled) return;
+    var a = t.getAttribute('data-act'); if (a.indexOf('hr-') !== 0) return;
+    switch (a.slice(3)) {
+      case 'bet': bet(t.getAttribute('data-t'), +t.getAttribute('data-h')); break;
+      case 'stake': stake = +t.getAttribute('data-stake'); shownKey = ''; draw(); break;
+      case 'rules': $('sheetPanel').innerHTML = '<div class="panel-head"><h3>At yarışı</h3><button class="ghost" type="button" data-act="close">Kapat</button></div>' + rulesPlay(); $('sheet').hidden = false; break;
+    }
+  });
+  window.__hrDebug = function () { return { tb: tb, p: HR.phase(now()), race: race, stake: stake }; };
+  CORE.whenReady(function () {
+    pid = CORE.pid;
+    $('hrRulesL').innerHTML = '<h3>Nasıl oynanır</h3>' + rulesPlay();
+    $('hrRulesR').innerHTML = '';
+    CORE.onChange(function () { if (tb) { shownKey = ''; draw(); settle(); } });
+    CORE.onTable(KEY, function (t) { tb = t; shownKey = ''; race = null; lastSpoken = ''; draw(); settle(); start(); });
   });
 })();
 
