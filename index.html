@@ -1819,7 +1819,7 @@ window.CORE = (function () {
   };
 
   // ---------- ses: "Sıra sende" ----------
-  var spoken = {};
+  var spoken = {}, shoutUntil = 0;
   core.muted = function () { try { return localStorage.getItem('rp_mute') === '1'; } catch (e) { return false; } };
   core.setMuted = function (m) { try { localStorage.setItem('rp_mute', m ? '1' : '0'); } catch (e) {} core.emit(); };
   core.say = function (text) {
@@ -1829,7 +1829,21 @@ window.CORE = (function () {
       u.lang = 'tr-TR'; u.rate = 1; u.pitch = 1;
       var vs = speechSynthesis.getVoices() || [], tr = vs.filter(function (v) { return /^tr/i.test(v.lang); })[0];
       if (tr) u.voice = tr;
-      speechSynthesis.cancel(); speechSynthesis.speak(u);
+      if (Date.now() > shoutUntil) speechSynthesis.cancel(); // pişti bağırışı yarıda kesilmesin, arkasından söylesin
+      speechSynthesis.speak(u);
+    } catch (e) {}
+  };
+  // Kadın sesiyle bağırarak söyler (Türkçe kadın sesi varsa onu seçer: Yelda, Emel, Google Türkçe…)
+  core.shout = function (text) {
+    if (core.muted() || !window.speechSynthesis || !window.SpeechSynthesisUtterance) return;
+    try {
+      var u = new SpeechSynthesisUtterance(text);
+      u.lang = 'tr-TR'; u.rate = 1.15; u.pitch = 1.7; u.volume = 1;
+      var tr = (speechSynthesis.getVoices() || []).filter(function (v) { return /^tr/i.test(v.lang); });
+      var fem = tr.filter(function (v) { return /yelda|emel|seda|filiz|female|kad[ıi]n|google/i.test(v.name); })[0] ||
+        tr.filter(function (v) { return !/tolga|cem|ahmet|male/i.test(v.name); })[0] || tr[0];
+      if (fem) u.voice = fem;
+      speechSynthesis.cancel(); speechSynthesis.speak(u); shoutUntil = Date.now() + 2500;
     } catch (e) {}
   };
   core.notifyTurn = function (key) {
@@ -3995,6 +4009,7 @@ window.CORE = (function () {
 
   function makeTable(cfg) {
     var pre = cfg.pre, pid = null, R = {}, st = null, seats = {}, loaded = { st: false, seats: false };
+    var seenEv = { key: '', n: 0 };
     var busy = false, V = null, turnSeen = {}, autoShownKey = '', lenChoice = 5, stakeChoice = 100, sel = null, tb = 0;
     var AUTO_AFTER = 60000, MAX = cfg.max, MIN = cfg.min;
 
@@ -4039,12 +4054,24 @@ window.CORE = (function () {
     function render() {
       V = view();
       var v = V, r = v.r;
+      pistiShout(v);
       var gdR = gameDisp(v);
       $('Round').textContent = 'Masa ' + tb + ' · ' + CORE.gameLabel(gdR, !!(r && !r.end));
       CORE.syncGame(cfg.key, tb, gdR, false);
       var bt = CORE.bannerText(loaded.st);
       $('Banner').innerHTML = bt ? '<div class="banner">' + esc(bt) + '</div>' : '';
       renderTable(v); renderSeats(v); renderMine(v); renderActions(v);
+    }
+    // Biri pişti yapınca masadaki herkesin telefonunda bağırır (sayfa açılınca eski piştiler tekrar söylenmez)
+    function pistiShout(v) {
+      var r = v.r; if (!r) return;
+      var key = tb + ':' + v.s.no + ':' + v.s.seed, n = r.events.length;
+      if (seenEv.key !== key) { var fresh = !!seenEv.key && n <= 1; seenEv = { key: key, n: fresh ? 0 : n }; if (!fresh) return; }
+      if (n <= seenEv.n) return;
+      var hit = false;
+      for (var i = seenEv.n; i < n; i++) if (r.events[i] && r.events[i].type === 'pisti') hit = true;
+      seenEv.n = n;
+      if (hit && CORE.view === cfg.key) CORE.shout('Pişti lan yavşak!');
     }
     function eventText(r, players) {
       var e = r.events[r.events.length - 1];
