@@ -394,6 +394,13 @@ a.btn { text-decoration: none; display: inline-flex; align-items: center; justif
   #adminBody .adm { grid-template-columns: 1fr 1fr; }
 }
 
+.wallet-week { font-size: 12.5px; color: var(--muted); font-weight: 600; margin-top: 3px; }
+.week-card { display: grid; gap: 10px; padding: 14px; border-radius: 16px; background: var(--panel); border: 1px solid rgba(217,180,91,.35); }
+.lobby-tables { display: grid; gap: 18px; }
+.lobby-tables > div { display: grid; gap: 8px; align-content: start; }
+.scoretbl.players td:nth-child(2) { color: var(--muted); font-size: 12.5px; white-space: nowrap; }
+@media (min-width: 900px) { .lobby-tables { grid-template-columns: 1fr 1fr; } }
+
 </style>
 </head>
 <body>
@@ -1611,8 +1618,8 @@ window.CORE = (function () {
   var TITLES = { poker: 'Rus Pokeri', okey: 'Okey', holdem: 'Texas Hold\'em', pisti: 'Pişti', esli: 'Eşli Pişti', bj: 'Blackjack', kayit: 'Kayıtlar', admin: 'Admin paneli' };
   var core = { db: null, auth: null, user: null, me: null, pid: null, connected: false, online: {}, ownerId: null, error: null,
     view: 'lobby', table: 1, TABLES: 3, bootAt: Date.now(), ready: false, authKnown: false,
-    ledger: {}, users: {}, requests: {}, bans: {}, ledgerLoaded: false, START_CHIPS: 1000, GAMES: ['poker', 'okey', 'holdem', 'pisti', 'esli', 'bj'] };
-  core.GAME_NAMES = { poker: 'Rus Pokeri', okey: 'Okey', holdem: 'Hold\'em', pisti: 'Pişti', esli: 'Eşli Pişti', bj: 'Blackjack', admin: 'Admin', start: 'Başlangıç' };
+    ledger: {}, users: {}, requests: {}, bans: {}, deleted: {}, weekly: {}, weeklyLoaded: false, ledgerLoaded: false, START_CHIPS: 1000, GAMES: ['poker', 'okey', 'holdem', 'pisti', 'esli', 'bj'] };
+  core.GAME_NAMES = { poker: 'Rus Pokeri', okey: 'Okey', holdem: 'Hold\'em', pisti: 'Pişti', esli: 'Eşli Pişti', bj: 'Blackjack', admin: 'Admin', start: 'Başlangıç', prize: 'Haftalık ödül' };
   var subs = [], readyFns = [];
   core.onChange = function (fn) { subs.push(fn); };
   core.emit = function () { subs.forEach(function (f) { try { f(); } catch (e) { console.error(e); } }); };
@@ -1661,7 +1668,7 @@ window.CORE = (function () {
     var upd = {}, n = 0;
     list.forEach(function (e) {
       var path = e.uid + '/' + e.key;
-      if ((core.ledger[e.uid] || {})[e.key] || pendingEntries[path] || upd[path]) return;
+      if (core.deleted[e.uid] || (core.ledger[e.uid] || {})[e.key] || pendingEntries[path] || upd[path]) return;
       upd[path] = { d: e.d, g: e.g, tb: e.tb || 0, n: e.n || '', at: Date.now() };
       n++;
     });
@@ -1724,6 +1731,83 @@ window.CORE = (function () {
     var t = 0; Object.keys(groups).forEach(function (k) { if (groups[k].closed) t += groups[k].d; });
     return t;
   };
+  // ---------- üyelik silme (sadece admin) ----------
+  // Oyuncunun bütün kayıtları silinir; hesabı da o kişi siteyi bir sonraki açışında kendiliğinden silinir (isim boşa çıkar)
+  core.deleteUser = function (uid) {
+    if (!core.isAdmin() || uid === core.pid) return Promise.resolve();
+    var u = {};
+    u['deleted/' + uid] = true; u['users/' + uid] = null; u['ledger/' + uid] = null; u['requests/' + uid] = null; u['bans/' + uid] = null; u['online/' + uid] = null;
+    GAMES.forEach(function (g) { for (var t = 1; t <= core.TABLES; t++) u['t/' + g + '/' + t + '/seats/' + uid] = null; });
+    return core.db.ref('rp').update(u);
+  };
+  function gone(u) {
+    if (core.goneStarted) return; core.goneStarted = true; core.loggingOut = true;
+    try { sessionStorage.setItem('rp_loginMsg', 'Üyeliğin admin tarafından silindi. İstersen yeniden hesap açabilirsin.'); } catch (e) {}
+    try { core.db.ref('rp/users/' + u.uid).onDisconnect().cancel(); core.db.ref('rp/online/' + u.uid).onDisconnect().cancel(); } catch (e) {}
+    var cu = core.auth.currentUser;
+    var p = cu && typeof cu.delete === 'function' ? cu.delete() : Promise.reject();
+    p.catch(function () { return core.auth.signOut(); }).then(function () { location.hash = ''; location.reload(); }, function () { location.reload(); });
+  }
+
+  // ---------- haftalık yarış: Pazartesi 00:00 – Pazar 23:59 (Türkiye saati); en çok kazanana 500 çip ----------
+  var DAY = 86400000, TRT = 3 * 3600000;
+  core.WEEKLY_PRIZE = 500;
+  function pad2(n) { return (n < 10 ? '0' : '') + n; }
+  core.weekStart = function (ms) {
+    var d = new Date(ms + TRT), dow = (d.getUTCDay() + 6) % 7;
+    return Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()) - dow * DAY - TRT;
+  };
+  core.weekId = function (ws) { var d = new Date(ws + TRT); return d.getUTCFullYear() + '-' + pad2(d.getUTCMonth() + 1) + '-' + pad2(d.getUTCDate()); };
+  core.weekEnd = function (ws) { return ws + 7 * DAY; };
+  // O hafta biten ellerin/oyunların toplam kazancı (admin çipi, başlangıç ve ödül sayılmaz)
+  core.weekNets = function (ws) {
+    var we = ws + 7 * DAY, out = {};
+    Object.keys(core.ledger).forEach(function (uid) {
+      if (core.deleted[uid]) return;
+      var l = core.ledger[uid] || {}, groups = {};
+      Object.keys(l).forEach(function (k) {
+        var e = l[k]; if (!e || GAMES.indexOf(e.g) < 0) return;
+        var i = k.lastIndexOf('-'), grp = k.slice(0, i), suf = k.slice(i + 1);
+        var g = groups[grp] = groups[grp] || { d: 0, closeAt: 0 };
+        g.d += Number(e.d) || 0;
+        if (suf !== 'h' && suf !== 's') g.closeAt = Math.max(g.closeAt, e.at || 0);
+      });
+      var t = 0, any = false;
+      Object.keys(groups).forEach(function (k) { var g = groups[k]; if (g.closeAt >= ws && g.closeAt < we) { t += g.d; any = true; } });
+      if (any) out[uid] = t;
+    });
+    return out;
+  };
+  core.weekWinners = function (nets) {
+    var best = 0, win = [];
+    Object.keys(nets).forEach(function (u) { if (nets[u] > best) { best = nets[u]; win = [u]; } else if (nets[u] === best && best > 0) win.push(u); });
+    return { winners: win, net: best };
+  };
+  function payWeek(id, rec) {
+    if (!rec || !rec.winners) return;
+    core.ensureEntries(rec.winners.map(function (u) { return { uid: u, key: 'prize-' + id, d: rec.prize || core.WEEKLY_PRIZE, g: 'prize', n: 'Haftanın birincisi · ' + id }; }));
+  }
+  var weekBusy = {};
+  // Hafta bitince siteyi ilk açan kişinin cihazı kazananı yazar; aynı hafta iki kez yazılmaz
+  function processWeekly() {
+    if (!core.db || !core.ledgerLoaded || !core.weeklyLoaded) return;
+    var cur = core.weekStart(Date.now());
+    [1, 2].forEach(function (k) {
+      var ws = cur - k * 7 * DAY, id = core.weekId(ws), rec = core.weekly[id];
+      if (rec) { payWeek(id, rec); return; }
+      if (weekBusy[id]) return;
+      weekBusy[id] = true;
+      var w = core.weekWinners(core.weekNets(ws));
+      var val = w.winners.length ? { winners: w.winners, net: w.net, prize: core.WEEKLY_PRIZE, at: Date.now() } : { none: true, at: Date.now() };
+      core.db.ref('rp/weekly/' + id).transaction(function (c) { return c ? undefined : val; })
+        .then(function (r) { if (r.committed) payWeek(id, r.snapshot.val()); }, function () { weekBusy[id] = false; });
+    });
+  }
+  // veriler otursun diye biraz bekleyip hesapla
+  var weekTimer = null;
+  function scheduleWeekly() { clearTimeout(weekTimer); weekTimer = setTimeout(processWeekly, 2500); }
+  setInterval(processWeekly, 60000);
+
   core.userName = function (uid) { return (core.users[uid] && core.users[uid].name) || 'Oyuncu'; };
   core.bannerText = function (loaded) {
     if (core.error === 'config') return 'Site ayarı eksik: Firebase bilgileri girilmemiş.';
@@ -2005,12 +2089,15 @@ window.CORE = (function () {
     db.ref('rp/users').on('value', function (s) { core.users = s.val() || {}; core.emit(); }, function () {});
     db.ref('rp/requests').on('value', function (s) { core.requests = s.val() || {}; core.emit(); }, function () {});
     db.ref('rp/bans').on('value', function (s) { core.bans = s.val() || {}; core.emit(); }, function () {});
+    db.ref('rp/deleted').on('value', function (s) { core.deleted = s.val() || {}; if (core.deleted[core.pid]) gone(core.user); core.emit(); }, function () {});
+    db.ref('rp/weekly').on('value', function (s) { core.weekly = s.val() || {}; core.weeklyLoaded = true; scheduleWeekly(); core.emit(); }, function () {});
     db.ref('rp/ledger').on('value', function (s) {
       core.ledger = s.val() || {};
       prunePending();
       if (!core.ledgerLoaded) {
         core.ledgerLoaded = true;
         if (!(core.ledger[core.pid] || {}).start) core.ensureEntries([{ uid: core.pid, key: 'start', d: core.START_CHIPS, g: 'start', n: 'Başlangıç çipi' }]);
+        scheduleWeekly();
       }
       core.emit();
     }, function () {});
@@ -2035,7 +2122,11 @@ window.CORE = (function () {
       if (!u) { core.user = null; route(); return; }
       if (core.ready) return;
       core.user = u; core.pid = u.uid;
-      core.db.ref('rp/users/' + u.uid).once('value').then(function (s) {
+      core.db.ref('rp/deleted/' + u.uid).once('value').then(function (d) {
+        if (d.val()) { gone(u); return null; }
+        return core.db.ref('rp/users/' + u.uid).once('value');
+      }).then(function (s) {
+        if (!s) return;
         var prof = s.val();
         core.me = { name: (prof && prof.name) || core.pendingName || (u.email || '').split('@')[0] };
         if (!prof && core.pendingName) core.db.ref('rp/users/' + u.uid).update({ name: core.pendingName, createdAt: Date.now() }).catch(function () {});
@@ -2049,7 +2140,8 @@ window.CORE = (function () {
 /* Giriş ekranı, lobi, kayıtlar ve admin paneli */
 (function () {
   'use strict';
-  var mode = 'in', busy = false, tablesRef = null, tables = {};
+  var mode = 'in', busy = false, tablesRef = null, tables = {}, delSure = {}, resetSure = {};
+  function sureNow(map, k) { return !!(map[k] && Date.now() - map[k] < 6000); }
   function $(id) { return document.getElementById(id); }
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
   function fmt(n) { n = Number(n || 0); return (n < 0 ? '−' : '') + Math.abs(n).toLocaleString('tr-TR'); }
@@ -2067,6 +2159,47 @@ window.CORE = (function () {
     esli: '4 kişi · 2\'ye 2 · kazanan takım potu bölüşür',
     bj: 'Krupiyeye karşı · 1–5 kişi · blackjack 3:2'
   };
+  function userIds() { return Object.keys(CORE.users).filter(function (id) { return CORE.users[id] && CORE.users[id].name && !CORE.deleted[id]; }); }
+  function leftText(ms) {
+    var m = Math.max(0, Math.floor(ms / 60000)), d = Math.floor(m / 1440), h = Math.floor((m % 1440) / 60), mm = m % 60;
+    return d ? d + ' gün ' + h + ' saat' : h ? h + ' saat ' + mm + ' dk' : mm + ' dk';
+  }
+  function lastSeen(id) {
+    var u = CORE.users[id] || {};
+    return CORE.online[id] ? '<span class="tag win">Şu an sitede</span>' : esc(when(u.lastIn));
+  }
+  // Haftalık yarış tablosu: bu hafta oyunlardan kazanılan çip
+  function weeklyHTML(full) {
+    var ws = CORE.weekStart(Date.now()), nets = CORE.weekNets(ws), left = CORE.weekEnd(ws) - Date.now();
+    var ids = Object.keys(nets).filter(function (id) { return CORE.users[id] && CORE.users[id].name; }).sort(function (a, b) { return nets[b] - nets[a]; });
+    var top = CORE.weekWinners(nets).winners;
+    var h = '<div class="section-head"><h2>Haftalık yarış</h2><span>Bitişe ' + leftText(left) + '</span></div>' +
+      '<div class="week-card"><p class="lobby-note">Bu hafta oyunlardan en çok çip kazanan, Pazar gecesi 23:59\'da hafta kapanınca <b>' + fmt(CORE.WEEKLY_PRIZE) + ' çip hediye</b> alır. Admin\'in verdiği çipler sayılmaz.</p>';
+    if (ids.length) {
+      h += '<div class="scroll-x"><table class="scoretbl"><thead><tr><th>Sıra</th><th>Oyuncu</th><th class="n">Bu hafta</th></tr></thead><tbody>' + ids.map(function (id, i) {
+        var lead = top.indexOf(id) >= 0;
+        return '<tr' + (lead ? ' class="win"' : '') + '><td>' + (i + 1) + '.</td><td>' + (CORE.online[id] ? '<span class="on-dot"></span>' : '') + esc(CORE.userName(id)) +
+          (id === CORE.pid ? ' <span class="tag gold">sen</span>' : '') + (lead ? ' <span class="tag win">Lider</span>' : '') + '</td>' +
+          '<td class="n"><span class="amt ' + (nets[id] > 0 ? 'pos' : nets[id] < 0 ? 'neg' : 'zero') + '">' + sfmt(nets[id]) + '</span></td></tr>';
+      }).join('') + '</tbody></table></div>';
+    } else h += '<p class="lobby-note">Bu hafta henüz biten oyun yok.</p>';
+    var weeks = Object.keys(CORE.weekly).filter(function (k) { return CORE.weekly[k] && CORE.weekly[k].winners; }).sort().reverse().slice(0, full ? 20 : 1);
+    if (weeks.length) h += '<div class="prev">' + weeks.map(function (k) {
+      var r = CORE.weekly[k];
+      return '<div class="row"><b>' + (full ? esc(k) + ' haftası' : 'Geçen haftanın birincisi') + '</b><span>' + r.winners.map(function (id) { return esc(CORE.userName(id)); }).join(', ') +
+        ' · ' + sfmt(r.net) + ' · <span class="amt pos">+' + fmt(r.prize || CORE.WEEKLY_PRIZE) + ' hediye</span></span></div>';
+    }).join('') + '</div>';
+    return h + '</div>';
+  }
+  function playersHTML() {
+    var ids = userIds().sort(function (a, b) { return CORE.balance(b) - CORE.balance(a); });
+    if (!ids.length) return '';
+    return '<div class="section-head"><h2>Oyuncular</h2><a class="ghost" href="#kayit">Kayıtlar</a></div>' +
+      '<div class="scroll-x"><table class="scoretbl players"><thead><tr><th>Oyuncu</th><th>Son giriş</th><th class="n">Çip</th></tr></thead><tbody>' + ids.map(function (id, i) {
+        return '<tr><td>' + (i + 1) + '. ' + (CORE.online[id] ? '<span class="on-dot"></span>' : '') + esc(CORE.userName(id)) + (id === CORE.pid ? ' <span class="tag gold">sen</span>' : '') + '</td>' +
+          '<td>' + lastSeen(id) + '</td><td class="n tot">' + fmt(CORE.balance(id)) + '</td></tr>';
+      }).join('') + '</tbody></table></div>';
+  }
   function whereOf(uid) {
     var v = String(CORE.online[uid] || ''); if (!v) return '';
     var p = v.split('/'), g = p[0];
@@ -2107,9 +2240,16 @@ window.CORE = (function () {
       if (amt) CORE.grant(id, amt).then(function () { flash('Çip ' + (amt > 0 ? 'verildi' : 'alındı') + ': ' + sfmt(amt)); });
     }
     else if (act === 'adm-ban') CORE.setBan(id, t.getAttribute('data-on') === '1');
+    else if (act === 'adm-del') {
+      var nm = CORE.userName(id);
+      if (!sureNow(delSure, id)) { delSure[id] = Date.now(); renderAdmin(true); setTimeout(function () { renderAdmin(true); }, 6100); return; }
+      delete delSure[id]; t.disabled = true; t.textContent = 'Siliniyor…';
+      CORE.deleteUser(id).then(function () { flash(nm + ' üyeliği silindi.'); }, function () { flash('Silinemedi. Firebase kurallarını kontrol et.'); t.disabled = false; });
+    }
     else if (act === 'adm-reset') {
-      if (t.getAttribute('data-sure') !== '1') { t.setAttribute('data-sure', '1'); t.textContent = 'Emin misin?'; return; }
       var g = t.getAttribute('data-g'), tb = +t.getAttribute('data-tb');
+      if (!sureNow(resetSure, g + tb)) { resetSure[g + tb] = Date.now(); renderAdmin(true); setTimeout(function () { renderAdmin(true); }, 6100); return; }
+      delete resetSure[g + tb];
       t.disabled = true;
       CORE.resetTable(g, tb).then(function (n) { flash(CORE.GAME_NAMES[g] + ' masa ' + tb + ' sıfırlandı' + (n ? ', ' + n + ' kişiye çip iade edildi' : '')); });
     }
@@ -2137,7 +2277,9 @@ window.CORE = (function () {
     var w = $('lobbyWallet');
     if (w && CORE.ready) {
       var bal = CORE.balance(CORE.pid), req = CORE.requests[CORE.pid];
-      w.innerHTML = '<div class="wallet"><div><div class="label">Çipin</div><div class="wallet-n">' + fmt(bal) + '</div></div>' +
+      var wn = CORE.weekNets(CORE.weekStart(Date.now())), wids = Object.keys(wn).sort(function (a, b) { return wn[b] - wn[a]; }), wr = wids.indexOf(CORE.pid);
+      w.innerHTML = '<div class="wallet"><div><div class="label">Çipin</div><div class="wallet-n">' + fmt(bal) + '</div>' +
+        '<div class="wallet-week">' + (wr >= 0 ? 'Haftalık yarışta ' + (wr + 1) + '. sıradasın · ' + sfmt(wn[CORE.pid]) : 'Bu hafta henüz oyun bitirmedin') + '</div></div>' +
         '<div class="wallet-btns">' + (CORE.isAdmin() ? '<a class="btn sm primary" href="#admin">Admin paneli</a>' : '') +
         '<a class="btn sm" href="#kayit">Kayıtlar</a>' +
         (CORE.isAdmin() ? '' : '<button type="button" class="btn sm" data-act="req-chips"' + (req ? ' disabled' : '') + '>' + (req ? 'İstek gönderildi' : 'Admin\'den çip iste') + '</button>') + '</div></div>';
@@ -2152,12 +2294,7 @@ window.CORE = (function () {
       el.innerHTML = h;
     });
     var lb = $('lobbyBoard');
-    if (lb && CORE.ready) {
-      var ids = Object.keys(CORE.users).sort(function (a, b) { return CORE.balance(b) - CORE.balance(a); }).slice(0, 5);
-      lb.innerHTML = ids.length ? '<div class="section-head"><h2>Çip sıralaması</h2><a class="ghost" href="#kayit">Tümü</a></div><div class="prev">' + ids.map(function (id, i) {
-        return '<div class="row"><b>' + (i + 1) + '. ' + (CORE.online[id] ? '<span class="on-dot"></span>' : '') + esc(CORE.userName(id)) + '</b><span>' + fmt(CORE.balance(id)) + '</span></div>';
-      }).join('') + '</div>' : '';
-    }
+    if (lb && CORE.ready && CORE.view === 'lobby') lb.innerHTML = '<div class="lobby-tables"><div>' + weeklyHTML(false) + '</div><div>' + playersHTML() + '</div></div>';
     ['lobbyBanner', 'loginBanner'].forEach(function (id) {
       var b = $(id); if (!b) return;
       var t = CORE.error ? CORE.bannerText(true) : '';
@@ -2181,7 +2318,7 @@ window.CORE = (function () {
   }
   function renderKayit() {
     var body = $('kayitBody'); if (!body || CORE.view !== 'kayit') return;
-    var ids = Object.keys(CORE.users).sort(function (a, b) { return CORE.balance(b) - CORE.balance(a); });
+    var ids = userIds().sort(function (a, b) { return CORE.balance(b) - CORE.balance(a); });
     var openNow = {}; body.querySelectorAll('details[open]').forEach(function (d) { openNow[d.getAttribute('data-id')] = true; });
     body.innerHTML = '<p class="lobby-note">Çipler, en son giriş-çıkış ve oyun oyun kazanılan/kaybedilen çip. Hareketleri görmek için isme dokun.</p>' + ids.map(function (id, i) {
       var u = CORE.users[id] || {}, groups = groupEntries(id), byGame = {};
@@ -2218,7 +2355,7 @@ window.CORE = (function () {
       return '<div class="adm-row"><div class="adm-name">' + esc(CORE.userName(id)) + ' <span class="adm-info">' + fmt(r.amount) + ' çip istiyor · ' + when(r.at) + ' · şu an ' + fmt(CORE.balance(id)) + '</span></div>' +
         '<div class="adm-btns"><button type="button" class="btn sm primary" data-act="adm-req" data-ok="1" data-id="' + id + '">Onayla</button><button type="button" class="btn sm danger" data-act="adm-req" data-ok="0" data-id="' + id + '">Reddet</button></div></div>';
     }).join('') + '</div>' : '<p class="lobby-note">Bekleyen istek yok.</p>');
-    var ids = Object.keys(CORE.users).sort(function (a, b) { return CORE.userName(a).localeCompare(CORE.userName(b), 'tr'); });
+    var ids = userIds().sort(function (a, b) { return CORE.userName(a).localeCompare(CORE.userName(b), 'tr'); });
     h += '<h4>Oyuncular</h4><div class="adm">' + ids.map(function (id) {
       var u = CORE.users[id] || {}, banned = CORE.isBanned(id);
       return '<div class="adm-row"><div class="adm-name">' + (CORE.online[id] ? '<span class="on-dot"></span>' : '') + esc(u.name || 'Oyuncu') + (id === CORE.ownerId ? ' <span class="tag gold">Admin</span>' : '') + (banned ? ' <span class="tag loss">Yasaklı</span>' : '') +
@@ -2230,6 +2367,7 @@ window.CORE = (function () {
         '<span class="adm-amt"><input id="amt-' + id + '" type="number" inputmode="numeric" min="1" step="10" placeholder="Miktar" aria-label="' + esc(u.name || '') + ' için çip miktarı">' +
         '<button type="button" class="btn sm" data-act="adm-give" data-sign="+" data-id="' + id + '">Ver</button><button type="button" class="btn sm" data-act="adm-give" data-sign="-" data-id="' + id + '">Al</button></span>' +
         (id !== CORE.pid ? '<button type="button" class="btn sm ' + (banned ? '' : 'danger') + '" data-act="adm-ban" data-on="' + (banned ? '0' : '1') + '" data-id="' + id + '">' + (banned ? 'Yasağı kaldır' : 'Bütün masalardan at') + '</button>' : '') +
+        (id !== CORE.pid ? '<button type="button" class="btn sm danger" data-act="adm-del" data-id="' + id + '">' + (sureNow(delSure, id) ? esc(u.name || 'Oyuncu') + ' silinsin mi? Tekrar bas' : 'Üyeliği sil') + '</button>' : '') +
         '</div></div>';
     }).join('') + '</div>';
     var trows = '', idle = 0;
@@ -2240,10 +2378,11 @@ window.CORE = (function () {
         if (!active && !here && !seatsN && !gm) { idle++; continue; }
         trows += '<div class="adm-row"><div class="adm-name">' + CORE.GAME_NAMES[g] + ' · Masa ' + t + ' <span class="adm-info">' + here + ' kişi bakıyor · ' + seatsN + ' oturan' +
           (active ? ' · el #' + (stt.no || 1) + ' dağıtıldı' : '') + (gm ? ' · oyun sürüyor' + (gm.stake ? ', pot ' + fmt(CORE.potOf(gm)) : '') : '') + '</span></div>' +
-          '<div class="adm-btns"><a class="btn sm" href="#' + g + '/' + t + '">Masaya git</a><button type="button" class="btn sm danger" data-act="adm-reset" data-g="' + g + '" data-tb="' + t + '">Masayı sıfırla</button></div></div>';
+          '<div class="adm-btns"><a class="btn sm" href="#' + g + '/' + t + '">Masaya git</a><button type="button" class="btn sm danger" data-act="adm-reset" data-g="' + g + '" data-tb="' + t + '">' + (sureNow(resetSure, g + t) ? 'Emin misin? Tekrar bas' : 'Masayı sıfırla') + '</button></div></div>';
       }
     });
     h += '<h4>Masalar</h4>' + (trows ? '<div class="adm">' + trows + '</div>' : '') + '<p class="lobby-note">' + (trows ? idle + ' boş masa gösterilmiyor.' : 'Bütün masalar boş.') + '</p>';
+    h += '<h4>Haftalık yarış</h4>' + weeklyHTML(true);
     h += '<h4>Diğer</h4><div class="adm-btns"><a class="btn sm" href="#kayit">Kayıtlar</a><button type="button" class="btn sm" data-act="adm-clean">Eski oyuncu kayıtlarını temizle</button></div>' +
       '<p class="lobby-note">Masayı sıfırlamak eli ve oyunu iptal eder; masada bekleyen çipler sahiplerine iade edilir.</p>';
     body.innerHTML = h;
