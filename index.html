@@ -3713,6 +3713,7 @@ window.CORE = (function () {
       if (s.banned) b += btnA(o.pre, 'unban', id, 'Geri al');
       else {
         if (o.sit && !s.sit) b += btnA(o.pre, 'seat', id, 'Oturt');
+        b += btnA(o.pre, 'kick', id, 'Masadan at', 'danger');
         
       }
       b += btnA(o.pre, 'add', id, '+500') + btnA(o.pre, 'sub', id, '−500') + btnA(o.pre, 'rebuy', id, '1.000 yükle');
@@ -3723,7 +3724,7 @@ window.CORE = (function () {
   core.adminOp = function (ref, seats, op, id) {
     var s = seats[id] || {}, patch = null;
     if (!core.isAdmin()) return Promise.resolve();
-    if (op === 'kick') return Promise.resolve();
+    if (op === 'kick') patch = { sit: false, anteRound: 0, betRound: 0 };
     else if (op === 'unban') patch = { banned: false };
     else if (op === 'seat') patch = { sit: true, sitAt: Date.now() };
     else if (op === 'add') return core.grant(id, 500);
