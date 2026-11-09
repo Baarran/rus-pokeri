@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Topçu — Sıra Tabanlı Savaş</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="app">
+
+  <!-- GİRİŞ / KAYIT -->
+  <section id="authView" class="screen">
+    <div class="card auth">
+      <h1>💣 TOPÇU</h1>
+      <p class="sub">Sıra tabanlı topçu savaşı · kalıcı karakter · silah geliştirme</p>
+      <div class="tabs"><button id="tabLogin" class="on" type="button">Giriş</button><button id="tabReg" type="button">Kayıt ol</button></div>
+      <input id="auName" placeholder="Kullanıcı adı" maxlength="14" autocomplete="username">
+      <input id="auPass" type="password" placeholder="Şifre (en az 6 karakter)" autocomplete="current-password">
+      <button id="auGo" class="btn primary" type="button">Giriş yap</button>
+      <div id="auErr" class="err"></div>
+    </div>
+  </section>
+
+  <!-- ANA MENÜ -->
+  <section id="hubView" class="screen" hidden>
+    <header class="card prof">
+      <div class="prow">
+        <div><b id="pName">-</b> <span class="lv" id="pLv">Sv 1</span></div>
+        <button id="btnOut" class="btn sm" type="button">Çıkış</button>
+      </div>
+      <div class="xpbar"><i id="pXp"></i><span id="pXpT"></span></div>
+      <div class="stats">
+        <span>🪙 <b id="pGold">0</b></span><span>❤️ <b id="pHp">0</b></span><span>🛡️ <b id="pArmor">0</b></span><span>🏆 <b id="pWL">0/0</b></span>
+      </div>
+    </header>
+    <nav class="tabs big"><button id="hbLobby" class="on" type="button">⚔️ Savaş</button><button id="hbInv" type="button">🎒 Envanter</button></nav>
+    <div id="hubBody"></div>
+  </section>
+
+  <!-- SAVAŞ -->
+  <section id="battleView" class="screen" hidden>
+    <div class="cvwrap"><canvas id="cv"></canvas></div>
+    <div class="hud">
+      <div id="turnInfo" class="turn">-</div>
+      <div id="aimInfo" class="aim">Açı 45° · Güç 60</div>
+    </div>
+    <div id="wbar" class="wbar"></div>
+    <div class="actions">
+      <button id="btnFire" class="btn primary big" type="button" disabled>🔥 ATEŞ</button>
+      <button id="btnSur" class="btn" type="button">🏳️ Teslim</button>
+      <button id="btnLeave" class="btn" type="button">⬅ Menü</button>
+    </div>
+    <p class="hint">Ekranda sürükleyerek nişan al (uzağa çek = daha güçlü) · ya da ← → açı, ↑ ↓ güç, boşluk = ateş</p>
+    <div id="waitBox" class="overlay" hidden><div class="card"><h2>Rakip bekleniyor…</h2><p>Bir arkadaşın lobiden maçına katılınca savaş başlar.</p><button id="btnCancel" class="btn" type="button">Maçı iptal et</button></div></div>
+    <div id="resBox" class="overlay" hidden></div>
+  </section>
+
+  <div id="toast" class="toast" hidden></div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<script src="firebase-db.js"></script>
+<script src="auth-inventory.js"></script>
+<script src="game-physics.js"></script>
+<script src="main.js"></script>
+</body>
+</html>
