@@ -9630,6 +9630,20 @@ window.CORE = (function () {
     fab();
   });
 })();
+/* Sohbetten dönünce önceki oyuna/ekrana dön */
+(function () {
+  var prev = '', last = location.hash;
+  window.addEventListener('hashchange', function () {
+    var h = location.hash;
+    if (h === '#chat' && last !== '#chat') prev = last;
+    last = h;
+  });
+  document.addEventListener('click', function (e) {
+    var a = e.target.closest && e.target.closest('#chatView a.back');
+    if (!a || !prev || prev === '#chat') return;
+    e.preventDefault(); location.hash = prev;
+  }, true);
+})();
 
 </script>
 <script>
