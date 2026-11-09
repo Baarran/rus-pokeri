@@ -1,0 +1,1184 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Rus Pokeri Masası</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:opsz,wght@6..96,500;6..96,700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  /* Tek tema: kumarhane çuhası. Düzen: üstte krupiye, ortada oyuncular, altta senin elin ve sabit işlem çubuğu */
+  --felt: #12402f;
+  --felt-hi: #1b5a42;
+  --felt-deep: #0a2a1f;
+  --ink: #f3ead7;
+  --muted: #a9bcaa;
+  --gold: #d9b45b;
+  --gold-ink: #261b06;
+  --win: #8fdc9a;
+  --loss: #f19482;
+  --card: #fbf8f1;
+  --card-red: #b8332a;
+  --card-black: #18181c;
+  --line: rgba(243, 234, 215, .14);
+  --panel: rgba(4, 18, 13, .42);
+  --display: "Bodoni Moda", "Didot", "Bodoni 72", Georgia, serif;
+  --body: "Manrope", "Segoe UI", system-ui, -apple-system, sans-serif;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; margin: 0; }
+body {
+  background: radial-gradient(130% 70% at 50% 0%, var(--felt-hi) 0%, var(--felt) 45%, var(--felt-deep) 100%) fixed, var(--felt-deep);
+  color: var(--ink);
+  font-family: var(--body);
+  font-size: 15px;
+  line-height: 1.4;
+  -webkit-tap-highlight-color: transparent;
+}
+button { font: inherit; color: inherit; cursor: pointer; }
+button:disabled { cursor: not-allowed; opacity: .45; }
+:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+
+#app {
+  max-width: 560px; min-height: 100%; margin: 0 auto;
+  display: flex; flex-direction: column; gap: 14px;
+  padding: calc(12px + env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) 0 max(16px, env(safe-area-inset-left));
+}
+
+/* Üst çubuk */
+.top { display: flex; align-items: center; gap: 10px; }
+.brand { font-family: var(--display); font-weight: 700; font-size: 21px; letter-spacing: .01em; line-height: 1; white-space: nowrap; }
+.brand small { display: block; font-family: var(--body); font-weight: 600; font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); margin-top: 4px; }
+.top .spacer { flex: 1; }
+.pill { display: inline-flex; align-items: center; gap: 6px; padding: 6px 10px; border-radius: 999px; background: rgba(0,0,0,.28); border: 1px solid var(--line); font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.pill .dot { width: 14px; height: 14px; border-radius: 50%; background: var(--gold); box-shadow: inset 0 0 0 3px rgba(0,0,0,.25), inset 0 0 0 5px var(--gold); }
+.ghost { background: transparent; border: 1px solid var(--line); border-radius: 999px; padding: 6px 10px; font-size: 13px; font-weight: 600; color: var(--ink); }
+.top { flex-wrap: nowrap; }
+.top .pill { padding: 6px 9px; }
+
+/* Krupiye */
+.dealer { display: grid; justify-items: center; gap: 10px; padding-top: 4px; }
+.label { font-size: 11px; font-weight: 700; letter-spacing: .18em; text-transform: uppercase; color: var(--gold); }
+.cards { display: flex; gap: 6px; justify-content: center; flex-wrap: nowrap; }
+.dealer .cards { --cw: min(15vw, 62px); }
+.dstatus { min-height: 22px; font-weight: 600; text-align: center; }
+.dstatus.yes { color: var(--win); }
+.dstatus.no { color: var(--loss); }
+.printed { width: 100%; display: flex; align-items: center; gap: 10px; color: rgba(217, 180, 91, .75); font-size: 10.5px; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; text-align: center; }
+.printed::before, .printed::after { content: ""; flex: 1; height: 1px; background: rgba(217, 180, 91, .35); }
+
+/* Kart */
+.card {
+  --cw: 48px;
+  width: var(--cw); aspect-ratio: 5 / 7; flex: none;
+  border-radius: calc(var(--cw) * .11);
+  background: var(--card); color: var(--card-black);
+  position: relative; overflow: hidden;
+  box-shadow: 0 1px 0 rgba(0,0,0,.35), 0 6px 14px rgba(0,0,0,.28);
+  font-family: var(--display);
+  transition: transform .15s ease;
+  user-select: none;
+}
+.cards .card { --cw: inherit; }
+.card .r { position: absolute; top: 5%; left: 9%; font-weight: 700; font-size: calc(var(--cw) * .32); line-height: 1; letter-spacing: -.04em; }
+.card .s1 { position: absolute; top: 37%; left: 10%; font-size: calc(var(--cw) * .2); line-height: 1; }
+.card .s { position: absolute; right: 8%; bottom: 4%; font-size: calc(var(--cw) * .52); line-height: 1; }
+.card.red { color: var(--card-red); }
+.card.back {
+  background:
+    radial-gradient(circle at 50% 50%, rgba(217,180,91,.55) 0 14%, transparent 15%),
+    repeating-linear-gradient(45deg, #7c1f2c 0 4px, #92283a 4px 8px);
+  border: calc(var(--cw) * .06) solid var(--card);
+}
+.card.empty { background: transparent; border: 1px dashed rgba(243,234,215,.25); box-shadow: none; }
+.card.sel { transform: translateY(-14%); box-shadow: 0 0 0 3px var(--gold), 0 10px 18px rgba(0,0,0,.35); }
+.card.sel::after { content: "DEĞİŞ"; position: absolute; left: 0; right: 0; bottom: 0; background: var(--gold); color: var(--gold-ink); font-family: var(--body); font-weight: 800; font-size: calc(var(--cw) * .15); letter-spacing: .08em; text-align: center; padding: 2px 0; }
+.card.new { box-shadow: 0 0 0 2px var(--gold), 0 6px 14px rgba(0,0,0,.28); }
+.card.swap { box-shadow: 0 0 0 3px var(--win), 0 6px 14px rgba(0,0,0,.28); }
+.card.dim { opacity: .45; }
+button.card { border: 0; padding: 0; }
+
+/* Oyuncular */
+.section-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.section-head h2 { margin: 0; font-family: var(--display); font-weight: 500; font-size: 17px; }
+.section-head span { color: var(--muted); font-size: 13px; font-variant-numeric: tabular-nums; }
+.seats { display: grid; gap: 6px; }
+.seat {
+  display: grid; grid-template-columns: 1fr auto; gap: 4px 10px; align-items: center;
+  padding: 9px 12px; border-radius: 10px; background: var(--panel);
+  border-left: 3px solid transparent;
+}
+.seat.turn { border-left-color: var(--gold); background: rgba(217,180,91,.12); }
+.seat.mine .who::after { content: " · sen"; color: var(--gold); font-weight: 600; }
+.who { font-weight: 700; min-width: 0; overflow-wrap: anywhere; }
+.sub { grid-column: 1 / -1; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; color: var(--muted); font-size: 13px; }
+.amt { font-weight: 800; font-variant-numeric: tabular-nums; text-align: right; white-space: nowrap; }
+.amt.pos { color: var(--win); }
+.amt.neg { color: var(--loss); }
+.amt.zero { color: var(--muted); }
+.mini { display: flex; gap: 3px; }
+.mini .card { --cw: 26px; border-radius: 3px; box-shadow: 0 1px 2px rgba(0,0,0,.4); }
+.mini .card.back { border-width: 2px; }
+.tag { display: inline-block; padding: 1px 7px; border-radius: 999px; font-size: 11.5px; font-weight: 700; background: rgba(243,234,215,.1); color: var(--ink); }
+.tag.gold { background: rgba(217,180,91,.2); color: var(--gold); }
+.tag.win { background: rgba(143,220,154,.16); color: var(--win); }
+.tag.loss { background: rgba(241,148,130,.16); color: var(--loss); }
+.empty-note { color: var(--muted); font-size: 14px; padding: 10px 12px; border-radius: 10px; border: 1px dashed var(--line); }
+.prev { display: grid; gap: 8px; padding: 10px 12px; border-radius: 10px; background: rgba(0,0,0,.18); }
+.prev .row { display: flex; justify-content: space-between; gap: 8px; font-size: 13.5px; }
+.prev .row b { font-weight: 600; }
+
+/* Senin elin */
+.mine-hand { display: grid; gap: 8px; justify-items: center; padding: 12px 0 4px; }
+.mine-hand .cards { --cw: min(16.5vw, 72px); gap: 7px; padding-top: 14px; }
+.mine-hand .cards.six { --cw: min(14vw, 62px); gap: 5px; }
+.handname { font-family: var(--display); font-size: 20px; font-weight: 700; text-align: center; text-wrap: balance; }
+.hint { color: var(--muted); font-size: 13.5px; text-align: center; max-width: 42ch; text-wrap: balance; }
+
+/* İşlem çubuğu */
+.actions {
+  position: sticky; bottom: 0; margin: auto calc(-1 * max(16px, env(safe-area-inset-left))) 0;
+  padding: 12px max(16px, env(safe-area-inset-left)) calc(14px + env(safe-area-inset-bottom));
+  background: linear-gradient(180deg, rgba(6, 22, 16, .86), rgba(4, 16, 12, .97));
+  border-top: 1px solid var(--line);
+  display: grid; gap: 10px;
+  backdrop-filter: blur(6px);
+}
+.msg { font-size: 14px; text-align: center; text-wrap: balance; }
+.msg b { color: var(--gold); }
+.row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.btn {
+  min-height: 48px; border-radius: 12px; padding: 10px 12px;
+  font-weight: 800; font-size: 15px; letter-spacing: .01em;
+  border: 1px solid var(--line); background: rgba(243,234,215,.08); color: var(--ink);
+}
+.btn.primary { background: var(--gold); color: var(--gold-ink); border-color: var(--gold); }
+.btn.danger { background: transparent; color: var(--loss); border-color: rgba(241,148,130,.45); }
+.btn small { display: block; font-weight: 600; font-size: 12px; opacity: .8; }
+.result { text-align: center; display: grid; gap: 2px; }
+.result .big { font-family: var(--display); font-weight: 700; font-size: 26px; font-variant-numeric: tabular-nums; }
+.result .big.pos { color: var(--win); }
+.result .big.neg { color: var(--loss); }
+
+/* Fiş seçimi */
+.chipset { display: flex; justify-content: center; gap: 12px; }
+.chip {
+  width: 54px; height: 54px; border-radius: 50%; border: 0; display: grid; place-items: center;
+  font-weight: 800; font-size: 14px; color: #fff; position: relative;
+  box-shadow: 0 3px 0 rgba(0,0,0,.35);
+}
+.chip::before { content: ""; position: absolute; inset: 4px; border-radius: 50%; border: 3px dashed rgba(255,255,255,.75); }
+.chip span { position: relative; width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; background: rgba(255,255,255,.92); color: #222; font-size: 12.5px; }
+.chip.c10 { background: #2f6fb5; }
+.chip.c25 { background: #2c8a4a; }
+.chip.c50 { background: #b7342b; }
+.chip.c100 { background: #232326; }
+.chip.on { outline: 3px solid var(--gold); outline-offset: 3px; }
+
+/* Alt sayfa (kurallar, fiş tablosu, katılım) */
+.sheet { position: fixed; inset: 0; background: rgba(0,0,0,.55); display: flex; align-items: flex-end; justify-content: center; z-index: 10; }
+.sheet[hidden] { display: none; }
+.sheet .panel {
+  width: 100%; max-width: 560px; max-height: 86%; overflow-y: auto;
+  background: #0f2c22; border-top: 1px solid var(--line); border-radius: 18px 18px 0 0;
+  padding: 18px 18px calc(18px + env(safe-area-inset-bottom));
+  display: grid; gap: 12px;
+}
+.panel h3 { margin: 0; font-family: var(--display); font-size: 22px; font-weight: 700; }
+.panel h4 { margin: 6px 0 0; font-size: 13px; letter-spacing: .14em; text-transform: uppercase; color: var(--gold); }
+.panel p, .panel li { color: #dfe6dc; max-width: 65ch; }
+.panel p { margin: 0; }
+.panel ol { margin: 0; padding-left: 20px; display: grid; gap: 6px; }
+.panel-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; font-size: 14px; }
+th, td { padding: 6px 4px; border-bottom: 1px solid var(--line); text-align: left; }
+td.n, th.n { text-align: right; }
+th { color: var(--muted); font-weight: 600; font-size: 12px; }
+.field { display: grid; gap: 6px; }
+.field label { font-weight: 700; font-size: 13px; color: var(--muted); }
+.field input { min-height: 48px; border-radius: 12px; border: 1px solid var(--line); background: rgba(0,0,0,.3); color: var(--ink); padding: 0 14px; font: inherit; font-size: 17px; }
+
+.toast { position: fixed; left: 50%; bottom: calc(150px + env(safe-area-inset-bottom)); transform: translateX(-50%); background: #f3ead7; color: #1a1a1a; padding: 10px 14px; border-radius: 10px; font-weight: 700; font-size: 14px; max-width: 90vw; text-align: center; z-index: 20; box-shadow: 0 8px 24px rgba(0,0,0,.35); }
+.toast[hidden] { display: none; }
+.on-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--win); margin-right: 7px; vertical-align: middle; }
+.banner { padding: 10px 12px; border-radius: 10px; background: rgba(241,148,130,.14); border: 1px solid rgba(241,148,130,.4); font-size: 14px; }
+
+@media (prefers-reduced-motion: reduce) { .card { transition: none; } }
+</style>
+</head>
+<body>
+<div id="app">
+  <header class="top">
+    <div class="brand">Rus Pokeri<small id="roundNo">Masa</small></div>
+    <div class="spacer"></div>
+    <span class="pill" id="myChips" title="Fişin"><span class="dot"></span><span id="myChipsVal">—</span></span>
+    <button class="ghost" type="button" data-act="board">Fişler</button>
+    <button class="ghost" type="button" data-act="rules">Kurallar</button>
+  </header>
+
+  <section class="dealer" aria-label="Krupiye">
+    <div class="label">Krupiye</div>
+    <div class="cards" id="dealerCards"></div>
+    <div class="dstatus" id="dealerStatus"></div>
+    <div class="printed">Krupiye en az As-Papaz ile oynar</div>
+  </section>
+
+  <div id="banner"></div>
+
+  <section aria-label="Oyuncular" class="seats-wrap">
+    <div class="section-head"><h2 id="seatsTitle">Masa</h2><span id="seatsCount"></span></div>
+    <div class="seats" id="seats"></div>
+  </section>
+
+  <section class="mine-hand" id="mine" aria-label="Senin elin"></section>
+
+  <footer class="actions" id="actions" aria-live="polite"></footer>
+</div>
+
+<div class="sheet" id="sheet" hidden>
+  <div class="panel" id="sheetPanel" role="dialog" aria-modal="true"></div>
+</div>
+<div class="toast" id="toast" hidden></div>
+
+<script>
+/* Masanın veritabanı adresi (Firebase Realtime Database) */
+var VERITABANI = "https://ruspokeri-de28e-default-rtdb.europe-west1.firebasedatabase.app";
+</script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<script>
+/* Rus Pokeri — oyun motoru (saf fonksiyonlar, deterministik) */
+(function (root) {
+  'use strict';
+
+  var RANKS = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'];
+  var SUITS = ['♠', '♥', '♦', '♣'];
+  var A = 12, K = 11;
+
+  function rankOf(c) { return c % 13; }
+  function suitOf(c) { return Math.floor(c / 13); }
+
+  // ---- seeded RNG ----
+  function hashStr(s) {
+    var h = 1779033703 ^ s.length;
+    for (var i = 0; i < s.length; i++) {
+      h = Math.imul(h ^ s.charCodeAt(i), 3432918353);
+      h = (h << 13) | (h >>> 19);
+    }
+    return function () {
+      h = Math.imul(h ^ (h >>> 16), 2246822507);
+      h = Math.imul(h ^ (h >>> 13), 3266489909);
+      return (h ^= h >>> 16) >>> 0;
+    };
+  }
+  function mulberry32(a) {
+    return function () {
+      a |= 0; a = (a + 0x6D2B79F5) | 0;
+      var t = Math.imul(a ^ (a >>> 15), 1 | a);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+  function makeRng(seed) { return mulberry32(hashStr(String(seed))()); }
+  function shuffle(arr, rng) {
+    var a = arr.slice();
+    for (var i = a.length - 1; i > 0; i--) {
+      var j = Math.floor(rng() * (i + 1));
+      var t = a[i]; a[i] = a[j]; a[j] = t;
+    }
+    return a;
+  }
+
+  // ---- 5 kartlık el değerlendirme ----
+  // cat: 0 yüksek kart, 1 per, 2 döper, 3 üçlü, 4 kent, 5 floş, 6 ful, 7 kare, 8 sıralı floş
+  function eval5(cards) {
+    var counts = {}, suits = {}, ranks = [];
+    for (var i = 0; i < 5; i++) {
+      var r = rankOf(cards[i]), s = suitOf(cards[i]);
+      counts[r] = (counts[r] || 0) + 1;
+      suits[s] = (suits[s] || 0) + 1;
+    }
+    var groups = Object.keys(counts).map(function (r) { return [counts[r], +r]; });
+    groups.sort(function (x, y) { return y[0] - x[0] || y[1] - x[1]; });
+    var flush = Object.keys(suits).length === 1;
+    var straightHigh = -1;
+    if (groups.length === 5) {
+      var rs = groups.map(function (g) { return g[1]; }); // azalan
+      if (rs[0] - rs[4] === 4) straightHigh = rs[0];
+      else if (rs[0] === A && rs[1] === 3 && rs[4] === 0) straightHigh = 3; // A-2-3-4-5
+    }
+    var cat, tb;
+    if (straightHigh >= 0 && flush) { cat = 8; tb = [straightHigh]; }
+    else if (groups[0][0] === 4) { cat = 7; tb = [groups[0][1], groups[1][1]]; }
+    else if (groups[0][0] === 3 && groups[1][0] === 2) { cat = 6; tb = [groups[0][1], groups[1][1]]; }
+    else if (flush) { cat = 5; tb = groups.map(function (g) { return g[1]; }); }
+    else if (straightHigh >= 0) { cat = 4; tb = [straightHigh]; }
+    else if (groups[0][0] === 3) { cat = 3; tb = groups.map(function (g) { return g[1]; }); }
+    else if (groups[0][0] === 2 && groups[1][0] === 2) { cat = 2; tb = groups.map(function (g) { return g[1]; }); }
+    else if (groups[0][0] === 2) { cat = 1; tb = groups.map(function (g) { return g[1]; }); }
+    else { cat = 0; tb = groups.map(function (g) { return g[1]; }); }
+    return { cat: cat, tb: tb, cards: cards.slice() };
+  }
+  function cmpEval(a, b) {
+    if (a.cat !== b.cat) return a.cat - b.cat;
+    for (var i = 0; i < Math.max(a.tb.length, b.tb.length); i++) {
+      var d = (a.tb[i] || 0) - (b.tb[i] || 0);
+      if (d) return d;
+    }
+    return 0;
+  }
+  function subsets5(n) {
+    var out = [];
+    if (n === 5) return [[0, 1, 2, 3, 4]];
+    for (var skip = 0; skip < n; skip++) {
+      var s = [];
+      for (var i = 0; i < n; i++) if (i !== skip) s.push(i);
+      out.push(s);
+    }
+    return out;
+  }
+  function bestHand(cards) {
+    var best = null;
+    subsets5(cards.length).forEach(function (idx) {
+      var e = eval5(idx.map(function (i) { return cards[i]; }));
+      if (!best || cmpEval(e, best) > 0) best = e;
+    });
+    return best;
+  }
+  function hasAK(cards) {
+    var a = false, k = false;
+    cards.forEach(function (c) { if (rankOf(c) === A) a = true; if (rankOf(c) === K) k = true; });
+    return a && k;
+  }
+  function dealerQualifies(cards) {
+    var e = bestHand(cards);
+    return e.cat >= 1 || hasAK(cards);
+  }
+
+  // ---- ödeme tabloları ----
+  var SINGLE = { RF: 100, SF: 50, '4K': 20, FH: 7, FL: 5, ST: 4, '3K': 3, '2P': 2, P: 1, AK: 1 };
+  var ORDER = ['RF', 'SF', '4K', 'FH', 'FL', 'ST', '3K', '2P', 'P', 'AK'];
+  var DOUBLE = {
+    'RF+SF': 150, 'RF+FL': 105, 'RF+ST': 104,
+    'SF+SF': 100, 'SF+FL': 55, 'SF+ST': 54, 'SF+AK': 51,
+    '4K+FH': 27, '4K+AK': 21,
+    'FH+FH': 14, 'FH+AK': 8,
+    'FL+FL': 10, 'FL+ST': 9, 'FL+P': 6, 'FL+AK': 6,
+    'ST+ST': 8, 'ST+AK': 5,
+    '3K+AK': 4, '2P+2P': 4, '2P+AK': 3, 'P+AK': 2
+  };
+  var TYPE_NAME = {
+    RF: 'Royal Floş', SF: 'Sıralı Floş', '4K': 'Kare', FH: 'Ful', FL: 'Floş',
+    ST: 'Kent', '3K': 'Üçlü', '2P': 'Döper', P: 'Per', AK: 'As-Papaz'
+  };
+  var CAT_NAME = ['Yüksek kart', 'Per', 'Döper', 'Üçlü', 'Kent', 'Floş', 'Ful', 'Kare', 'Sıralı Floş'];
+
+  function handName(e, cards) {
+    if (e.cat === 8 && e.tb[0] === A) return 'Royal Floş';
+    if (e.cat === 0) return hasAK(cards) ? 'As-Papaz' : 'Yüksek kart';
+    return CAT_NAME[e.cat];
+  }
+
+  // Elin içindeki tüm kombinasyonlar (kart maskesiyle)
+  function combos(cards) {
+    var n = cards.length, out = [], i, j, k, l;
+    var byRank = {};
+    for (i = 0; i < n; i++) { var r = rankOf(cards[i]); (byRank[r] = byRank[r] || []).push(i); }
+    for (i = 0; i < n; i++) for (j = 0; j < n; j++)
+      if (rankOf(cards[i]) === A && rankOf(cards[j]) === K) out.push({ t: 'AK', m: (1 << i) | (1 << j) });
+    var pairs = [];
+    for (i = 0; i < n; i++) for (j = i + 1; j < n; j++)
+      if (rankOf(cards[i]) === rankOf(cards[j])) pairs.push({ r: rankOf(cards[i]), m: (1 << i) | (1 << j) });
+    pairs.forEach(function (p) { out.push({ t: 'P', m: p.m }); });
+    for (i = 0; i < pairs.length; i++) for (j = i + 1; j < pairs.length; j++)
+      if (pairs[i].r !== pairs[j].r) out.push({ t: '2P', m: pairs[i].m | pairs[j].m });
+    Object.keys(byRank).forEach(function (r) {
+      var ix = byRank[r];
+      if (ix.length >= 3) {
+        for (i = 0; i < ix.length; i++) for (j = i + 1; j < ix.length; j++) for (k = j + 1; k < ix.length; k++)
+          out.push({ t: '3K', m: (1 << ix[i]) | (1 << ix[j]) | (1 << ix[k]) });
+      }
+      if (ix.length === 4) {
+        var m4 = 0; for (l = 0; l < 4; l++) m4 |= (1 << ix[l]);
+        out.push({ t: '4K', m: m4 });
+      }
+    });
+    subsets5(n).forEach(function (idx) {
+      var e = eval5(idx.map(function (q) { return cards[q]; }));
+      var m = 0; idx.forEach(function (q) { m |= (1 << q); });
+      if (e.cat === 8) out.push({ t: e.tb[0] === A ? 'RF' : 'SF', m: m });
+      else if (e.cat === 6) out.push({ t: 'FH', m: m });
+      else if (e.cat === 5) out.push({ t: 'FL', m: m });
+      else if (e.cat === 4) out.push({ t: 'ST', m: m });
+    });
+    return out;
+  }
+
+  // a kombinasyonunda, b'nin kullanmadığı (rütbe olarak) en az bir kart var mı?
+  function rankExtra(ma, mb, cards) {
+    var cnt = {};
+    for (var i = 0; i < cards.length; i++) {
+      var r = rankOf(cards[i]);
+      if (ma & (1 << i)) cnt[r] = (cnt[r] || 0) + 1;
+      if (mb & (1 << i)) cnt[r] = (cnt[r] || 0) - 1;
+    }
+    for (var k in cnt) if (cnt[k] > 0) return true;
+    return false;
+  }
+
+  // Kazanan elin bet ödeme çarpanı (tek ya da iki kombinasyon)
+  function payout(cards) {
+    var cs = combos(cards);
+    var best = { mult: 0, label: '' };
+    cs.forEach(function (c) {
+      if (SINGLE[c.t] > best.mult) best = { mult: SINGLE[c.t], label: TYPE_NAME[c.t], types: [c.t] };
+    });
+    for (var i = 0; i < cs.length; i++) for (var j = i + 1; j < cs.length; j++) {
+      var a = cs[i], b = cs[j];
+      if (!rankExtra(a.m, b.m, cards) || !rankExtra(b.m, a.m, cards)) continue; // farklı olmalı
+      var x = a.t, y = b.t;
+      if (ORDER.indexOf(x) > ORDER.indexOf(y)) { var t = x; x = y; y = t; }
+      var v = DOUBLE[x + '+' + y];
+      if (v && v > best.mult) best = { mult: v, label: TYPE_NAME[x] + ' + ' + TYPE_NAME[y], types: [x, y] };
+    }
+    return best;
+  }
+
+  // ---- bir elin tüm akışını tohumdan + kararlardan hesapla ----
+  // state: {no, seed, players:[{id, ante}], skipPlay:{}, skipBuy:{}}
+  // decs: { id: {r, draw:null|{t:'x', idx:[..]}|{t:'6'}, final:null|'bet'|'fold', buy:null|true|false} }
+  function simulate(state, decs) {
+    var rng = makeRng(state.seed + ':' + state.no);
+    var deck = shuffle(range(52), rng), ptr = 0, discards = [];
+    function draw() {
+      if (ptr >= deck.length) { deck = shuffle(discards, rng); discards = []; ptr = 0; }
+      return deck[ptr++];
+    }
+    var players = (state.players || []).map(function (p) {
+      return { id: p.id, ante: p.ante, initial: [], hand: [], draw: null, drawCount: 0, final: null, skipped: false, buy: null };
+    });
+    for (var c = 0; c < 5; c++) players.forEach(function (p) { p.initial.push(draw()); });
+    var dealer = [];
+    for (c = 0; c < 5; c++) dealer.push(draw());
+    players.forEach(function (p) { p.hand = p.initial.slice(); });
+
+    var skipPlay = state.skipPlay || {}, skipBuy = state.skipBuy || {};
+    var turn = -1; // sırası gelen oyuncunun indeksi
+    for (var i = 0; i < players.length; i++) {
+      var p = players[i];
+      var d = decs[p.id];
+      if (!d || d.r !== state.no) d = null;
+      if (d && d.draw) {
+        if (d.draw.t === 'x' && validIdx(d.draw.idx)) {
+          var fresh = d.draw.idx.map(function () { return draw(); });
+          d.draw.idx.forEach(function (ix, k) { discards.push(p.hand[ix]); p.hand[ix] = fresh[k]; });
+          p.draw = 'x'; p.drawCount = d.draw.idx.length;
+        } else if (d.draw.t === '6') {
+          p.hand.push(draw()); p.draw = '6'; p.drawCount = 1;
+        }
+      }
+      if (skipPlay[p.id]) { p.final = 'fold'; p.skipped = true; continue; } // süresi doldu: pas
+      if (d && (d.final === 'bet' || d.final === 'fold')) { p.final = d.final; continue; }
+      turn = i; break;
+    }
+
+    var res = { no: state.no, players: players, dealerInitial: dealer.slice(), dealer: dealer, turn: turn,
+      phase: 'play', dealerEval: null, qualifies: null, dealerSwap: null };
+    if (turn >= 0) return res;
+
+    // Krupiye açar
+    var bettors = players.filter(function (p) { return p.final === 'bet'; });
+    res.dealerEval = bestHand(dealer);
+    res.qualifies = dealerQualifies(dealer);
+    var finalDealer = dealer, finalQual = res.qualifies;
+    if (!res.qualifies && bettors.length) {
+      var waiting = [];
+      bettors.forEach(function (p) {
+        var d2 = decs[p.id];
+        if (skipBuy[p.id]) { p.buy = false; p.skippedBuy = true; return; }
+        if (d2 && d2.r === state.no && (d2.buy === true || d2.buy === false)) p.buy = d2.buy;
+        else waiting.push(p.id);
+      });
+      if (waiting.length) { res.phase = 'buy'; res.waitingBuy = waiting; return res; }
+      if (bettors.some(function (p) { return p.buy; })) {
+        // en yüksek kartı değiştir
+        var hi = 0;
+        for (var q = 1; q < 5; q++) if (rankOf(dealer[q]) > rankOf(dealer[hi])) hi = q;
+        finalDealer = dealer.slice();
+        var newCard = draw();
+        res.dealerSwap = { index: hi, out: dealer[hi], card: newCard };
+        finalDealer[hi] = newCard;
+        finalQual = dealerQualifies(finalDealer);
+      }
+    }
+    res.phase = 'done';
+    res.dealerFinal = finalDealer;
+    res.dealerFinalEval = bestHand(finalDealer);
+    res.finalQualifies = finalQual;
+
+    players.forEach(function (p) { settle(p, res); });
+    return res;
+  }
+
+  function settle(p, res) {
+    var A_ = p.ante, E = p.draw ? A_ : 0, B = 2 * A_;
+    p.best = bestHand(p.hand);
+    p.name = handName(p.best, p.hand);
+    if (p.final === 'fold') { p.outcome = 'fold'; p.net = -A_ - E; return; }
+    var G = p.buy ? A_ : 0;
+    var dealerCards = p.buy ? res.dealerFinal : res.dealer;
+    var qual = p.buy ? res.finalQualifies : res.qualifies;
+    if (!qual) { p.outcome = 'noqual'; p.net = A_ - E - G; return; }
+    var cmp = cmpEval(p.best, bestHand(dealerCards));
+    if (cmp > 0) {
+      var po = payout(p.hand);
+      p.mult = po.mult; p.payLabel = po.label;
+      p.outcome = 'win';
+      p.net = (E ? 0 : A_) + B * po.mult - E - G;
+    } else if (cmp === 0) { p.outcome = 'push'; p.net = -E - G; }
+    else { p.outcome = 'lose'; p.net = -A_ - B - E - G; }
+  }
+
+  function validIdx(idx) {
+    if (!Array.isArray(idx) || idx.length < 1 || idx.length > 5) return false;
+    var seen = {};
+    for (var i = 0; i < idx.length; i++) {
+      var v = idx[i];
+      if (typeof v !== 'number' || v !== Math.floor(v) || v < 0 || v > 4 || seen[v]) return false;
+      seen[v] = 1;
+    }
+    return true;
+  }
+  function range(n) { var a = []; for (var i = 0; i < n; i++) a.push(i); return a; }
+
+  // Oyuncunun bu elde masaya koyduğu toplam
+  function committed(p) {
+    var t = p.ante;
+    if (p.draw) t += p.ante;
+    if (p.final === 'bet') t += 2 * p.ante;
+    if (p.buy) t += p.ante;
+    return t;
+  }
+
+  var api = {
+    RANKS: RANKS, SUITS: SUITS, rankOf: rankOf, suitOf: suitOf,
+    eval5: eval5, bestHand: bestHand, cmpEval: cmpEval, handName: handName, hasAK: hasAK,
+    dealerQualifies: dealerQualifies, combos: combos, payout: payout,
+    simulate: simulate, committed: committed, SINGLE: SINGLE, DOUBLE: DOUBLE, TYPE_NAME: TYPE_NAME,
+    makeRng: makeRng, shuffle: shuffle
+  };
+  if (typeof module !== 'undefined' && module.exports) module.exports = api;
+  else root.RP = api;
+})(this);
+
+</script>
+<script>
+(function () {
+  'use strict';
+  var RP = window.RP;
+  var START = 1000, MAX_SEATS = 6, SKIP_AFTER = 60000, ANTES = [10, 25, 50, 100];
+  var SUITS = ['♠', '♥', '♦', '♣'];
+
+  function $(id) { return document.getElementById(id); }
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  function fmt(n) { return (n < 0 ? '−' : '') + Math.abs(n).toLocaleString('tr-TR'); }
+  function sfmt(n) { return (n > 0 ? '+' : n < 0 ? '−' : '±') + Math.abs(n).toLocaleString('tr-TR'); }
+  function cls(n) { return n > 0 ? 'pos' : n < 0 ? 'neg' : 'zero'; }
+  function clone(o) { return o == null ? o : JSON.parse(JSON.stringify(o)); }
+
+  var db = null, R = {}, pid = null, ownerId = null, connected = false, bootAt = Date.now();
+  var stateDoc = null, seats = {}, online = {};
+  var loaded = { state: false, seats: false }, connError = null;
+  var selected = [], selKey = '';
+  var anteChoice = 25, busy = false;
+  var turnSeen = {}, skipShownKey = '';
+  var V = null;
+
+  // ---------- veri yardımcıları ----------
+  function bankOf(sd) { return (sd && sd.bank) || {}; }
+  function view() {
+    var sd = stateDoc || {};
+    var st = { no: sd.no || 1, seed: sd.seed || null, players: sd.players || null,
+      skipPlay: sd.skipPlay || {}, skipBuy: sd.skipBuy || {}, prev: sd.prev || null };
+    var sim = null;
+    if (st.players && st.players.length && st.seed) {
+      try { sim = RP.simulate(st, localDecs()); } catch (e) { console.error(e); }
+    }
+    var phase = sim ? sim.phase : 'ante';
+    var me = sim ? sim.players.filter(function (p) { return p.id === pid; })[0] || null : null;
+    var anted = Object.keys(seats).filter(function (id) {
+      var s = seats[id]; return s && s.anteRound === st.no && ANTES.indexOf(s.ante) >= 0;
+    }).sort(function (a, b) { return (seats[a].anteAt || 0) - (seats[b].anteAt || 0); });
+    return { st: st, sim: sim, phase: phase, me: me, anted: anted };
+  }
+  function localDecs() {
+    var decs = {};
+    Object.keys(seats).forEach(function (id) { if (seats[id] && seats[id].dec) decs[id] = seats[id].dec; });
+    return decs;
+  }
+  function chipsFromBank(id, bank) {
+    var s = seats[id] || {};
+    return START * (1 + (s.rebuys || 0) - ((bank.rebuyBase || {})[id] || 0)) + ((bank.net || {})[id] || 0);
+  }
+  function chipsOf(id, v) {
+    var b = bankOf(stateDoc);
+    var c = chipsFromBank(id, b);
+    if (v && v.sim && v.sim.phase === 'done' && (b.applied || 0) < v.st.no) {
+      var p = v.sim.players.filter(function (x) { return x.id === id; })[0];
+      if (p) c += p.net;
+    }
+    return c;
+  }
+  function nameOf(id) { var s = seats[id]; return (s && s.name) || 'Oyuncu'; }
+  function joined() { return !!(pid && seats[pid] && seats[pid].name); }
+  function isOwner() { return !!(pid && ownerId === pid); }
+  function curDec(no) {
+    var d = seats[pid] && seats[pid].dec;
+    return d && d.r === no ? d : { r: no };
+  }
+  function handLabel(cards) { return RP.handName(RP.bestHand(cards), cards); }
+  function dot(id) { return online[id] ? '<span class="on-dot" title="Çevrimiçi"></span>' : ''; }
+
+  // ---------- kart çizimi ----------
+  function cardHTML(c, extra, attrs) {
+    extra = extra || ''; attrs = attrs || '';
+    if (c === 'empty') return '<div class="card empty" aria-hidden="true"></div>';
+    if (c == null) return '<div class="card back ' + extra + '" aria-label="kapalı kart"></div>';
+    var r = RP.RANKS[c % 13], s = Math.floor(c / 13), red = s === 1 || s === 2;
+    var g = SUITS[s] + '︎';
+    var tag = attrs ? 'button type="button"' : 'div';
+    var close = attrs ? 'button' : 'div';
+    return '<' + tag + ' class="card ' + (red ? 'red ' : '') + extra + '" ' + attrs + ' aria-label="' + r + ' ' + ['maça', 'kupa', 'karo', 'sinek'][s] + '">' +
+      '<span class="r">' + r + '</span><span class="s1">' + g + '</span><span class="s">' + g + '</span></' + close + '>';
+  }
+
+  // ---------- çizim ----------
+  function render() {
+    V = view();
+    var v = V, st = v.st, sim = v.sim;
+    if (selKey !== st.no + ':' + (sim ? st.seed : '')) { selected = []; selKey = st.no + ':' + (sim ? st.seed : ''); }
+
+    $('roundNo').textContent = 'El #' + st.no;
+    $('myChipsVal').textContent = joined() ? fmt(chipsOf(pid, v)) : '—';
+
+    var banner = '';
+    if (connError === 'config') banner = 'Masanın veritabanı adresi girilmemiş. Kodun başındaki VERITABANI satırına Firebase adresini yaz.';
+    else if (connError === 'nolib') banner = 'Oyun dosyaları yüklenemedi. İnternet bağlantını kontrol edip sayfayı yenile.';
+    else if (connError === 'perm') banner = 'Masaya erişilemiyor. Firebase\'de Realtime Database → Kurallar sekmesinde "rp" için okuma ve yazma izni açık olmalı.';
+    else if (loaded.state && !connected && Date.now() - bootAt > 6000) banner = 'Bağlantı koptu, yeniden bağlanılıyor… Bu sırada yaptığın hamleler bağlantı gelince gönderilir.';
+    else if (!loaded.state && Date.now() - bootAt > 10000) banner = 'Masaya bağlanılamıyor. İnternet bağlantını kontrol et; bağlantı gelince masa kendiliğinden yüklenir.';
+    $('banner').innerHTML = banner ? '<div class="banner">' + esc(banner) + '</div>' : '';
+
+    renderDealer(v);
+    renderSeats(v);
+    renderMine(v);
+    renderActions(v);
+  }
+
+  function renderDealer(v) {
+    var sim = v.sim, html = '', status = '', sc = '';
+    if (!sim) {
+      var prev = v.st.prev;
+      if (prev && prev.dealer) {
+        html = prev.dealer.map(function (c) { return cardHTML(c, 'dim'); }).join('');
+        status = 'Önceki el: ' + (prev.qual ? 'oyunu vardı · ' + prev.dealerName : 'oyunu yoktu');
+      } else {
+        html = [0, 0, 0, 0, 0].map(function () { return cardHTML('empty'); }).join('');
+        status = 'Yeni el için ante koyun';
+      }
+    } else if (sim.phase === 'play') {
+      html = sim.dealer.map(function (c, i) { return i === 4 ? cardHTML(c) : cardHTML(null); }).join('');
+      status = 'Bir kartı açık';
+    } else if (sim.phase === 'buy') {
+      html = sim.dealer.map(function (c) { return cardHTML(c); }).join('');
+      status = 'Oyunu yok · ' + RP.handName(sim.dealerEval, sim.dealer); sc = 'no';
+    } else {
+      var d = sim.dealerFinal, sw = sim.dealerSwap;
+      html = d.map(function (c, i) { return cardHTML(c, sw && sw.index === i ? 'swap' : ''); }).join('');
+      if (sw) {
+        status = 'Oyun satın alındı · ' + (sim.finalQualifies ? 'oyunu çıktı: ' + RP.handName(sim.dealerFinalEval, d) : 'yine oyunu yok');
+        sc = sim.finalQualifies ? 'yes' : 'no';
+      } else if (sim.qualifies) { status = 'Oyunu var · ' + RP.handName(sim.dealerFinalEval, d); sc = 'yes'; }
+      else { status = 'Oyunu yok · ' + RP.handName(sim.dealerFinalEval, d); sc = 'no'; }
+    }
+    $('dealerCards').innerHTML = html;
+    var ds = $('dealerStatus'); ds.textContent = status; ds.className = 'dstatus ' + sc;
+  }
+
+  function seatRow(o) {
+    return '<div class="seat' + (o.turn ? ' turn' : '') + (o.mine ? ' mine' : '') + '">' +
+      '<div class="who">' + (o.id ? dot(o.id) : '') + esc(o.name) + '</div>' +
+      '<div class="amt ' + (o.amtCls || '') + '">' + (o.amt || '') + '</div>' +
+      '<div class="sub">' + (o.sub || '') + '</div></div>';
+  }
+
+  function renderSeats(v) {
+    var sim = v.sim, st = v.st, out = '';
+    if (!sim) {
+      $('seatsTitle').textContent = 'Ante koyanlar';
+      $('seatsCount').textContent = Math.min(v.anted.length, MAX_SEATS) + ' / ' + MAX_SEATS;
+      if (!v.anted.length) out = '<div class="empty-note">Henüz kimse ante koymadı. Ante koyan oyuncular burada görünür; en fazla 6 kişi aynı elde oynar.</div>';
+      v.anted.forEach(function (id, i) {
+        var s = seats[id];
+        out += seatRow({ id: id, name: nameOf(id), mine: id === pid, amt: fmt(s.ante), amtCls: 'zero',
+          sub: i < MAX_SEATS ? '<span class="tag gold">Ante</span> Kutu ' + (i + 1) : '<span class="tag">Masa dolu</span> Sonraki eli bekliyor' });
+      });
+      var waiting = Object.keys(online).filter(function (id) { return seats[id] && seats[id].name && v.anted.indexOf(id) < 0; });
+      if (waiting.length) out += '<div class="empty-note">Masada ama ante koymadı: ' + waiting.map(function (id) { return esc(nameOf(id)); }).join(', ') + '</div>';
+      var prev = st.prev;
+      if (prev && prev.players && prev.players.length) {
+        out += '<div class="prev"><div class="label">Önceki el · #' + prev.no + '</div>';
+        prev.players.forEach(function (p) {
+          out += '<div class="row"><b>' + esc(nameOf(p.id)) + '</b><span>' + esc(outcomeText(p)) +
+            ' <span class="amt ' + cls(p.net) + '">' + sfmt(p.net) + '</span></span></div>';
+        });
+        out += '</div>';
+      }
+      $('seats').innerHTML = out;
+      return;
+    }
+    $('seatsTitle').textContent = 'Bu el';
+    $('seatsCount').textContent = sim.players.length + ' oyuncu';
+    sim.players.forEach(function (p, i) {
+      var mine = p.id === pid, amt = '', amtCls = 'zero', turn = false, tags = [];
+      if (p.draw === 'x') tags.push('<span class="tag">' + p.drawCount + ' kart değişti</span>');
+      if (p.draw === '6') tags.push('<span class="tag">6. kart</span>');
+      if (sim.phase === 'play' && i === sim.turn) {
+        turn = true; tags.push('<span class="tag gold">Sırası · <span data-timer>0:00</span></span>');
+      } else if (sim.phase === 'play' && i > sim.turn) {
+        tags.push('<span class="tag">Bekliyor</span>');
+      } else if (p.skipped) tags.push('<span class="tag loss">Süresi doldu · pas</span>');
+      else if (p.final === 'fold') tags.push('<span class="tag">Pas</span>');
+      else if (p.final === 'bet' && sim.phase !== 'done') tags.push('<span class="tag gold">Bet</span>');
+      if (sim.phase === 'buy' && p.final === 'bet') {
+        if (p.buy === true) tags.push('<span class="tag gold">Oyun aldı</span>');
+        else if (p.buy === false) tags.push('<span class="tag">Ante\'yi aldı</span>');
+        else { turn = true; tags.push('<span class="tag gold">Karar veriyor</span>'); }
+      }
+      var cardsHtml = '';
+      if (sim.phase === 'done') {
+        amt = sfmt(p.net); amtCls = cls(p.net);
+        tags.unshift('<span class="tag ' + (p.net > 0 ? 'win' : p.net < 0 ? 'loss' : '') + '">' + esc(outcomeText(p)) + '</span>');
+        cardsHtml = p.final !== 'fold' ? p.hand.map(function (c) { return cardHTML(c); }).join('') : p.hand.map(function () { return cardHTML(null, 'dim'); }).join('');
+      } else {
+        amt = 'Masada ' + fmt(RP.committed(p));
+        if (!mine) cardsHtml = p.hand.map(function () { return cardHTML(null); }).join('');
+      }
+      var sub = (cardsHtml ? '<span class="mini">' + cardsHtml + '</span>' : '') + tags.join('');
+      out += seatRow({ id: p.id, name: nameOf(p.id), mine: mine, turn: turn, amt: amt, amtCls: amtCls, sub: sub });
+    });
+    $('seats').innerHTML = out;
+  }
+
+  function outcomeText(p) {
+    if (p.outcome === 'fold') return p.skipped ? 'Süresi doldu' : 'Pas';
+    if (p.outcome === 'win') return (p.payLabel || p.pay || p.name) + ' · ' + (p.mult || 1) + ':1';
+    if (p.outcome === 'lose') return 'Kaybetti · ' + p.name;
+    if (p.outcome === 'push') return 'Berabere · ' + p.name;
+    if (p.outcome === 'noqual') return 'Krupiyenin oyunu yok';
+    return '';
+  }
+
+  function canSelect(v) {
+    var me = v.me, sim = v.sim;
+    return !!(me && sim && sim.phase === 'play' && sim.players[sim.turn] === me && !me.draw && !busy);
+  }
+
+  function renderMine(v) {
+    var me = v.me, el = $('mine');
+    if (!me) { el.innerHTML = ''; el.hidden = true; return; }
+    el.hidden = false;
+    var sel = canSelect(v);
+    var cards = me.hand.map(function (c, i) {
+      var extra = '';
+      if (i >= 5 || me.initial[i] !== c) extra += 'new ';
+      if (sel && selected.indexOf(i) >= 0) extra += 'sel ';
+      if (me.final === 'fold') extra += 'dim ';
+      return cardHTML(c, extra, sel ? 'data-act="sel" data-i="' + i + '"' : '');
+    }).join('');
+    var po = RP.payout(me.hand), hint;
+    if (me.final === 'fold') hint = 'Bu eli pas geçtin.';
+    else if (sel) hint = 'Değiştirmek istediğin kartlara dokun, sonra aşağıdan seç.';
+    else if (po.mult) hint = 'Krupiyeyi geçersen bet ' + po.mult + ':1 öder' + (po.types && po.types.length === 2 ? ' (' + po.label + ')' : '') + '.';
+    else hint = 'Krupiyenin oyunu olursa onu geçmek için en az As-Papaz gerekir.';
+    el.innerHTML = '<div class="label">Senin elin</div><div class="cards' + (me.hand.length > 5 ? ' six' : '') + '">' + cards + '</div>' +
+      '<div class="handname">' + esc(handLabel(me.hand)) + '</div><div class="hint">' + esc(hint) + '</div>';
+  }
+
+  function timerKey(v) {
+    var sim = v.sim;
+    if (!sim) return null;
+    if (sim.phase === 'play') return v.st.no + ':' + v.st.seed + ':p:' + sim.players[sim.turn].id;
+    if (sim.phase === 'buy') return v.st.no + ':' + v.st.seed + ':b';
+    return null;
+  }
+  function elapsed(v) {
+    var k = timerKey(v); if (!k) return 0;
+    if (!turnSeen[k]) turnSeen[k] = Date.now();
+    return Date.now() - turnSeen[k];
+  }
+  function mmss(ms) { var s = Math.floor(ms / 1000); return Math.floor(s / 60) + ':' + ('0' + (s % 60)).slice(-2); }
+
+  function btn(act, label, o) {
+    o = o || {};
+    return '<button type="button" class="btn ' + (o.cls || '') + '" data-act="' + act + '"' + (o.data || '') +
+      (o.disabled || busy ? ' disabled' : '') + '>' + label + (o.small ? '<small>' + o.small + '</small>' : '') + '</button>';
+  }
+
+  function renderActions(v) {
+    var el = $('actions'), sim = v.sim, me = v.me, st = v.st, h = '';
+    if (connError === 'config' || connError === 'nolib' || connError === 'perm') { el.innerHTML = '<div class="msg">Masa şu an açılamıyor.</div>'; return; }
+    if (!(loaded.state && loaded.seats && pid)) { el.innerHTML = '<div class="msg">Masaya bağlanılıyor…</div>'; return; }
+    if (!joined()) {
+      el.innerHTML = '<div class="msg">Oynamak için masaya otur.</div>' + btn('join', 'Masaya otur', { cls: 'primary' });
+      return;
+    }
+    var chips = chipsOf(pid, v);
+    var ek = timerKey(v), ms = elapsed(v), late = ek && ms >= SKIP_AFTER;
+    if (late) skipShownKey = ek;
+
+    if (!sim) {
+      var mySeat = seats[pid], iAnted = mySeat.anteRound === st.no && ANTES.indexOf(mySeat.ante) >= 0;
+      if (iAnted) {
+        var n = Math.min(v.anted.length, MAX_SEATS);
+        h += '<div class="msg">Ante\'n masada: <b>' + fmt(mySeat.ante) + '</b>. Herkes ante koyunca kartları dağıt.</div>';
+        h += '<div class="row2">' + btn('unante', 'Ante\'yi geri çek') + btn('deal', 'Kartları dağıt', { cls: 'primary', small: n + ' oyuncu' }) + '</div>';
+      } else if (chips < 5 * ANTES[0]) {
+        h += '<div class="msg">Fişin bitti (' + fmt(chips) + '). Yeniden ' + fmt(START) + ' fiş yükleyebilirsin; fiş tablosunda yükleme sayın görünür.</div>';
+        h += btn('rebuy', fmt(START) + ' fiş yükle', { cls: 'primary' });
+      } else if (v.anted.length >= MAX_SEATS) {
+        h += '<div class="msg">Masa dolu (6 kutu). Bir sonraki eli bekle.</div>';
+      } else {
+        if (chips < 5 * anteChoice) anteChoice = ANTES.filter(function (a) { return chips >= 5 * a; }).pop() || ANTES[0];
+        h += '<div class="chipset" role="radiogroup" aria-label="Ante miktarı">' + ANTES.map(function (a) {
+          return '<button type="button" class="chip c' + a + (a === anteChoice ? ' on' : '') + '" role="radio" aria-checked="' + (a === anteChoice) +
+            '" data-act="chip" data-v="' + a + '"' + (chips < 5 * a ? ' disabled' : '') + '><span>' + a + '</span></button>';
+        }).join('') + '</div>';
+        h += btn('ante', 'Ante koy · ' + fmt(anteChoice), { cls: 'primary', small: 'Elin sonuna kadar en fazla ' + fmt(5 * anteChoice) + ' fiş riske girer' });
+      }
+      el.innerHTML = h; return;
+    }
+
+    var A = me ? me.ante : 0;
+    if (sim.phase === 'play') {
+      var cur = sim.players[sim.turn];
+      if (me && cur === me) {
+        if (!me.draw) {
+          var k = selected.length;
+          h += '<div class="row2">' + btn('fold', 'Pas', { cls: 'danger', small: 'Ante gider (' + fmt(A) + ')' }) +
+            btn('bet', 'Bet', { cls: 'primary', small: fmt(2 * A) + ' fiş' }) + '</div>';
+          h += '<div class="row2">' + btn('exchange', k ? k + ' kart değiştir' : 'Kart değiştir', { disabled: !k, small: k ? fmt(A) + ' fiş' : 'Önce kart seç' }) +
+            btn('six', '6. kart al', { small: fmt(A) + ' fiş' }) + '</div>';
+        } else {
+          h += '<div class="msg">' + (me.draw === 'x' ? 'Kartların değişti.' : '6. kartını aldın; en iyi 5 kartın sayılır.') + ' Şimdi karar ver.</div>';
+          h += '<div class="row2">' + btn('fold', 'Pas', { cls: 'danger', small: fmt(2 * A) + ' fiş gider' }) +
+            btn('bet', 'Bet', { cls: 'primary', small: fmt(2 * A) + ' fiş' }) + '</div>';
+        }
+      } else {
+        h += '<div class="msg">Sıra <b>' + esc(nameOf(cur.id)) + '</b>\'de · <span data-timer>' + mmss(ms) + '</span></div>';
+        if (!me) h += '<div class="msg" style="color:var(--muted)">Bu eli izliyorsun. Bir sonraki elde ante koyabilirsin.</div>';
+        if (late) h += btn('skipPlay', esc(nameOf(cur.id)) + ' için süre doldu · pas say', { data: ' data-id="' + esc(cur.id) + '"' });
+      }
+    } else if (sim.phase === 'buy') {
+      var waiting = sim.waitingBuy || [];
+      if (me && waiting.indexOf(pid) >= 0) {
+        var E = me.draw ? A : 0, gain = A - E;
+        h += '<div class="msg">Krupiyenin oyunu yok. Beklersen ante 1:1 ödenir (<b>' + sfmt(gain) + '</b>). Oyun satın alırsan krupiye en yüksek kartını değiştirir; oyunu çıkarsa elin karşılaştırılır.</div>';
+        h += '<div class="row2">' + btn('nobuy', 'Ante\'yi al', { small: sfmt(gain) + ' fiş' }) +
+          btn('buy', 'Oyun satın al', { cls: 'primary', small: fmt(A) + ' fiş' }) + '</div>';
+      } else {
+        h += '<div class="msg">Krupiyenin oyunu yok. <b>' + waiting.map(function (id) { return esc(nameOf(id)); }).join(', ') +
+          '</b> oyun satın alıp almamaya karar veriyor · <span data-timer>' + mmss(ms) + '</span></div>';
+        if (late) h += btn('skipBuy', 'Süre doldu · beklemeden geç');
+      }
+    } else {
+      if (me) {
+        h += '<div class="result"><div class="big ' + cls(me.net) + '">' + sfmt(me.net) + '</div><div class="msg">' + esc(resultSentence(me)) + '</div></div>';
+      } else {
+        h += '<div class="msg">El bitti.</div>';
+      }
+      h += btn('newround', 'Yeni el', { cls: 'primary' });
+    }
+    el.innerHTML = h;
+  }
+
+  function resultSentence(p) {
+    if (p.outcome === 'fold') return p.skipped ? 'Süren dolduğu için pas sayıldın.' : 'Pas geçtin.';
+    if (p.outcome === 'win') return 'Kazandın: ' + p.payLabel + ', bet ' + p.mult + ':1 ödendi' + (p.draw ? '.' : ', ante 1:1.');
+    if (p.outcome === 'lose') return 'Krupiye kazandı. Senin elin: ' + p.name + '.';
+    if (p.outcome === 'push') return 'Berabere. Bet ve ante iade edildi.';
+    if (p.outcome === 'noqual') return p.buy ? 'Oyun satın aldın ama krupiyenin oyunu çıkmadı; ante 1:1 ödendi.' : 'Krupiyenin oyunu yoktu; ante 1:1 ödendi, bet iade.';
+    return '';
+  }
+
+  // ---------- yazma ----------
+  function toast(t) {
+    var el = $('toast'); el.textContent = t; el.hidden = false;
+    clearTimeout(toast._t); toast._t = setTimeout(function () { el.hidden = true; }, 3200);
+  }
+  function write(fn) {
+    if (busy) return Promise.resolve(false);
+    busy = true; render();
+    var slow = new Promise(function (res) { setTimeout(function () { res('slow'); }, 8000); });
+    var work = Promise.resolve().then(fn).then(function () { return true; });
+    return Promise.race([work, slow]).then(function (r) {
+      if (r === 'slow') toast('Bağlantı yavaş; hamlen bağlantı gelince gönderilecek.');
+      return r === true;
+    }, function (e) {
+      console.warn(e);
+      var code = String((e && (e.code || e.message)) || '');
+      if (/PERMISSION/i.test(code)) { connError = 'perm'; }
+      else toast('Kaydedilemedi. Bağlantını kontrol edip tekrar dene.');
+      return false;
+    }).then(function (ok) { busy = false; render(); return ok; });
+  }
+  function saveSeat(patch) {
+    var next = clone(seats[pid] || {});
+    Object.keys(patch).forEach(function (k) { next[k] = patch[k]; });
+    return R.seats.child(pid).set(clone(next));
+  }
+  function setDec(patch) {
+    var d = curDec(V.st.no), next = { r: d.r };
+    if (d.draw) next.draw = clone(d.draw);
+    if (d.final) next.final = d.final;
+    if (d.buy === true || d.buy === false) next.buy = d.buy;
+    Object.keys(patch).forEach(function (k) { next[k] = patch[k]; });
+    return saveSeat({ dec: next });
+  }
+  function newSeed() {
+    var a = new Uint32Array(4);
+    try { crypto.getRandomValues(a); } catch (e) { for (var i = 0; i < 4; i++) a[i] = Math.floor(Math.random() * 4294967296); }
+    return Array.prototype.map.call(a, function (x) { return x.toString(36); }).join('');
+  }
+
+  function deal() {
+    var reason = '';
+    return write(function () {
+      return R.state.transaction(function (cur) {
+        reason = '';
+        if (cur && cur.players && cur.seed) { reason = 'Kartlar zaten dağıtıldı.'; return; }
+        var no = (cur && cur.no) || 1, bank = bankOf(cur), list = [];
+        Object.keys(seats).forEach(function (id) {
+          var x = seats[id];
+          if (x && x.anteRound === no && ANTES.indexOf(x.ante) >= 0 && chipsFromBank(id, bank) >= 5 * x.ante) list.push({ id: id, ante: x.ante, at: x.anteAt || 0 });
+        });
+        list.sort(function (a, b) { return a.at - b.at; });
+        var players = list.slice(0, MAX_SEATS).map(function (x) { return { id: x.id, ante: x.ante }; });
+        if (!players.length) { reason = 'Önce ante koyulmalı.'; return; }
+        var next = clone(cur) || {};
+        next.no = no; next.seed = newSeed(); next.players = players; next.dealtAt = Date.now();
+        delete next.skipPlay; delete next.skipBuy;
+        return next;
+      }).then(function (r) { if (!r.committed && reason) toast(reason); });
+    });
+  }
+
+  function summarize(res) {
+    return {
+      no: res.no, dealer: res.dealerFinal, dealerName: RP.handName(res.dealerFinalEval, res.dealerFinal),
+      qual: !!res.finalQualifies, swapped: !!res.dealerSwap,
+      players: res.players.map(function (p) {
+        return { id: p.id, ante: p.ante, outcome: p.outcome, net: p.net, name: p.final === 'fold' ? '' : p.name,
+          pay: p.payLabel || '', mult: p.mult || 0, skipped: !!p.skipped, buy: !!p.buy, draw: p.draw || '' };
+      })
+    };
+  }
+
+  function newRound() {
+    var expectNo = V.st.no, reason = '';
+    return write(function () {
+      return R.state.transaction(function (cur) {
+        reason = '';
+        if (cur === null) return null; // önbellek boşsa sunucu doğru değerle tekrar çağırır
+        if (!cur.players || !cur.seed || (cur.no || 1) !== expectNo) return;
+        var st2 = { no: cur.no || 1, seed: cur.seed, players: cur.players, skipPlay: cur.skipPlay || {}, skipBuy: cur.skipBuy || {} };
+        var res = RP.simulate(st2, localDecs());
+        if (res.phase !== 'done') { reason = 'El henüz bitmedi.'; return; }
+        var bank = bankOf(cur), net = clone(bank.net || {});
+        if ((bank.applied || 0) < st2.no) res.players.forEach(function (p) { net[p.id] = (net[p.id] || 0) + p.net; });
+        return clone({ no: st2.no + 1, bank: { applied: Math.max(bank.applied || 0, st2.no), net: net, rebuyBase: bank.rebuyBase || {} }, prev: summarize(res) });
+      }).then(function (r) { if (!r.committed && reason) toast(reason); });
+    });
+  }
+
+  function resetChips() {
+    var reason = '';
+    return write(function () {
+      return R.state.transaction(function (cur) {
+        reason = '';
+        if (cur && cur.players && cur.seed) { reason = 'Sıfırlama sadece eller arasında yapılabilir.'; return; }
+        var next = clone(cur) || {}, base = {};
+        Object.keys(seats).forEach(function (id) { base[id] = seats[id].rebuys || 0; });
+        next.bank = { applied: bankOf(cur).applied || 0, net: {}, rebuyBase: base };
+        return clone(next);
+      }).then(function (r) {
+        if (r.committed) { closeSheet(); toast('Herkesin fişi ' + fmt(START) + '\'e döndü.'); }
+        else if (reason) toast(reason);
+      });
+    });
+  }
+
+  // ---------- alt sayfalar ----------
+  function openSheet(html) { $('sheetPanel').innerHTML = html; $('sheet').hidden = false; }
+  function closeSheet() { $('sheet').hidden = true; $('sheetPanel').innerHTML = ''; }
+
+  function rulesHTML() {
+    var single = [['Royal Floş', 100], ['Sıralı Floş', 50], ['Kare', 20], ['Ful', 7], ['Floş', 5], ['Kent', 4], ['Üçlü', 3], ['Döper (iki çift)', 2], ['Per', 1], ['As-Papaz', 1]];
+    var dbl = [['Royal Floş + Sıralı Floş', 150], ['Royal Floş + Floş', 105], ['Royal Floş + Kent', 104], ['Sıralı Floş + Sıralı Floş', 100], ['Sıralı Floş + Floş', 55], ['Sıralı Floş + Kent', 54], ['Sıralı Floş + As-Papaz', 51], ['Kare + Ful', 27], ['Kare + As-Papaz', 21], ['Ful + Ful', 14], ['Floş + Floş', 10], ['Floş + Kent', 9], ['Ful + As-Papaz', 8], ['Kent + Kent', 8], ['Floş + Per', 6], ['Floş + As-Papaz', 6], ['Kent + As-Papaz', 5], ['Üçlü + As-Papaz', 4], ['Döper + Döper', 4], ['Döper + As-Papaz', 3], ['Per + As-Papaz', 2]];
+    function tbl(rows) { return '<table><thead><tr><th>El</th><th class="n">Bet ödemesi</th></tr></thead><tbody>' + rows.map(function (r) { return '<tr><td>' + r[0] + '</td><td class="n">' + r[1] + ':1</td></tr>'; }).join('') + '</tbody></table>'; }
+    return '<div class="panel-head"><h3>Kurallar</h3><button class="ghost" type="button" data-act="close">Kapat</button></div>' +
+      '<p>Herkes krupiyeye karşı oynar. Krupiye bilgisayardır; aranızdaki yarış fiş sayısıdır. Herkes ' + fmt(START) + ' sanal fişle başlar.</p>' +
+      '<h4>Bir el</h4><ol>' +
+      '<li>Ante koy (10, 25, 50 ya da 100). En fazla 6 kişi aynı elde oynar.</li>' +
+      '<li>Herkese 5 kart, krupiyeye 5 kart dağıtılır. Krupiyenin 1 kartı açıktır.</li>' +
+      '<li>Sıran gelince: <b>Bet</b> (2× ante), <b>Pas</b> (ante gider), <b>Kart değiştir</b> (1× ante öde, 1–5 kart değiştir) ya da <b>6. kart al</b> (1× ante öde, en iyi 5 kartın sayılır). Değiştirme ile 6. kart aynı elde birlikte yapılamaz; sonrasında Bet ya da Pas dersin.</li>' +
+      '<li>Herkes karar verince krupiye kartlarını açar. Oyunu olması için en az <b>As-Papaz</b> gerekir.</li></ol>' +
+      '<h4>Krupiyenin oyunu yoksa</h4><p>Bet iade edilir, ante 1:1 ödenir. İstersen 1× ante ödeyip krupiyeye <b>oyun satın alırsın</b>: krupiye en yüksek kartını atıp yeni kart çeker. Oyunu çıkarsa elin karşılaştırılır; çıkmazsa ante yine 1:1 ödenir. Oyun satın alma ücreti geri verilmez.</p>' +
+      '<h4>Krupiyenin oyunu varsa</h4><p>Elin büyükse bet aşağıdaki oranla ödenir. İlk elinle oynadıysan ante de 1:1 ödenir; kart değiştirdiysen ya da 6. kart aldıysan ante sadece iade edilir ve ödediğin ücret gider. Beraberlikte bet ve ante iade edilir. Krupiye büyükse hepsi gider.</p>' +
+      '<h4>Ödeme tablosu</h4>' + tbl(single) +
+      '<h4>İki kombinasyon</h4><p>Elinde birbirinden farklı iki kombinasyon varsa (örneğin Per ve As-Papaz) ikisi birden ödenir. En yüksek olan sayılır.</p>' + tbl(dbl) +
+      '<h4>Süre</h4><p>Bir oyuncu 1 dakika içinde karar vermezse masadakiler onu pas sayabilir. Bu sürümde sigorta yok.</p>' +
+      '<h4>Oyuncu kaydı</h4><p>Masadaki yerin bu telefona ve tarayıcıya kayıtlıdır. Başka bir telefondan ya da tarayıcıdan girersen yeni oyuncu olarak başlarsın.</p>';
+  }
+
+  function boardHTML() {
+    var v = V || view(), b = bankOf(stateDoc);
+    var ids = Object.keys(seats).filter(function (id) { return seats[id] && seats[id].name; });
+    ids.sort(function (a, c) { return chipsOf(c, v) - chipsOf(a, v); });
+    var rows = ids.map(function (id, i) {
+      var s = seats[id], rb = (s.rebuys || 0) - ((b.rebuyBase || {})[id] || 0), c = chipsOf(id, v), profit = c - START * (1 + rb);
+      return '<tr><td>' + (i + 1) + '. ' + dot(id) + esc(s.name) + (id === pid ? ' <span class="tag gold">sen</span>' : '') + (rb ? ' <span class="tag">+' + rb + ' yükleme</span>' : '') + '</td>' +
+        '<td class="n">' + fmt(c) + '</td><td class="n"><span class="amt ' + cls(profit) + '">' + sfmt(profit) + '</span></td></tr>';
+    }).join('');
+    var h = '<div class="panel-head"><h3>Fiş tablosu</h3><button class="ghost" type="button" data-act="close">Kapat</button></div>';
+    h += ids.length ? '<table><thead><tr><th>Oyuncu</th><th class="n">Fiş</th><th class="n">Kâr</th></tr></thead><tbody>' + rows + '</tbody></table>'
+      : '<p>Henüz masaya oturan yok.</p>';
+    h += '<p style="color:var(--muted);font-size:13px">Kâr, başlangıç fişi ve yüklemeler düşülerek hesaplanır. Yeşil nokta şu an masada olanları gösterir.</p>';
+    if (isOwner()) {
+      h += '<h4>Masa sahibi</h4><p>Yeni bir oyun gecesine başlarken herkesin fişini ' + fmt(START) + '\'e döndürebilirsin.</p>' +
+        btn('askreset', 'Herkesin fişini sıfırla', { cls: 'danger', disabled: !!v.sim, small: v.sim ? 'Sadece eller arasında yapılabilir' : '' });
+    }
+    return h;
+  }
+
+  function joinHTML() {
+    return '<div class="panel-head"><h3>Masaya otur</h3><button class="ghost" type="button" data-act="close">Kapat</button></div>' +
+      '<form id="joinForm" class="field"><label for="nameInput">Masada görünecek adın</label>' +
+      '<input id="nameInput" name="name" maxlength="16" autocomplete="nickname" placeholder="ör. Baran" required>' +
+      '<button class="btn primary" type="submit">Otur</button></form>';
+  }
+
+  // ---------- olaylar ----------
+  document.addEventListener('click', function (e) {
+    var t = e.target.closest('[data-act]');
+    if (!t) { if (e.target === $('sheet')) closeSheet(); return; }
+    var act = t.getAttribute('data-act'), v = V || view();
+    if (t.disabled) return;
+    switch (act) {
+      case 'rules': openSheet(rulesHTML()); break;
+      case 'board': openSheet(boardHTML()); break;
+      case 'close': closeSheet(); break;
+      case 'join': openSheet(joinHTML()); setTimeout(function () { var i = $('nameInput'); if (i) i.focus(); }, 50); break;
+      case 'chip': anteChoice = +t.getAttribute('data-v'); render(); break;
+      case 'ante':
+        if (chipsOf(pid, v) < 5 * anteChoice) { toast('Bu ante için yeterli fişin yok.'); break; }
+        write(function () { return saveSeat({ anteRound: v.st.no, ante: anteChoice, anteAt: Date.now() }); }); break;
+      case 'unante': write(function () { return saveSeat({ anteRound: 0 }); }); break;
+      case 'deal': deal(); break;
+      case 'rebuy': write(function () { return saveSeat({ rebuys: (seats[pid].rebuys || 0) + 1 }); }); break;
+      case 'sel':
+        if (!canSelect(v)) break;
+        var i = +t.getAttribute('data-i'), at = selected.indexOf(i);
+        if (at >= 0) selected.splice(at, 1); else selected.push(i);
+        render(); break;
+      case 'exchange':
+        if (!selected.length) break;
+        var idx = selected.slice().sort();
+        write(function () { return setDec({ draw: { t: 'x', idx: idx } }); }).then(function () { selected = []; render(); }); break;
+      case 'six': write(function () { return setDec({ draw: { t: '6' } }); }); break;
+      case 'bet': write(function () { return setDec({ final: 'bet' }); }); break;
+      case 'fold': write(function () { return setDec({ final: 'fold' }); }); break;
+      case 'buy': write(function () { return setDec({ buy: true }); }); break;
+      case 'nobuy': write(function () { return setDec({ buy: false }); }); break;
+      case 'skipPlay':
+        var id = t.getAttribute('data-id');
+        write(function () { return R.state.child('skipPlay/' + id).set(true); }); break;
+      case 'skipBuy':
+        var w = (v.sim && v.sim.waitingBuy) || [], o2 = {};
+        w.forEach(function (x) { o2[x] = true; });
+        if (w.length) write(function () { return R.state.child('skipBuy').update(o2); }); break;
+      case 'newround': newRound(); break;
+      case 'askreset':
+        openSheet('<h3>Fişler sıfırlansın mı?</h3><p>Masadaki herkesin fişi ' + fmt(START) + '\'e döner ve yükleme sayıları sıfırlanır. Bu geri alınamaz.</p>' +
+          '<div class="row2">' + btn('close', 'Vazgeç') + btn('reset', 'Sıfırla', { cls: 'danger' }) + '</div>'); break;
+      case 'reset': if (isOwner()) resetChips(); break;
+    }
+  });
+  document.addEventListener('submit', function (e) {
+    if (e.target.id !== 'joinForm') return;
+    e.preventDefault();
+    var name = ($('nameInput').value || '').trim().replace(/\s+/g, ' ').slice(0, 16);
+    if (!name) return;
+    write(function () {
+      var base = seats[pid] || {};
+      return saveSeat({ name: name, rebuys: base.rebuys || 0, joinedAt: base.joinedAt || Date.now() }).then(function () {
+        // masayı ilk kuran kişi masa sahibi olur
+        return R.owner.transaction(function (cur) { return cur == null ? pid : undefined; });
+      });
+    }).then(function (ok) { if (ok) closeSheet(); });
+  });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !$('sheet').hidden) closeSheet(); });
+
+  setInterval(function () {
+    if (!V) return;
+    if (!V.sim) { if ((!connected && loaded.state) || !loaded.state) render(); return; }
+    var ms = elapsed(V), k = timerKey(V);
+    var els = document.querySelectorAll('[data-timer]');
+    for (var i = 0; i < els.length; i++) els[i].textContent = mmss(ms);
+    if (k && ms >= SKIP_AFTER && skipShownKey !== k) render();
+  }, 1000);
+
+  // ---------- başlatma ----------
+  function localId() {
+    var id = null;
+    try { id = localStorage.getItem('rp_pid'); } catch (e) {}
+    if (!id || !/^[A-Za-z0-9_]+$/.test(id)) {
+      id = 'p_' + newSeed();
+      try { localStorage.setItem('rp_pid', id); } catch (e) {}
+    }
+    return id;
+  }
+  function boot() {
+    pid = localId();
+    render();
+    if (!/^https:\/\/[^\s]+$/.test(VERITABANI) || VERITABANI.indexOf('__') >= 0) { connError = 'config'; render(); return; }
+    if (!window.firebase || !firebase.initializeApp) { connError = 'nolib'; render(); return; }
+    try {
+      firebase.initializeApp({ databaseURL: VERITABANI.replace(/\/+$/, '') });
+      db = firebase.database();
+    } catch (e) { console.error(e); connError = 'config'; render(); return; }
+    R.state = db.ref('rp/state'); R.seats = db.ref('rp/seats'); R.online = db.ref('rp/online'); R.owner = db.ref('rp/owner');
+    function onErr(e) { console.warn(e); connError = 'perm'; render(); }
+    R.state.on('value', function (s) { stateDoc = s.val(); loaded.state = true; render(); }, onErr);
+    R.seats.on('value', function (s) { seats = s.val() || {}; loaded.seats = true; render(); }, onErr);
+    R.online.on('value', function (s) { online = s.val() || {}; render(); }, function () {});
+    R.owner.on('value', function (s) { ownerId = s.val(); }, function () {});
+    db.ref('.info/connected').on('value', function (s) {
+      connected = !!s.val();
+      if (connected) {
+        var me = R.online.child(pid);
+        me.onDisconnect().remove();
+        me.set(true).catch(function () {});
+      }
+      render();
+    });
+  }
+  boot();
+})();
+</script>
+</body>
+</html>
