@@ -615,6 +615,18 @@ body.sl-lock { overflow: hidden; overscroll-behavior: none; }
 .hr-pl { padding: 6px 10px; border-radius: 10px; background: rgba(243,234,215,.06); }
 .hr-pl.first { background: rgba(242,193,78,.2); font-weight: 700; }
 .hr-pl b { display: inline-block; width: 24px; }
+
+/* sohbet */
+#chatView { display: flex; flex-direction: column; height: 100vh; height: 100dvh; max-width: 640px; margin: 0 auto; }
+#chatView[hidden] { display: none; }
+.ch-list { flex: 1; overflow-y: auto; padding: 8px 12px; display: flex; flex-direction: column; gap: 8px; }
+.ch-msg { max-width: 82%; padding: 7px 11px; border-radius: 14px 14px 14px 4px; background: rgba(243,234,215,.1); align-self: flex-start; }
+.ch-msg.mine { align-self: flex-end; border-radius: 14px 14px 4px 14px; background: rgba(217,180,91,.22); }
+.ch-meta { display: flex; gap: 8px; align-items: baseline; font-size: 12px; }
+.ch-meta span { color: var(--muted); font-size: 10px; }
+.ch-text { overflow-wrap: anywhere; white-space: pre-wrap; }
+.ch-form { display: flex; gap: 8px; padding: 10px 12px calc(10px + env(safe-area-inset-bottom)); border-top: 1px solid rgba(243,234,215,.12); background: rgba(0,0,0,.25); }
+.ch-form input { flex: 1; min-width: 0; padding: 12px 14px; border-radius: 12px; border: 1px solid rgba(243,234,215,.2); background: rgba(0,0,0,.3); color: inherit; font: inherit; font-size: 16px; }
 </style>
 </head>
 <body>
@@ -736,6 +748,20 @@ body.sl-lock { overflow: hidden; overscroll-behavior: none; }
   </div>
   <div id="lobbyBoard"></div>
   <p class="lobby-note">Her oyunun 3 ayrı masası var; kalabalıksanız farklı masalara dağılın. Çipin bitince lobiden admin'den çip iste. Masadan lobiye sol üstteki ‹ düğmesiyle dönülür.</p>
+</div>
+
+<div class="view" id="chatView" hidden>
+  <header class="top">
+    <a class="ghost back" href="#" aria-label="Lobiye dön">‹</a>
+    <div class="brand">Sohbet<small>Herkes yazabilir</small></div>
+    <div class="spacer"></div>
+    <button class="ghost" type="button" data-act="chat-clear" id="chatAdmin" hidden>Temizle</button>
+  </header>
+  <div class="ch-list" id="chatList"></div>
+  <form class="ch-form" id="chatForm" autocomplete="off">
+    <input id="chatInput" maxlength="300" placeholder="Mesaj yaz…" enterkeyhint="send">
+    <button class="btn primary" type="submit">Gönder</button>
+  </form>
 </div>
 
 <div class="view" id="kayitView" hidden>
@@ -3136,9 +3162,9 @@ var FB_CONFIG = { apiKey: "AIzaSyBsP1VNPJpt1Y6MN0FwDCmvuHeZxaDoTGU", authDomain:
 /* Ortak bağlantı: Firebase, hesaplar, admin, çevrimiçi durumu, ses, lobi yönlendirme */
 window.CORE = (function () {
   'use strict';
-  var VIEWS = ['lobby', 'poker', 'okey', 'holdem', 'pisti', 'esli', 'bj', 'slither', 'tombala', 'emlak', 'futbol', 'flip7', 'slot', 'yaris', 'kayit', 'admin'];
+  var VIEWS = ['lobby', 'poker', 'okey', 'holdem', 'pisti', 'esli', 'bj', 'slither', 'tombala', 'emlak', 'futbol', 'flip7', 'slot', 'yaris', 'chat', 'kayit', 'admin'];
   var GAMES = ['poker', 'okey', 'holdem', 'pisti', 'esli', 'bj', 'slither', 'tombala', 'emlak', 'futbol', 'flip7', 'slot', 'yaris'];
-  var TITLES = { poker: 'Rus Pokeri', okey: 'Okey', holdem: 'Texas Hold\'em', pisti: 'Pişti', esli: 'Eşli Pişti', bj: 'Blackjack', slither: 'Slither', tombala: 'Tombala', emlak: 'Emlak', futbol: 'Futbol Ligi', flip7: 'Flip 7', slot: 'Tatlı Yağmur', yaris: 'At Yarışı', kayit: 'Kayıtlar', admin: 'Admin paneli' };
+  var TITLES = { poker: 'Rus Pokeri', okey: 'Okey', holdem: 'Texas Hold\'em', pisti: 'Pişti', esli: 'Eşli Pişti', bj: 'Blackjack', slither: 'Slither', tombala: 'Tombala', emlak: 'Emlak', futbol: 'Futbol Ligi', flip7: 'Flip 7', slot: 'Tatlı Yağmur', yaris: 'At Yarışı', chat: 'Sohbet', kayit: 'Kayıtlar', admin: 'Admin paneli' };
   var core = { db: null, auth: null, user: null, me: null, pid: null, connected: false, online: {}, ownerId: null, error: null,
     view: 'lobby', table: 1, TABLES: 3, bootAt: Date.now(), ready: false, authKnown: false,
     ledger: {}, users: {}, requests: {}, bans: {}, deleted: {}, weekly: {}, weeklyLoaded: false, ledgerLoaded: false, START_CHIPS: 1000, GAMES: ['poker', 'okey', 'holdem', 'pisti', 'esli', 'bj', 'slither', 'tombala', 'emlak', 'futbol', 'flip7', 'slot', 'yaris'] };
@@ -3745,7 +3771,7 @@ window.CORE = (function () {
     var v = String(CORE.online[uid] || ''); if (!v) return '';
     var p = v.split('/'), g = p[0];
     if (CORE.GAME_NAMES[g] && p[1]) return CORE.GAME_NAMES[g] + ' · Masa ' + p[1];
-    return { lobby: 'Lobide', kayit: 'Kayıtlarda', admin: 'Admin panelinde' }[g] || 'Sitede';
+    return { lobby: 'Lobide', chat: 'Sohbette', kayit: 'Kayıtlarda', admin: 'Admin panelinde' }[g] || 'Sitede';
   }
 
   // ---------- giriş ----------
@@ -3822,6 +3848,7 @@ window.CORE = (function () {
       w.innerHTML = '<div class="wallet"><div><div class="label">Çipin</div><div class="wallet-n">' + fmt(bal) + '</div>' +
         '<div class="wallet-week">' + (wr >= 0 ? 'Haftalık yarışta ' + (wr + 1) + '. sıradasın · ' + sfmt(wn[CORE.pid]) : 'Bu hafta henüz oyun bitirmedin') + '</div></div>' +
         '<div class="wallet-btns">' + (CORE.isAdmin() ? '<a class="btn sm primary" href="#admin">Admin paneli</a>' : '') +
+        '<a class="btn sm" href="#chat">Sohbet' + (CORE.chatUnread ? ' <span class="tag gold">' + CORE.chatUnread + '</span>' : '') + '</a>' +
         '<a class="btn sm" href="#kayit">Kayıtlar</a>' +
         (CORE.isAdmin() ? '' : '<button type="button" class="btn sm" data-act="req-chips"' + (req ? ' disabled' : '') + '>' + (req ? 'İstek gönderildi' : 'Admin\'den çip iste') + '</button>') + '</div></div>';
     }
@@ -8976,6 +9003,70 @@ window.CORE = (function () {
     $('hrRulesR').innerHTML = '';
     CORE.onChange(function () { if (tb) { shownKey = ''; draw(); settle(); } });
     CORE.onTable(KEY, function (t) { tb = t; shownKey = ''; race = null; lastSpoken = ''; draw(); settle(); start(); });
+  });
+})();
+
+</script>
+<script>
+/* Genel sohbet: herkes yazar, son 80 mesaj görünür. Mesajlar rp/chat/{zaman-anahtarı} altında. */
+(function () {
+  'use strict';
+  var CORE = window.CORE, msgs = {}, lastSend = 0, ref = null, readKey = 'rp_chat_read';
+  function $(id) { return document.getElementById(id); }
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  function list() { return Object.keys(msgs).sort().slice(-80).map(function (k) { return msgs[k]; }); }
+  function readAt() { try { return Number(localStorage.getItem(readKey)) || 0; } catch (e) { return 0; } }
+  function markRead() {
+    var l = list(), t = l.length ? l[l.length - 1].at : 0;
+    try { localStorage.setItem(readKey, String(t)); } catch (e) {}
+    setUnread(0);
+  }
+  function setUnread(n) { if (CORE.chatUnread !== n) { CORE.chatUnread = n; CORE.emit(); } }
+  function unread() { var r = readAt(); return list().filter(function (m) { return m.uid !== CORE.pid && m.at > r; }).length; }
+  function hue(uid) { var h = 0; for (var i = 0; i < uid.length; i++) h = (h * 31 + uid.charCodeAt(i)) % 360; return h; }
+  function hm(t) { try { return new Date(t).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }); } catch (e) { return ''; } }
+  function render() {
+    var el = $('chatList'); if (!el) return;
+    var near = el.scrollHeight - el.scrollTop - el.clientHeight < 120 || !el.childElementCount;
+    var l = list();
+    el.innerHTML = l.length ? l.map(function (m) {
+      var mine = m.uid === CORE.pid;
+      return '<div class="ch-msg' + (mine ? ' mine' : '') + '"><div class="ch-meta"><b style="color:hsl(' + hue(m.uid || '') + ',70%,72%)">' + esc(mine ? 'Sen' : (CORE.users[m.uid] && CORE.users[m.uid].name) || m.name || 'Oyuncu') + '</b><span>' + hm(m.at) + '</span></div><div class="ch-text">' + esc(m.text) + '</div></div>';
+    }).join('') : '<div class="empty-note">Henüz mesaj yok. İlk yazan sen ol.</div>';
+    if (near) el.scrollTop = el.scrollHeight;
+    $('chatAdmin').hidden = !CORE.isAdmin();
+  }
+  function send(text) {
+    text = String(text || '').replace(/\s+/g, ' ').trim().slice(0, 300);
+    if (!text || !ref || Date.now() - lastSend < 1200) return false;
+    lastSend = Date.now();
+    var at = CORE.serverNow(), key = ('00000000' + at.toString(36)).slice(-9) + CORE.rnd().slice(0, 3);
+    ref.child(key).set({ uid: CORE.pid, name: CORE.me.name, text: text, at: at }).catch(function (e) { console.warn(e); var t = $('toast'); t.textContent = 'Mesaj gönderilemedi.'; t.hidden = false; setTimeout(function () { t.hidden = true; }, 2500); });
+    return true;
+  }
+  function onMsg(s) {
+    var v = s.val(); if (!v || typeof v.text !== 'string') return;
+    msgs[s.key] = v;
+    var keys = Object.keys(msgs).sort(); while (keys.length > 120) delete msgs[keys.shift()];
+    if (CORE.view === 'chat') { render(); markRead(); } else setUnread(unread());
+  }
+  document.addEventListener('submit', function (e) {
+    if (e.target.id !== 'chatForm') return;
+    e.preventDefault();
+    var inp = $('chatInput'); if (send(inp.value)) inp.value = '';
+    inp.focus();
+  });
+  document.addEventListener('click', function (e) {
+    var t = e.target.closest('[data-act="chat-clear"]'); if (!t || !CORE.isAdmin() || !ref) return;
+    if (window.confirm('Tüm sohbet silinsin mi?')) ref.remove();
+  });
+  CORE.whenReady(function () {
+    if (!CORE.db) return;
+    var base = CORE.db.ref('rp/chat'); ref = base;
+    var q = base.limitToLast ? base.limitToLast(80) : base;
+    q.on('child_added', onMsg, function (e) { console.warn(e); });
+    q.on('child_removed', function (s) { delete msgs[s.key]; if (CORE.view === 'chat') render(); else setUnread(unread()); });
+    CORE.onChange(function () { if (CORE.view === 'chat') { render(); markRead(); } });
   });
 })();
 
