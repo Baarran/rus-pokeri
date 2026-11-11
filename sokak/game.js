@@ -38,7 +38,7 @@
 
   function spawn(e) {
     var n = M.n, k = e.k, x = e.t === 0 ? 250 : W - 250;
-    var y = n === 1 ? H / 2 : (k === 0 ? H / 2 - 110 : H / 2 + 110);
+    var y = n === 1 ? H / 2 : H * (k + 1) / (n + 1); if (n > 2) x += (e.t === 0 ? -1 : 1) * (k % 2 ? -50 : 20);
     e.x = x; e.y = y; e.vx = e.vy = 0; e.tx = x; e.ty = y; e.f = e.t === 0 ? 0 : Math.PI; e.chg = 0; e.cd = 0;
   }
   function buildEntities(n, as, names) {
@@ -135,11 +135,9 @@
       }
       tx = bx; ty = by; sprint = d > 120;
     } else {
-      var off = e.k === 0 ? -1 : 1;
-      if (b.x * dir > (W / 2) * dir - 40 * dir && false) { tx = b.x; ty = b.y; }
-      var depth = M.n === 1 ? 0.5 : (e.k === 0 ? 0.35 : 0.65);
-      tx = ownX + (b.x - ownX) * depth + dir * 20; ty = H / 2 + (b.y - H / 2) * 0.55 + off * (M.n === 2 ? 70 : 0);
-      if (e.k === 1) tx = clamp(b.x + dir * 110, 120, W - 120);
+      var n = M.n, depth = n === 1 ? 0.5 : 0.25 + 0.5 * e.k / (n - 1);
+      tx = ownX + (b.x - ownX) * depth + dir * 20; ty = H / 2 + (b.y - H / 2) * 0.5 + (n === 1 ? 0 : (e.k - (n - 1) / 2) * (H * 0.55 / n));
+      if (n > 1 && e.k === n - 1) tx = clamp(b.x + dir * 110, 120, W - 120);
     }
     var dx = tx - e.x, dy = ty - e.y, dd = Math.hypot(dx, dy);
     var sk = 0.9; e.cd = Math.max(0, e.cd - dt);
@@ -254,8 +252,8 @@
   var modeSel = '1v1';
   function menu() {
     if (M.on) return; leaveRoom(); showCtl(false); ov.hidden = false;
-    var h = '<h1>⚽ SOKAK FUTBOLU</h1><p class="sub">Üstten görünüşlü arcade futbol · 1v1 veya 2v2</p>';
-    h += '<div class="sec">Tek kişilik (botlara karşı)</div><button class="mode" data-off="1v1"><b>1v1 — Botla</b><small>Sen ve bir bot kapışır</small></button><button class="mode" data-off="2v2"><b>2v2 — Takım</b><small>Sen + bot takım arkadaşın, karşıda 2 bot</small></button>';
+    var h = '<h1>⚽ SOKAK FUTBOLU</h1><p class="sub">Üstten görünüşlü arcade futbol · 1v1 · 2v2 · 3v3 · 4v4 (8 kişi)</p>';
+    h += '<div class="sec">Tek kişilik (botlara karşı)</div><button class="mode" data-off="1v1"><b>1v1 — Botla</b><small>Sen ve bir bot kapışır</small></button><button class="mode" data-off="2v2"><b>2v2 — Takım</b><small>Sen + bot takım arkadaşın, karşıda 2 bot</small></button><button class="mode" data-off="3v3"><b>3v3</b><small>Sen + 2 bot, karşıda 3 bot</small></button><button class="mode" data-off="4v4"><b>4v4 — 8 oyuncu</b><small>Sen + 3 bot, karşıda 4 bot</small></button>';
     h += '<div class="sec">Arkadaşlarla (çevrimiçi)</div>';
     if (!db || !uid) h += '<p class="help">Çevrimiçi oynamak için ana sayfadan giriş yap.</p>';
     else for (var i = 1; i <= 4; i++) { var r = roomsAll[i] || {}, pc = r.pl ? Object.keys(r.pl).length : 0, run = r.st && r.st.no && !r.st.over; h += '<div class="room"><div><b>Oda ' + i + '</b><small>' + pc + ' oyuncu' + (run ? ' · maç sürüyor' : '') + (r.cfg && r.cfg.mode ? ' · ' + r.cfg.mode : '') + '</small></div><button class="btn pri" data-room="' + i + '">Katıl</button></div>'; }
@@ -267,7 +265,7 @@
   }
   function menuRefresh() { var sc = card.scrollTop; menu(); card.scrollTop = sc; }
   function startOffline(mode) {
-    var n = mode === '2v2' ? 2 : 1; M = freshM(); M.net = false; M.host = true; M.n = n; M.dur = DUR;
+    var n = parseInt(mode, 10) || 1; M = freshM(); M.net = false; M.host = true; M.n = n; M.dur = DUR;
     var as = {}; as['me'] = 0; buildEntities(n, as, { me: myName }); M.me = M.E[0]; M.me.uid = 'me';
     M.t0 = snow() + 3000; M.ph = 'cd'; M.on = true; ov.hidden = true; showCtl(true); setMsg('', 0);
   }
@@ -295,7 +293,7 @@
   }
   function lobby() {
     if (!roomN || M.on) return; showCtl(false); ov.hidden = false;
-    var pl = room.pl || {}, ids = Object.keys(pl).sort(), host = hostUid(), amHost = host === uid, mode = (room.cfg && room.cfg.mode) || '1v1', cap = mode === '2v2' ? 2 : 1;
+    var pl = room.pl || {}, ids = Object.keys(pl).sort(), host = hostUid(), amHost = host === uid, mode = (room.cfg && room.cfg.mode) || '1v1', cap = parseInt(mode, 10) || 1;
     var tm = [[], []]; ids.forEach(function (k) { tm[pl[k].t === 1 ? 1 : 0].push(k); });
     var bad = tm[0].length > cap || tm[1].length > cap, allReady = ids.every(function (k) { return k === host || pl[k].r; });
     var h = '<h1>Oda ' + roomN + '</h1><p class="sub">' + (amHost ? 'Sen odanın sahibisin (başlatan)' : 'Sahip: ' + esc((pl[host] || {}).n)) + '</p><div class="teams">';
@@ -305,9 +303,9 @@
       for (var i = tm[t].length; i < cap; i++) h += '<div class="pr emp">boş → bot</div>';
       h += '<button class="btn" data-team="' + t + '" style="margin-top:6px;width:100%;padding:8px">Bu takıma geç</button></div>';
     });
-    h += '</div><div class="lopt"><span>Mod:</span>' + (amHost ? '<select id="mSel"><option value="1v1"' + (mode === '1v1' ? ' selected' : '') + '>1v1</option><option value="2v2"' + (mode === '2v2' ? ' selected' : '') + '>2v2</option></select>' : '<b>' + mode + '</b>') + '</div>';
+    h += '</div><div class="lopt"><span>Mod:</span>' + (amHost ? '<select id="mSel">' + ['1v1', '2v2', '3v3', '4v4'].map(function (m) { return '<option value="' + m + '"' + (mode === m ? ' selected' : '') + '>' + m + '</option>'; }).join('') + '</select>' : '<b>' + mode + '</b>') + '</div>';
     h += '<div style="display:flex;gap:8px;margin-top:12px">' + (amHost ? '<button class="btn pri" id="lStart" style="flex:1"' + (bad || !allReady ? ' disabled' : '') + '>Maçı başlat</button>' : '<button class="btn pri" id="lReady" style="flex:1">' + (pl[uid] && pl[uid].r ? 'Hazır değilim' : 'Hazırım') + '</button>') + '<button class="btn" id="lLeave">Çık</button></div>';
-    h += '<div class="help">' + (bad ? 'Bir takımda çok fazla oyuncu var — takım değiştirin ya da modu 2v2 yapın.' : (amHost && !allReady ? 'Herkes "Hazırım"a basınca başlatabilirsin.' : 'Boş yerler botlarla dolar.')) + '</div>';
+    h += '<div class="help">' + (bad ? 'Bir takımda çok fazla oyuncu var — takım değiştirin ya da modu büyütün.' : (amHost && !allReady ? 'Herkes "Hazırım"a basınca başlatabilirsin.' : 'Boş yerler botlarla dolar.')) + '</div>';
     card.innerHTML = h;
     card.querySelectorAll('[data-team]').forEach(function (b) { b.onclick = function () { R.child('pl/' + uid + '/t').set(+b.getAttribute('data-team')); R.child('pl/' + uid + '/r').set(false); }; });
     var ms = $('mSel'); if (ms) ms.onchange = function () { R.child('cfg/mode').set(ms.value); };
@@ -351,7 +349,7 @@
     var h = '<h1>' + (M.me ? (iw ? '🏆 KAZANDIN!' : 'Kaybettin') : 'Maç bitti') + '</h1><p class="sub">' + (M.w === 0 ? 'Kırmızı' : 'Mavi') + ' takım kazandı</p><div style="text-align:center;font-size:44px;font-weight:900"><span style="color:' + COL[0] + '">' + M.s[0] + '</span> - <span style="color:' + COL[1] + '">' + M.s[1] + '</span></div>';
     h += '<div style="display:flex;gap:8px;margin-top:14px"><button class="btn pri" id="again" style="flex:1">' + (M.net ? 'Lobiye dön' : 'Tekrar oyna') + '</button><button class="btn" id="home">Menü</button></div>';
     card.innerHTML = h; var off = !M.net, n = M.n;
-    $('again').onclick = function () { if (off) startOffline(n === 2 ? '2v2' : '1v1'); else { M.over = false; if (roomN) { R.child('pl/' + uid + '/r').set(false); lobby(); } } };
+    $('again').onclick = function () { if (off) startOffline(n + 'v' + n); else { M.over = false; if (roomN) { R.child('pl/' + uid + '/r').set(false); lobby(); } } };
     $('home').onclick = function () { M.on = false; leaveRoom(); menu(); };
   }
 
