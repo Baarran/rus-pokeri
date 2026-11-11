@@ -19,8 +19,8 @@
     { n: 'Elit Lig', sal: 12000, clubs: ['Atlas SK', 'Kaplanlar', 'Ejderha FK', 'Kuzey Kartalları', 'Zümrüt SK', 'Fırtına Gücü', 'Kristal FK', 'Efsane SK'] },
     { n: 'Süper Yıldızlar Ligi', sal: 50000, clubs: ['Nova FC', 'Titan SK', 'Orion United', 'Phoenix FK', 'Galaksi SK', 'Zenith FC', 'Apex SK', 'Meteor FK'] }
   ];
-  var POS = { F: 'Forvet', M: 'Orta Saha', K: 'Kanat' };
-  var STN = { shot: 'Şut', pass: 'Pas', drib: 'Dribling', fit: 'Kondisyon', spd: 'Hız' };
+  var POS = { F: 'Forvet', M: 'Orta Saha', K: 'Kanat', D: 'Defans' };
+  var STN = { shot: 'Şut', pass: 'Pas', drib: 'Dribling', fit: 'Kondisyon', spd: 'Hız', fk: 'Frikik / Falso', def: 'Savunma / Kayma' };
   var HOUSES = [['Kiralık oda', 0], ['Stüdyo daire', 3000], ['2+1 daire', 20000], ['Müstakil villa', 150000], ['Deniz kenarı malikane', 1000000]];
   var CARS = [['Yaya / otobüs', 0], ['Bisiklet', 300], ['İkinci el hatchback', 5000], ['Spor coupe', 60000], ['Lüks SUV', 400000], ['Süper spor araba', 2500000]];
   var ITEMS = [
@@ -51,7 +51,7 @@
   }
   function afterLogin() {
     try { var pr = db.ref('rp/online/' + uid); pr.onDisconnect().remove(); pr.set('kariyer'); } catch (e) {}
-    function use(v) { S = v || null; if (S && !S.retired && S.v === 1) { ui.view = 'main'; ui.tab = 'hub'; startPresence(); } else { ui.view = S && S.retired ? 'retired' : 'create'; } render(); }
+    function use(v) { S = migrate(v || null); if (S && !S.retired && S.v === 1) { ui.view = 'main'; ui.tab = 'hub'; startPresence(); } else { ui.view = S && S.retired ? 'retired' : 'create'; } render(); }
     db.ref('rp/kariyer/top/' + uid).once('value').then(function (s) { topMine = s.val() || null; }, function () {}).then(function () {
       return db.ref('rp/kariyer/p/' + uid).once('value');
     }).then(function (s) { var v = s.val(); if (v && typeof v === 'string') { try { v = JSON.parse(v); } catch (e) { v = null; } } use(v || lsLoad()); }, function () { use(lsLoad()); });
@@ -71,12 +71,13 @@
 
   /* ---- oyuncu ---- */
   function ovr(p) {
-    p = p || S; var s = p.st, w = p.pos === 'F' ? [.4, .1, .2, .1, .2] : p.pos === 'M' ? [.15, .35, .2, .2, .1] : [.1, .15, .35, .1, .3];
-    return Math.round(s.shot * w[0] + s.pass * w[1] + s.drib * w[2] + s.fit * w[3] + s.spd * w[4]);
+    p = p || S; var s = p.st, w = p.pos === 'F' ? [.4, .1, .2, .1, .2, 0] : p.pos === 'M' ? [.15, .35, .2, .2, .1, 0] : p.pos === 'D' ? [.05, .15, .1, .2, .15, .35] : [.1, .15, .35, .1, .3, 0];
+    return Math.round(s.shot * w[0] + s.pass * w[1] + s.drib * w[2] + s.fit * w[3] + s.spd * w[4] + (s.def || 35) * w[5]);
   }
+  function migrate(s) { if (!s || !s.st) return s; if (s.st.fk == null) s.st.fk = 34; if (s.st.def == null) s.st.def = 34; ['yc', 'rc', 'ys', 'susp', 'inj', 'dw', 'dl'].forEach(function (k) { if (s[k] == null) s[k] = 0; }); if (s.fans == null) s.fans = 30; return s; }
   function newCareer(name, pos) {
-    var st = { shot: 38, pass: 38, drib: 38, fit: 40, spd: 40 }; var main = pos === 'F' ? 'shot' : pos === 'M' ? 'pass' : 'drib'; st[main] += 8; if (pos === 'K') st.spd += 5;
-    S = { v: 1, name: name, pos: pos, age: 17, season: 1, week: 1, st: st, energy: 100, form: 50, morale: 60, money: 500, rep: 0, tier: 0, club: pick(TIERS[0].clubs), sal: 200, goals: 0, assists: 0, apps: 0, sg: 0, sa: 0, sapps: 0, srat: [], best: { avg: 0, match: 0 }, house: 0, car: 0, items: [], awards: [], titles: 0, hist: [], acted: false, retired: false, phase: 'play', offers: [], last: null, ts: Date.now() };
+    var st = { shot: 38, pass: 38, drib: 38, fit: 40, spd: 40, fk: 34, def: 34 }; var main = pos === 'F' ? 'shot' : pos === 'M' ? 'pass' : pos === 'D' ? 'def' : 'drib'; st[main] += 8; if (pos === 'D') st.fit += 4; if (pos === 'K') st.spd += 5;
+    S = { v: 1, name: name, pos: pos, age: 17, season: 1, week: 1, st: st, energy: 100, form: 50, morale: 60, money: 500, rep: 0, tier: 0, club: pick(TIERS[0].clubs), sal: 200, goals: 0, assists: 0, apps: 0, sg: 0, sa: 0, sapps: 0, srat: [], best: { avg: 0, match: 0 }, house: 0, car: 0, items: [], awards: [], yc: 0, rc: 0, ys: 0, susp: 0, inj: 0, fans: 30, dw: 0, dl: 0, titles: 0, hist: [], acted: false, retired: false, phase: 'play', offers: [], last: null, ts: Date.now() };
     newSeasonTable(); S.fx = fixtures(); save(true);
   }
   function oppStr(tier, i) { return 32 + tier * 13 + (i % 4) * 2 - 3; }
@@ -89,22 +90,28 @@
   function condition() { return (100 - S.energy) / 150 + (50 - S.form) / 250 + (50 - S.morale) / 400; }
 
   /* ---- maç mantığı ---- */
-  var MT = { F: ['sut', 'sut', 'sut', 'drib', 'pas', 'sut'], M: ['pas', 'pas', 'sut', 'drib', 'pas', 'sut'], K: ['drib', 'drib', 'sut', 'pas', 'drib', 'sut'] };
+  var MT = { F: ['sut', 'sut', 'sut', 'drib', 'pas', 'sut'], M: ['pas', 'pas', 'sut', 'drib', 'pas', 'sut'], K: ['drib', 'drib', 'sut', 'pas', 'drib', 'sut'], D: ['kayma', 'kayma', 'pas', 'sut', 'kayma', 'drib'] };
   var MC = null; /* aktif maç */
+  function hasCv(k) { return k === 'sut' || k === 'pen' || k === 'drib' || k === 'pas' || k === 'fk' || k === 'kayma'; }
   function startMatch() {
     var o = opp(), os = strOf(o), diff = clamp((os - ovr()) / 100, -0.3, 0.5), n = 5, list = [], pool = MT[S.pos];
     for (var i = 0; i < n; i++) list.push(pick(pool));
     if (Math.random() < 0.2) list.splice(ri(1, n - 1), 0, 'pen');
-    MC = { opp: o, os: os, diff: diff, list: list, i: 0, rating: 6.0, g: 0, a: 0, mine: 0, theirs: 0, log: [], sc: null, bonus: false };
+    if (Math.random() < 0.35) list.splice(ri(0, list.length), 0, 'fk');
+    if (S.pos !== 'D' && Math.random() < 0.25) list.splice(ri(0, list.length), 0, 'kayma');
+    if (Math.random() < 0.22) list.splice(ri(1, list.length), 0, 'hakem');
+    MC = { opp: o, os: os, diff: diff, list: list, i: 0, rating: 6.0, g: 0, a: 0, mine: 0, theirs: 0, log: [], sc: null, bonus: false, notes: [], concede: 0, yc: 0, red: false };
     S.energy = Math.max(0, S.energy - (20 + (100 - S.st.fit) / 6)); ui.view = 'match'; nextMoment();
   }
   function nextMoment() {
     if (MC.i >= MC.list.length) { finishMatch(); return; }
-    MC.kind = MC.list[MC.i]; MC.state = 'wait'; MC.msg = ''; MC.minute = Math.round(12 + MC.i * (78 / MC.list.length) + rnd(-4, 4)); MC.press = rnd(0.0, 0.25) + MC.diff * 0.5; if (MC.bonusNext) { MC.press *= 0.5; MC.bonusNext = false; }
+    MC.kind = MC.list[MC.i]; MC.state = 'wait'; MC.msg = ''; MC.cls = ''; MC.minute = Math.round(12 + MC.i * (78 / MC.list.length) + rnd(-4, 4)); MC.press = rnd(0.0, 0.25) + MC.diff * 0.5; if (MC.bonusNext) { MC.press *= MC.bonusNext === 2 ? 0.2 : 0.5; MC.bonusNext = false; }
     if (MC.kind === 'drib') { MC.def = pick([-1, 0, 1]); MC.tell = Math.random() < 0.6 ? MC.def : pick([-1, 0, 1]); }
-    if (MC.kind === 'pas') { MC.opts = [{ n: 'Kısa pas', r: 0.05, w: 0.14 }, { n: 'Ara pası', r: 0.25, w: 0.36 }, { n: 'Derin pas', r: 0.45, w: 0.62 }]; }
+    if (MC.kind === 'pas') { MC.opts = [{ n: 'Kısa pas', r: 0.05, w: 0.14 }, { n: 'Ara pası', r: 0.25, w: 0.36 }, { n: 'Derin pas', r: 0.45, w: 0.62 }]; var ms = mates(); if (ms.length) { var mt = pick(ms); MC.opts.push({ n: '👥 ' + mt.nm + "'e pas", r: 0.12, w: 0.5, f: mt.nm }); } }
+    if (MC.kind === 'fk') { MC.ks = clamp(0.22 + S.tier * 0.1 + MC.diff * 0.3 + rnd(-.05, .08), .15, .95); MC.kx = pick([-0.65, 0, 0.65]); MC.curve = 0; MC.dist = ri(18, 30); MC.wallOff = rnd(-0.15, 0.15); MC.press *= 0.6; }
+    if (MC.kind === 'kayma') { MC.tk0 = performance.now() / 1000; MC.tkSpd = 3 + MC.diff * 3 + rnd(0, 1.2); MC.tkZ = 0.07 + S.st.def / 99 * 0.13; }
     if (MC.kind === 'sut' || MC.kind === 'pen') { MC.ks = clamp(0.22 + S.tier * 0.1 + MC.diff * 0.3 + rnd(-.05, .08), .15, .95); MC.kx = pick([-0.65, 0, 0.65]); }
-    render(); if (MC.kind === 'sut' || MC.kind === 'pen' || MC.kind === 'drib' || MC.kind === 'pas') startScene();
+    render(); if (hasCv(MC.kind)) startScene();
   }
   function shotOutcome(x, pw, press, pen) {
     var sh = eff('shot'), sd = (0.55 - sh / 99 * 0.42) * (1 + condition() + (pen ? -0.25 : press)); sd = Math.max(0.05, sd);
@@ -117,12 +124,44 @@
     var reach = (0.28 + ks * 0.32) * (1.2 - 0.55 * clamp(fh, 0, 1)) * (weak ? 1.9 : 1); if (fh > 0.75 && Math.abs(fx) > 0.6) reach *= 0.55;
     return { r: Math.abs(fx - kx) < reach ? 'save' : 'goal', x: fx, h: fh, kx: kx };
   }
+  function fkOutcome(x, pw) {
+    var cu = MC.curve, sk = S.st.fk * 0.6 + eff('shot') * 0.4, sd = Math.max(0.06, (0.55 - sk / 99 * 0.42) * (1 + condition() + MC.press * 0.4 + (MC.dist - 18) / 60));
+    var h = 0.12 + 0.9 * clamp(pw, 0, 1.1);
+    if (h < 0.42 && Math.abs(x - MC.wallOff) < 0.4 * (1 - 0.65 * Math.abs(cu)) + 0.05 && Math.random() < 0.9) return { r: 'wall', x: x, h: 0.2, kx: 0 };
+    var fx = x + cu * (0.45 + 0.25 * sk / 99) + gauss() * sd, fh = h + gauss() * sd * 0.35, weak = pw < 0.3;
+    if (pw > 1.12) fh += 0.25;
+    if (fh > 1.02) return { r: 'over', x: fx, h: fh, kx: 0 }; if (Math.abs(fx) > 1.06) return { r: 'wide', x: fx, h: fh, kx: 0 }; if (Math.abs(fx) > 1.0) return { r: 'post', x: fx, h: fh, kx: 0 };
+    var ks = MC.ks, kx = MC.kx; if (Math.random() < ks * 0.3 * (1 - 0.5 * Math.abs(cu))) kx = fx < -0.3 ? -0.65 : fx > 0.3 ? 0.65 : 0;
+    var reach = (0.28 + ks * 0.32) * (1.2 - 0.55 * clamp(fh, 0, 1)) * (weak ? 1.9 : 1) * (1 - 0.3 * Math.abs(cu)); if (fh > 0.75 && Math.abs(fx) > 0.6) reach *= 0.55;
+    return { r: Math.abs(fx - kx) < reach ? 'save' : 'goal', x: fx, h: fh, kx: kx };
+  }
+  function giveYellow() {
+    MC.yc++; S.ys++; S.yc++; S.fans = clamp(S.fans - 1, 0, 100);
+    if (MC.yc >= 2) { MC.notes.push('🟨🟥 İkinci sarıdan kırmızı kart!'); giveRed(1, true); return '🟨 İkinci sarı kart → kırmızı!'; }
+    var t = '🟨 Sarı kart gördün'; MC.notes.push(t); if (S.ys >= 4) { S.ys = 0; S.susp += 1; MC.notes.push('⛔ 4 sarı kart: 1 maç ceza'); t += ' (4. sarı: 1 maç ceza)'; } return t;
+  }
+  function giveRed(m, quiet) {
+    S.rc++; S.susp += m; var fine = Math.round(S.sal * m * 0.5); S.money = Math.max(0, S.money - fine); MC.red = true; MC.rating -= 1.0; S.fans = clamp(S.fans - 3, 0, 100); S.morale = clamp(S.morale - 4, 0, 100);
+    MC.list = MC.list.slice(0, MC.i + 1); if (!quiet) MC.notes.push('🟥 Kırmızı kart'); MC.notes.push('⛔ ' + m + ' maç ceza · para cezası ' + money(fine));
+  }
+  function resolveTackle() {
+    var t = performance.now() / 1000, p = 0.5 + 0.5 * Math.sin((t - MC.tk0) * MC.tkSpd), d = Math.abs(p - 0.5), z = MC.tkZ;
+    if (d < z) { addRating(0.7, 'kayma'); S.fans = clamp(S.fans + 1, 0, 100); momentDone('Mükemmel kayma! Topu kaptın 🛡', 'ok'); }
+    else if (d < z * 2.4) { addRating(-0.3, 'faul'); var r = Math.random(), tx = 'Geç kaldın — faul!'; if (r < 0.12) { giveRed(1); tx += ' 🟥 Direkt kırmızı!'; } else if (r < 0.6) tx += ' ' + giveYellow(); if (Math.random() < 0.2) { MC.concede++; tx += ' Frikikten gol yedik.'; } momentDone(tx, 'bad'); }
+    else { addRating(-0.4, 'geçildin'); var tx2 = 'Rakip seni geçti!'; if (Math.random() < 0.35) { MC.concede++; tx2 += ' Gol yedik.'; } momentDone(tx2, 'bad'); }
+  }
+  function resolveRef(k) {
+    if (k === 0) { addRating(0.1, 'sakin'); S.fans = clamp(S.fans + 1, 0, 100); S.morale = clamp(S.morale + 2, 0, 100); momentDone('Sakin kaldın, oyuna döndün. Taraftar seni alkışladı 👏', 'ok'); }
+    else if (k === 1) { addRating(-0.1, 'itiraz'); S.morale = clamp(S.morale + 3, 0, 100); var tx = 'Hakeme itiraz ettin.'; if (Math.random() < 0.5) tx += ' ' + giveYellow(); else tx += ' Hakem seni uyardı.'; momentDone(tx, 'bad'); }
+    else { giveRed(3); S.rep = Math.max(0, S.rep - 4); S.fans = clamp(S.fans - 6, 0, 100); S.morale = clamp(S.morale + 6, 0, 100); momentDone('🟥 Hakeme saldırdın! Kırmızı kart, 3 maç ceza ve para cezası. Sinirini attın ama itibar zedelendi.', 'bad'); }
+  }
   function addRating(d, txt) { MC.rating += d; MC.log.push(txt); }
   function momentDone(txt, cls) { MC.state = 'done'; MC.msg = txt; MC.cls = cls || ''; MC.i++; render(); }
   function resolveShot(x, pw) {
-    var o = shotOutcome(x, pw, MC.press, MC.kind === 'pen'); MC.shotRes = o; MC.anim = { t: 0, o: o }; MC.state = 'fly';
+    var o = MC.kind === 'fk' ? fkOutcome(x, pw) : shotOutcome(x, pw, MC.press, MC.kind === 'pen'); MC.shotRes = o; MC.anim = { t: 0, o: o }; MC.state = 'fly';
     var txt, cls = '';
-    if (o.r === 'goal') { MC.g++; MC.mine++; S.goals++; S.sg++; addRating(MC.kind === 'pen' ? 0.8 : 1.0, MC.minute + "' gol"); txt = 'GOOOL! ⚽'; cls = 'ok'; }
+    if (o.r === 'goal') { MC.g++; MC.mine++; S.goals++; S.sg++; addRating(MC.kind === 'pen' ? 0.8 : MC.kind === 'fk' ? 1.2 : 1.0, MC.minute + "' gol"); txt = MC.kind === 'fk' ? 'FRİKİKTEN GOOOL! ⚽🎯' : 'GOOOL! ⚽'; cls = 'ok'; if (MC.kind === 'fk') S.fans = clamp(S.fans + 2, 0, 100); }
+    else if (o.r === 'wall') { addRating(-0.1, 'duvar'); txt = 'Duvara çarptı!'; cls = 'bad'; }
     else if (o.r === 'save') { addRating(0.1, 'şut kurtarıldı'); txt = 'Kaleci kurtardı!'; }
     else if (o.r === 'post') { addRating(0.15, 'direk'); txt = 'DİREK! Ucu ucuna…'; }
     else if (o.r === 'wide') { addRating(-0.15, 'şut auta'); txt = 'Auta gitti'; cls = 'bad'; }
@@ -133,37 +172,56 @@
   function resolvePas(k) {
     var op = MC.opts[k], ps = S.st.pass, p = clamp(0.95 - op.r * 1.1 + (ps - 50) / 250 - condition() * 0.5 - MC.diff * 0.25, 0.1, 0.97);
     if (Math.random() < p) {
-      if (Math.random() < op.w * (0.7 + MC.os / 200 * 0 + 0.3)) { MC.a++; MC.mine++; S.assists++; S.sa++; addRating(0.8, MC.minute + "' asist"); momentDone('Harika pas! Takım arkadaşın attı — ASİST 🅰', 'ok'); }
+      if (Math.random() < op.w * (0.7 + MC.os / 200 * 0 + 0.3)) { MC.a++; MC.mine++; S.assists++; S.sa++; addRating(0.8, MC.minute + "' asist"); momentDone(op.f ? 'Harika pas! ' + op.f + ' attı — ASİST 🅰 (arkadaşınla gol sevinci!)' : 'Harika pas! Takım arkadaşın attı — ASİST 🅰', 'ok'); if (op.f) S.morale = clamp(S.morale + 3, 0, 100); }
       else { addRating(0.2, 'iyi pas'); momentDone('Pas yerine ulaştı ama gol olmadı', ''); }
     } else { addRating(-0.3, 'top kaybı'); momentDone('Pas kesildi — top rakipte!', 'bad'); }
   }
   function resolveDrib(dir) {
     var ds = S.st.drib, win = dir !== MC.def ? 0.82 : 0.28 + ds / 220; win = clamp(win + (ds - 50) / 400 - condition() * 0.4 - MC.diff * 0.2, 0.1, 0.95);
-    if (Math.random() < win) { addRating(0.3, 'çalım'); MC.list.splice(MC.i + 1, 0, 'sut'); MC.bonusNext = true; momentDone('Rakibi geçtin! Şimdi şut zamanı 🔥', 'ok'); }
+    if (Math.random() < win) { addRating(0.3, 'çalım'); MC.state = 'trick'; MC.msg = 'Rakibi geçtin! Şimdi ne yapacaksın?'; MC.cls = 'ok'; MC.tricks = [{ n: 'Makas', r: 0.25, b: 0.4 }, { n: 'Topuk çalımı', r: 0.35, b: 0.55 }, { n: 'Rabona', r: 0.5, b: 0.75 }]; render(); }
     else { addRating(-0.3, 'top kaybı'); momentDone('Savunmacı topu kaptı!', 'bad'); }
   }
-  function finishMatch() {
-    var os = MC.os, ps = ovr(), lam = clamp(0.95 + (ps - os) / 55, 0.2, 2.4), tm = 0, th = 0, i;
-    for (i = 0; i < 4; i++) { if (Math.random() < lam / 4 * 0.8) tm++; if (Math.random() < clamp(0.95 - (ps - os) / 55, 0.2, 2.4) / 4 * 0.8) th++; }
-    var mine = MC.mine + tm, theirs = th;
-    var res = mine > theirs ? 3 : mine === theirs ? 1 : 0; MC.res = res; MC.fs = [mine, theirs];
-    var rating = MC.rating + (res === 3 ? 0.3 : res === 0 ? -0.3 : 0) + rnd(-0.25, 0.25) - (S.energy < 20 ? 0.2 : 0); rating = Math.round(clamp(rating, 3, 10) * 10) / 10; MC.final = rating;
-    S.apps++; S.sapps++; S.srat.push(rating); S.best.match = Math.max(S.best.match, rating);
-    S.form = clamp(S.form + (rating - 6.5) * 6, 0, 100); S.morale = clamp(S.morale + (res === 3 ? 8 : res === 1 ? 1 : -7) + (S.items.indexOf('mental') >= 0 && res === 0 ? 5 : 0), 0, 100);
-    var sal = S.sal + MC.g * S.sal * 0.25 + (res === 3 ? S.sal * 0.2 : 0) + S.rep * 2; S.money += Math.round(sal); MC.pay = Math.round(sal); S.rep += res === 3 ? 1 : 0; S.rep += rating >= 8 ? 2 : 0; if (MC.g >= 2) S.rep += 2;
-    var t = S.table[S.club]; t.p += res; t.g += mine; t.a += theirs; t.pl++;
-    var ot = S.table[MC.opp]; if (ot) { ot.p += res === 3 ? 0 : res === 1 ? 1 : 3; ot.g += theirs; ot.a += mine; ot.pl++; }
-    /* diğer maçlar */
-    var rest = TIERS[S.tier].clubs.filter(function (c) { return c !== S.club && c !== MC.opp; }).sort(function () { return Math.random() - .5; });
+  function trickP(tr) { return clamp(0.9 - tr.r * 0.9 + (S.st.drib - 50) / 220 - condition() * 0.3, 0.15, 0.92); }
+  function resolveTrick(k) {
+    if (k === 's') { MC.list.splice(MC.i + 1, 0, 'sut'); MC.bonusNext = true; momentDone('Şut pozisyonu 🔥', 'ok'); return; }
+    var tr = MC.tricks[+k];
+    if (Math.random() < trickP(tr)) { addRating(tr.b, tr.n); S.fans = clamp(S.fans + 3, 0, 100); S.rep += 1; MC.list.splice(MC.i + 1, 0, 'sut'); MC.bonusNext = 2; momentDone('✨ ' + tr.n + '! Taraftar ayakta, kaleci yalnız!', 'ok'); }
+    else { addRating(-0.35, 'çalım tutmadı'); S.fans = clamp(S.fans - 1, 0, 100); momentDone(tr.n + ' tutmadı, top kaybedildi', 'bad'); }
+  }
+  function applyTable(mine, theirs, oppName) {
+    var res = mine > theirs ? 3 : mine === theirs ? 1 : 0, i, t = S.table[S.club]; t.p += res; t.g += mine; t.a += theirs; t.pl++;
+    var ot = S.table[oppName]; if (ot) { ot.p += res === 3 ? 0 : res === 1 ? 1 : 3; ot.g += theirs; ot.a += mine; ot.pl++; }
+    var rest = TIERS[S.tier].clubs.filter(function (c) { return c !== S.club && c !== oppName; }).sort(function () { return Math.random() - .5; });
     for (i = 0; i + 1 < rest.length; i += 2) { var a = rest[i], b = rest[i + 1], sa = strOf(a), sb = strOf(b), ga = ri(0, 3) + (sa > sb && Math.random() < .5 ? 1 : 0), gb = ri(0, 3) + (sb > sa && Math.random() < .5 ? 1 : 0); S.table[a].pl++; S.table[b].pl++; S.table[a].g += ga; S.table[a].a += gb; S.table[b].g += gb; S.table[b].a += ga; if (ga > gb) S.table[a].p += 3; else if (gb > ga) S.table[b].p += 3; else { S.table[a].p++; S.table[b].p++; } }
-    S.last = { opp: MC.opp, fs: MC.fs, rating: rating, g: MC.g, a: MC.a, res: res, pay: MC.pay, wk: S.week };
+    return res;
+  }
+  function teamGoals(ps, os) { var lam = clamp(0.95 + (ps - os) / 55, 0.2, 2.4), lam2 = clamp(0.95 - (ps - os) / 55, 0.2, 2.4), tm = 0, th = 0; for (var i = 0; i < 4; i++) { if (Math.random() < lam / 4 * 0.8) tm++; if (Math.random() < lam2 / 4 * 0.8) th++; } return [tm, th]; }
+  function weekEnd() {
     S.week++; S.acted = false;
     S.energy = clamp(S.energy + 42 + S.house * 5 + (S.items.indexOf('fizyo') >= 0 ? 10 : 0), 0, 100);
     S.morale = clamp(S.morale + (S.house * 2 + S.car * 2 + 10 - S.morale * 0.12) * 0.2 + (50 - S.morale) * 0.05, 0, 100);
     if (S.week > WEEKS) { S.phase = 'seasonEnd'; }
-    MC.state = 'over'; save(true); render();
   }
-
+  function finishMatch() {
+    var os = MC.os, ps = ovr() + mates().length * 3 - (MC.red ? 6 : 0), tg = teamGoals(ps, os);
+    var mine = MC.mine + tg[0], theirs = tg[1] + MC.concede;
+    var res = mine > theirs ? 3 : mine === theirs ? 1 : 0; MC.res = res; MC.fs = [mine, theirs];
+    var rating = MC.rating + (res === 3 ? 0.3 : res === 0 ? -0.3 : 0) + rnd(-0.25, 0.25) - (S.energy < 20 ? 0.2 : 0); rating = Math.round(clamp(rating, 3, 10) * 10) / 10; MC.final = rating;
+    S.apps++; S.sapps++; S.srat.push(rating); S.best.match = Math.max(S.best.match, rating);
+    S.form = clamp(S.form + (rating - 6.5) * 6, 0, 100); S.morale = clamp(S.morale + (res === 3 ? 8 : res === 1 ? 1 : -7) + (S.items.indexOf('mental') >= 0 && res === 0 ? 5 : 0) + (mates().length ? 2 : 0), 0, 100);
+    S.fans = clamp(S.fans + (res === 3 ? 1 : res === 0 ? -1 : 0), 0, 100);
+    var sal = S.sal + MC.g * S.sal * 0.25 + (res === 3 ? S.sal * 0.2 : 0) + S.rep * 2 + S.fans * 2; S.money += Math.round(sal); MC.pay = Math.round(sal); S.rep += res === 3 ? 1 : 0; S.rep += rating >= 8 ? 2 : 0; if (MC.g >= 2) S.rep += 2;
+    applyTable(mine, theirs, MC.opp);
+    if (S.energy < 15 && Math.random() < (S.items.indexOf('fizyo') >= 0 ? 0.15 : 0.3)) { S.inj = ri(1, 3); MC.notes.push('🤕 Yorgunluktan sakatlandın: ' + S.inj + ' hafta yoksun'); }
+    S.last = { opp: MC.opp, fs: MC.fs, rating: rating, g: MC.g, a: MC.a, res: res, pay: MC.pay, wk: S.week };
+    weekEnd(); MC.state = 'over'; save(true); render();
+  }
+  function skipMatch() {
+    var o = opp(), reason = S.susp > 0 ? 'ceza' : 'sakat'; if (S.susp > 0) S.susp--; else if (S.inj > 0) S.inj--;
+    var tg = teamGoals(ovr() - 6 + mates().length * 3, strOf(o)), res = applyTable(tg[0], tg[1], o), pay = Math.round(S.sal * 0.5);
+    S.money += pay; S.last = { opp: o, fs: tg, rating: 0, g: 0, a: 0, res: res, pay: pay, wk: S.week, skipped: reason };
+    S.energy = clamp(S.energy + 15, 0, 100); weekEnd(); save(true); render();
+  }
   /* ---- sezon sonu ---- */
   function standings() { return Object.keys(S.table).map(function (c) { var t = S.table[c]; return { c: c, p: t.p, gd: t.g - t.a, g: t.g }; }).sort(function (a, b) { return b.p - a.p || b.gd - a.gd || b.g - a.g; }); }
   function seasonEnd() {
@@ -191,10 +249,14 @@
       var club = pick(TIERS[t].clubs); if (club === S.club && t === S.tier) continue; if (res.some(function (r) { return r.club === club; })) continue;
       var sal = Math.round(TIERS[t].sal * (0.8 + o / 100) * (mg ? 1.15 : 1) * (1 + Math.max(0, q) / 80)); res.push({ club: club, tier: t, sal: sal, sign: sal * 4 });
     }
+    Object.keys(boardData || {}).forEach(function (k) {
+      var f = boardData[k]; if (k === uid || !f || f.ret || !f.c || f.t == null || f.t > S.tier + 1 || o < 30 + f.t * 12 - 8) return; if (f.c === S.club && f.t === S.tier) return; var ex = res.filter(function (r) { return r.club === f.c; })[0]; if (ex) { ex.friend = f.nm; return; }
+      var sal = Math.round(TIERS[f.t].sal * (0.8 + o / 100)); res.unshift({ club: f.c, tier: f.t, sal: sal, sign: sal * 3, friend: f.nm });
+    });
     return res;
   }
   function nextSeason() {
-    var old = ovr(); S.age++; S.season++; S.week = 1; S.sg = S.sa = S.sapps = 0; S.srat = []; S.phase = 'play'; S.sumry = null; S.offers = [];
+    var old = ovr(); S.age++; S.season++; S.week = 1; S.sg = S.sa = S.sapps = 0; S.ys = 0; S.srat = []; S.phase = 'play'; S.sumry = null; S.offers = [];
     var young = S.age <= 23; Object.keys(S.st).forEach(function (k) { if (S.age >= 31 && (k === 'spd' || k === 'fit')) S.st[k] = Math.max(20, S.st[k] - ri(1, 3)); else if (S.age >= 33) S.st[k] = Math.max(20, S.st[k] - ri(0, 2)); else if (young) S.st[k] = Math.min(99, S.st[k] + ri(0, 2)); });
     S.energy = 100; S.sal = Math.round(TIERS[S.tier].sal * (0.8 + ovr() / 100)); newSeasonTable(); S.fx = fixtures(); S.acted = false;
     if (S.age >= 35) { S.phase = 'retireAsk'; if (S.age >= 38 || ovr() < 35) { retire(); return; } }
@@ -224,7 +286,7 @@
     return '<h1>ALTIN AYAK</h1><p class="sub">Futbolcu kariyeri · arkadaşlarınla ortak skor tablosu</p><div class="card"><b>Kullanıcı adın</b><input type="text" id="un" maxlength="16" placeholder="örn. Baran" autocomplete="off"><button class="btn pri" id="goLogin">Devam</button><p class="mu">Şifre yok: aynı kullanıcı adıyla girince kariyerin kaldığın yerden devam eder.</p></div>';
   }
   function viewCreate() {
-    return '<h1>FUTBOLCUNU YARAT</h1><p class="sub">17 yaşında, en alt ligde başlıyorsun</p><div class="card"><b>Futbolcu adı</b><input type="text" id="pn" maxlength="18" value="' + esc(uname) + '"><b>Mevki</b><div class="pos" style="margin:8px 0">' + ['F', 'M', 'K'].map(function (p) { return '<button class="btn ' + (createPos === p ? 'on' : '') + '" data-pos="' + p + '">' + { F: '🎯 Forvet', M: '🧠 Orta Saha', K: '⚡ Kanat' }[p] + '</button>'; }).join('') + '</div><p class="mu">' + { F: 'Şutta güçlüsün: bol şut pozisyonu.', M: 'Pas ustası: asist fırsatları çok.', K: 'Hız ve çalım: dribling ve şut karışık.' }[createPos] + '</p><button class="btn pri" id="goCreate">Kariyere başla</button></div>';
+    return '<h1>FUTBOLCUNU YARAT</h1><p class="sub">17 yaşında, en alt ligde başlıyorsun</p><div class="card"><b>Futbolcu adı</b><input type="text" id="pn" maxlength="18" value="' + esc(uname) + '"><b>Mevki</b><div class="pos" style="margin:8px 0">' + ['F', 'M', 'K', 'D'].map(function (p) { return '<button class="btn ' + (createPos === p ? 'on' : '') + '" data-pos="' + p + '">' + { F: '🎯 Forvet', M: '🧠 Orta Saha', K: '⚡ Kanat', D: '🛡 Defans' }[p] + '</button>'; }).join('') + '</div><p class="mu">' + { F: 'Şutta güçlüsün: bol şut pozisyonu.', M: 'Pas ustası: asist fırsatları çok.', K: 'Hız ve çalım: dribling ve şut karışık.', D: 'Kayma ve top kapma uzmanı — ama kart görmemeye dikkat!' }[createPos] + '</p><button class="btn pri" id="goCreate">Kariyere başla</button></div>';
   }
   function viewRetired() {
     var tg = S.hist.reduce(function (a, h) { return a + h.g; }, 0), ta = S.hist.reduce(function (a, h) { return a + h.a; }, 0);
@@ -238,12 +300,18 @@
   function tableHTML(n) {
     var st = standings(); return '<table><tr><th>#</th><th>Takım</th><th>O</th><th>AV</th><th>P</th></tr>' + st.map(function (r, i) { return (n && i >= n && r.c !== S.club) ? '' : '<tr class="' + (r.c === S.club ? 'me' : '') + '"><td>' + (i + 1) + '</td><td>' + esc(r.c) + '</td><td>' + S.table[r.c].pl + '</td><td>' + (r.gd > 0 ? '+' : '') + r.gd + '</td><td><b>' + r.p + '</b></td></tr>'; }).join('') + '</table>';
   }
+  function mates() { return Object.keys(boardData || {}).filter(function (k) { var v = boardData[k]; return k !== uid && v && !v.ret && v.c === S.club && v.t === S.tier; }).map(function (k) { return boardData[k]; }); }
+  function statusCard() {
+    var ms = mates(), h = '<div class="card"><div class="row"><span class="pill">🟨 ' + S.ys + '/4 sarı</span><span class="pill">🟥 ' + S.rc + ' kırmızı</span><span class="pill">📣 Taraftar ' + Math.round(S.fans) + '</span>' + (S.susp > 0 ? '<span class="pill" style="border-color:var(--bad)">⛔ Ceza ' + S.susp + ' maç</span>' : '') + (S.inj > 0 ? '<span class="pill" style="border-color:var(--bad)">🤕 Sakat ' + S.inj + ' hf</span>' : '') + '</div>';
+    if (ms.length) h += '<div style="margin-top:6px">👥 <b>Takım arkadaşların:</b> ' + ms.map(function (x) { return esc(x.nm); }).join(', ') + ' <span class="mu">(+takım gücü, pasta ortak gol)</span></div>';
+    return h + '</div>';
+  }
   function viewHub() {
-    var h = playerCard();
-    if (S.last && S.last.wk === S.week - 1) h += '<div class="card"><b>Geçen maç</b><div class="mu">' + esc(S.last.opp) + ' · ' + S.last.fs[0] + '-' + S.last.fs[1] + ' · Puan <b class="gold">' + S.last.rating.toFixed(1) + '</b> · ' + S.last.g + ' gol, ' + S.last.a + ' asist · +' + money(S.last.pay) + '</div></div>';
+    var h = playerCard() + statusCard();
+    if (S.last && S.last.wk === S.week - 1) h += '<div class="card"><b>Geçen maç</b><div class="mu">' + esc(S.last.opp) + ' · ' + S.last.fs[0] + '-' + S.last.fs[1] + (S.last.skipped ? ' · maçı tribünden izledin (' + S.last.skipped + ')' : ' · Puan <b class="gold">' + S.last.rating.toFixed(1) + '</b> · ' + S.last.g + ' gol, ' + S.last.a + ' asist') + ' · +' + money(S.last.pay) + '</div></div>';
     if (S.phase === 'play') {
       var o = opp(); h += '<div class="card"><div class="row"><b>Hafta ' + S.week + '/' + WEEKS + ' · ' + S.season + '. sezon</b><span class="sp"></span><span class="mu">Rakip gücü ' + strOf(o) + '</span></div><div style="font-size:20px;font-weight:900;margin:6px 0">' + esc(S.club) + ' <span class="mu">vs</span> ' + esc(o) + '</div>' + (S.acted ? '' : '<div class="mu">Önce antrenman yap ya da dinlen (haftada 1 kez), sonra maça çık.</div>') + '</div>';
-      h += '<button class="btn hot" id="goMatch">⚽ Maça çık</button>';
+      h += (S.susp > 0 || S.inj > 0) ? '<button class="btn" id="skipMatch">' + (S.susp > 0 ? '⛔ Cezalısın' : '🤕 Sakatsın') + ' — maçı tribünden izle</button>' : '<button class="btn hot" id="goMatch">⚽ Maça çık</button>';
     }
     h += '<h2>Lig tablosu</h2><div class="card">' + tableHTML(5) + '</div>'; return h;
   }
@@ -268,7 +336,12 @@
     return h;
   }
   var boardData = null;
-  function loadBoard() { if (!db) return; db.ref('rp/kariyer/top').once('value').then(function (s) { boardData = s.val() || {}; if (ui.tab === 'board' || ui.view === 'retired') render(); }, function () { }); }
+  function loadBoard() {
+    if (!db) return; db.ref('rp/kariyer/top').once('value').then(function (sn) {
+      var nv = sn.val() || {}, ch = JSON.stringify(nv) !== JSON.stringify(boardData); boardData = nv;
+      if (ch && ui.view === 'main' && (ui.tab === 'board' || ui.tab === 'hub' || ui.tab === 'live') && S && S.phase === 'play') { var sc = window.scrollY; render(); window.scrollTo(0, sc); } else if (ch && ui.view === 'retired') render();
+    }, function () { });
+  }
   function viewBoard() {
     var key = ui.board, rows = Object.keys(boardData || {}).map(function (k) { var v = boardData[k]; v.id = k; return v; });
     if (topMine && uid) { var mm = rows.filter(function (r) { return r.id === uid; })[0]; if (!mm) rows.push(Object.assign({ id: uid }, topMine)); }
@@ -283,29 +356,35 @@
   function viewOffers() {
     var s = S.sumry, h = '<h1>' + S.season + '. SEZON ÖZETİ</h1><div class="card"><b>' + s.rank + '. sıra · ' + s.g + ' gol · ' + s.a + ' asist · ort. ' + s.avg.toFixed(2) + '</b>' + (s.promo ? '<div class="ok" style="color:var(--ok)">Kulüp terfi etti → ' + s.newLeague + '</div>' : '') + (s.rel ? '<div style="color:var(--bad)">Kulüp küme düştü → ' + s.newLeague + '</div>' : '') + '<div style="margin-top:6px">' + (s.aw.map(function (a) { return '<div class="pill">' + esc(a) + '</div>'; }).join('') || '<span class="mu">Bu sezon ödül yok</span>') + '</div>' + (s.bonus ? '<div class="gold">Ödül primi: +' + money(s.bonus) + '</div>' : '') + '</div>';
     h += '<h2>Transfer teklifleri</h2>';
-    S.offers.forEach(function (o, i) { h += '<div class="card"><div class="row"><div class="sp"><b>' + esc(o.club) + '</b><div class="mu">' + TIERS[o.tier].n + ' · maaş ' + money(o.sal) + '/hafta</div><div class="mu">İmza parası ' + money(o.sign) + '</div></div><button class="btn sm pri" data-offer="' + i + '">Kabul et</button></div></div>'; });
+    S.offers.forEach(function (o, i) { h += '<div class="card"><div class="row"><div class="sp"><b>' + esc(o.club) + '</b>' + (o.friend ? ' <span class="pill" style="border-color:var(--ac)">👥 Arkadaşın ' + esc(o.friend) + ' orada</span>' : '') + '<div class="mu">' + TIERS[o.tier].n + ' · maaş ' + money(o.sal) + '/hafta</div><div class="mu">İmza parası ' + money(o.sign) + '</div></div><button class="btn sm pri" data-offer="' + i + '">Kabul et</button></div></div>'; });
     if (!S.offers.length) h += '<div class="card mu">Bu sezon teklif gelmedi. Daha iyi oyna!</div>';
     return h + '<button class="btn" id="stay">' + esc(S.club) + ' kulübünde kal</button>';
   }
   function viewRetireAsk() { return '<h1>EMEKLİLİK ZAMANI?</h1><p class="sub">' + S.age + ' yaşındasın.</p><div class="card mu">Bir sezon daha oynayabilirsin ama yaş ilerledikçe hız ve kondisyon düşer.</div><button class="btn hot" id="doRetire">Emekli ol</button><div style="height:8px"></div><button class="btn" id="oneMore">Bir sezon daha oyna</button>'; }
   /* ---- maç ekranı ---- */
   var cv = null, cx = null, anim = null, drag = null, raf = 0;
-  var KN = { sut: 'ŞUT', pen: 'PENALTI', pas: 'PAS', drib: 'DRİBLİNG' };
+  var KN = { sut: 'ŞUT', pen: 'PENALTI', pas: 'PAS', drib: 'DRİBLİNG', fk: 'FRİKİK', kayma: 'KAYMA', hakem: 'HAKEM KARARI' };
   function viewMatch() {
     var m = MC, h = '<div class="card row"><b>' + esc(S.club) + ' vs ' + esc(m.opp) + '</b><span class="sp"></span><span class="mu">' + (m.state === 'over' ? 'Maç bitti' : m.minute + '. dk') + '</span></div>';
     if (m.state === 'over') {
-      return h + '<div class="card" style="text-align:center"><div style="font-size:46px;font-weight:900">' + m.fs[0] + ' - ' + m.fs[1] + '</div><div class="res" style="color:' + (m.res === 3 ? 'var(--ok)' : m.res === 0 ? 'var(--bad)' : 'var(--tx)') + '">' + (m.res === 3 ? 'GALİBİYET' : m.res === 1 ? 'BERABERLİK' : 'MAĞLUBİYET') + '</div><div style="font-size:30px;font-weight:900" class="gold">' + m.final.toFixed(1) + '</div><div class="mu">Maçın puanı</div><div style="margin:8px 0">' + m.g + ' gol · ' + m.a + ' asist</div><div class="gold">+' + money(m.pay) + '</div></div><button class="btn pri" id="matchEnd">' + (S.phase === 'seasonEnd' ? 'Sezonu bitir' : 'Devam') + '</button>';
+      return h + '<div class="card" style="text-align:center"><div style="font-size:46px;font-weight:900">' + m.fs[0] + ' - ' + m.fs[1] + '</div><div class="res" style="color:' + (m.res === 3 ? 'var(--ok)' : m.res === 0 ? 'var(--bad)' : 'var(--tx)') + '">' + (m.res === 3 ? 'GALİBİYET' : m.res === 1 ? 'BERABERLİK' : 'MAĞLUBİYET') + '</div><div style="font-size:30px;font-weight:900" class="gold">' + m.final.toFixed(1) + '</div><div class="mu">Maçın puanı</div><div style="margin:8px 0">' + m.g + ' gol · ' + m.a + ' asist</div>' + m.notes.map(function (n) { return '<div style="color:var(--bad)">' + esc(n) + '</div>'; }).join('') + '<div class="gold">+' + money(m.pay) + '</div></div><button class="btn pri" id="matchEnd">' + (S.phase === 'seasonEnd' ? 'Sezonu bitir' : 'Devam') + '</button>';
     }
+    var hint = { sut: 'Parmağını kaydır: yana = yön, yukarı = güç', pen: 'Penaltı! Yön ve gücü seç', fk: 'Frikik: falso seç, sonra kaydır. Düşük şutlar duvara takılır', drib: 'Savunmacının hamlesini oku — yönünü seç', pas: 'Pas seç', kayma: 'İşaret yeşil alandayken KAY! de', hakem: 'Hakem sana karşı tartışmalı bir karar verdi! Ne yapacaksın?' }[m.kind];
     h += '<div class="card" style="padding:8px"><div class="row"><b>' + KN[m.kind] + '</b><span class="sp"></span><span class="mu">Pozisyon ' + Math.min(m.i + 1, m.list.length) + '/' + m.list.length + ' · Puan ' + m.rating.toFixed(1) + '</span></div>';
-    h += '<canvas id="cv" width="720" height="800"></canvas><div class="res ' + (m.cls || '') + '" style="color:' + (m.cls === 'ok' ? 'var(--ok)' : m.cls === 'bad' ? 'var(--bad)' : 'var(--tx)') + '">' + esc(m.msg || (m.kind === 'sut' || m.kind === 'pen' ? 'Parmağını kaydır: yana = yön, yukarı = güç' : m.kind === 'drib' ? 'Savunmacının hamlesini oku — yönünü seç' : 'Pas seç')) + '</div>';
-    if (m.state === 'wait' && m.kind === 'pas') h += m.opts.map(function (o, i) { var p = Math.round(clamp(0.95 - o.r * 1.1 + (S.st.pass - 50) / 250 - condition() * .5 - m.diff * .25, .1, .97) * 100); return '<button class="btn" style="margin:6px 0" data-pas="' + i + '">' + o.n + ' <span class="mu">(başarı ~%' + p + ')</span></button>'; }).join('');
+    if (m.kind !== 'hakem') h += '<canvas id="cv" width="720" height="800"></canvas>'; else h += '<div style="font-size:60px;text-align:center;margin:14px">🟨🟥</div>';
+    h += '<div class="res" style="color:' + (m.cls === 'ok' ? 'var(--ok)' : m.cls === 'bad' ? 'var(--bad)' : 'var(--tx)') + '">' + esc(m.msg || hint) + '</div>';
+    if (m.state === 'wait' && m.kind === 'pas') h += m.opts.map(function (o, i) { var p = Math.round(clamp(0.95 - o.r * 1.1 + (S.st.pass - 50) / 250 - condition() * .5 - m.diff * .25, .1, .97) * 100); return '<button class="btn" style="margin:6px 0" data-pas="' + i + '">' + esc(o.n) + ' <span class="mu">(başarı ~%' + p + ')</span></button>'; }).join('');
     if (m.state === 'wait' && m.kind === 'drib') h += '<div class="row"><button class="btn" data-dr="-1">◀ Sol</button><button class="btn" data-dr="0">▲ Orta</button><button class="btn" data-dr="1">Sağ ▶</button></div>';
+    if (m.state === 'wait' && m.kind === 'fk') h += '<div class="mu" style="text-align:center">Falso (' + m.dist + ' m)</div><div class="row" id="fcRow">' + [['-1', '↶ Sol falso'], ['0', 'Düz'], ['1', 'Sağ falso ↷']].map(function (x) { return '<button class="btn' + (m.curve === +x[0] ? ' pri' : '') + '" data-fc="' + x[0] + '">' + x[1] + '</button>'; }).join('') + '</div>';
+    if (m.state === 'wait' && m.kind === 'kayma') h += '<button class="btn hot" id="tackle">🛡 KAY!</button>';
+    if (m.state === 'trick') h += '<button class="btn pri" style="margin:6px 0" data-tr="s">⚽ Direkt şut</button>' + m.tricks.map(function (tr, i) { return '<button class="btn" style="margin:6px 0" data-tr="' + i + '">✨ ' + tr.n + ' <span class="mu">(~%' + Math.round(trickP(tr) * 100) + ' · tutarsa kaleci yalnız)</span></button>'; }).join('');
+    if (m.state === 'wait' && m.kind === 'hakem') h += '<button class="btn pri" style="margin:6px 0" data-hk="0">😌 Sakin ol</button><button class="btn" style="margin:6px 0" data-hk="1">😤 İtiraz et <span class="mu">(sarı kart riski)</span></button><button class="btn hot" style="margin:6px 0" data-hk="2">👊 Hakeme saldır! <span class="mu">(kırmızı + ceza)</span></button>';
     if (m.state === 'done') h += '<button class="btn pri" id="nextM">Devam ▶</button>';
     return h + '</div>';
   }
-  function startScene() { cancelAnimationFrame(raf); setTimeout(function () { cv = document.getElementById('cv'); if (!cv) return; cx = cv.getContext('2d'); cx.setTransform(2, 0, 0, 2, 0, 0); if (MC.kind === 'sut' || MC.kind === 'pen') bindShot(); bindSwipe(); loop(); }, 30); }
+  function startScene() { cancelAnimationFrame(raf); setTimeout(function () { cv = document.getElementById('cv'); if (!cv) return; cx = cv.getContext('2d'); cx.setTransform(2, 0, 0, 2, 0, 0); if (MC.kind === 'sut' || MC.kind === 'pen' || MC.kind === 'fk') bindShot(); bindSwipe(); loop(); }, 30); }
   function bindShot() {
-    cv.onpointerdown = function (e) { if (!MC || (MC.kind !== 'sut' && MC.kind !== 'pen') || MC.state !== 'wait') return; var r = cv.getBoundingClientRect(); drag = { x: e.clientX, y: e.clientY, dx: 0, dy: 0, k: 360 / r.width }; try { cv.setPointerCapture(e.pointerId); } catch (x) {} };
+    cv.onpointerdown = function (e) { if (!MC || (MC.kind !== 'sut' && MC.kind !== 'pen' && MC.kind !== 'fk') || MC.state !== 'wait') return; var r = cv.getBoundingClientRect(); drag = { x: e.clientX, y: e.clientY, dx: 0, dy: 0, k: 360 / r.width }; try { cv.setPointerCapture(e.pointerId); } catch (x) {} };
     cv.onpointermove = function (e) { if (!drag) return; drag.dx = (e.clientX - drag.x) * drag.k; drag.dy = (e.clientY - drag.y) * drag.k; };
     cv.onpointerup = function () { if (!drag) return; var d = drag; drag = null; var pw = clamp(-d.dy / 150, 0, 1.3), x = clamp(d.dx / 90, -1.4, 1.4); if (pw < 0.08) return; resolveShot(x, pw); };
     cv.onpointercancel = function () { drag = null; };
@@ -321,7 +400,7 @@
     var c = cx, m = MC; if (!m) return; var t = performance.now() / 1000;
     var g = c.createLinearGradient(0, 0, 0, 400); g.addColorStop(0, '#0b3d1e'); g.addColorStop(1, '#14803c'); c.fillStyle = g; c.fillRect(0, 0, 360, 400);
     for (var i = 0; i < 8; i++) { c.fillStyle = i % 2 ? 'rgba(255,255,255,.04)' : 'rgba(0,0,0,.05)'; c.fillRect(0, i * 50, 360, 50); }
-    if (m.kind === 'sut' || m.kind === 'pen') drawShot(c, m, t); else if (m.kind === 'drib') drawDrib(c, m, t); else drawPas(c, m, t);
+    if (m.kind === 'sut' || m.kind === 'pen' || m.kind === 'fk') drawShot(c, m, t); else if (m.kind === 'drib') drawDrib(c, m, t); else if (m.kind === 'kayma') drawKayma(c, m, t); else drawPas(c, m, t);
   }
   function jersey(c, x, y, col, s, lean) { c.save(); c.translate(x, y); c.rotate(lean || 0); c.fillStyle = 'rgba(0,0,0,.3)'; c.beginPath(); c.ellipse(0, 18 * s, 14 * s, 5 * s, 0, 0, 6.3); c.fill(); c.fillStyle = col; c.beginPath(); c.roundRect ? c.roundRect(-11 * s, -4 * s, 22 * s, 24 * s, 6 * s) : c.rect(-11 * s, -4 * s, 22 * s, 24 * s); c.fill(); c.fillStyle = '#f2c9a0'; c.beginPath(); c.arc(0, -12 * s, 8 * s, 0, 6.3); c.fill(); c.restore(); }
   function drawShot(c, m, t) {
@@ -333,16 +412,17 @@
     else kx = Math.sin(t * 2) * 0.12;
     var kxp = GX(kx), kyp = bot - 28 - (dv ? Math.min(0, a.o.h - 0.4) * 0 : 0) - (a && a.o.r === 'save' ? a.o.h * 40 * dv : 0);
     jersey(c, kxp, kyp, '#ffb02e', 1.5, kx * 1.1 * dv);
+    if (m.kind === 'fk') { var wx = 180 + (m.wallOff || 0) * gw; for (i = 0; i < 4; i++) jersey(c, wx - 33 + i * 22, 262, '#ff5d6c', 0.8, 0); c.fillStyle = '#fff9'; c.font = '11px system-ui'; c.textAlign = 'center'; c.fillText('Duvar', wx, 235); }
     /* nişan */
     var bx = 180, by = 340, tx = bx, ty = by, px = bx, py = by;
     if (drag && m.state === 'wait') {
       var pw = clamp(-drag.dy / 150, 0, 1.3), ax = clamp(drag.dx / 90, -1.4, 1.4); var h = 0.12 + 0.9 * clamp(pw, 0, 1.1); tx = GX(ax); ty = GY(h);
-      c.strokeStyle = 'rgba(255,230,80,.9)'; c.lineWidth = 3; c.setLineDash([8, 6]); c.beginPath(); c.moveTo(bx, by); c.lineTo(tx, ty); c.stroke(); c.setLineDash([]); c.beginPath(); c.arc(tx, ty, 9, 0, 6.3); c.stroke();
+      c.strokeStyle = 'rgba(255,230,80,.9)'; c.lineWidth = 3; c.setLineDash([8, 6]); c.beginPath(); c.moveTo(bx, by); if (m.kind === 'fk' && m.curve) c.quadraticCurveTo((bx + tx) / 2 - m.curve * 70, (by + ty) / 2, tx + m.curve * 0, ty); else c.lineTo(tx, ty); c.stroke(); c.setLineDash([]); c.beginPath(); c.arc(tx, ty, 9, 0, 6.3); c.stroke();
       /* güç çubuğu */
       c.fillStyle = 'rgba(0,0,0,.5)'; c.fillRect(14, 220, 16, 150); c.fillStyle = 'rgba(80,255,120,.35)'; c.fillRect(14, 370 - 150 * 0.95, 16, 150 * 0.4); c.fillStyle = pw > 1.05 ? '#ff5d6c' : pw < 0.3 ? '#ffb02e' : '#c6ff3d'; c.fillRect(14, 370 - 150 * Math.min(1.1, pw), 16, 150 * Math.min(1.1, pw));
     }
     var bpx = bx, bpy = by, sc = 1;
-    if (a) { a.t += 1 / 60; var f = clamp(a.t / 0.55, 0, 1), ex = GX(clamp(a.o.x, -1.6, 1.6)), ey = GY(clamp(a.o.h, 0, 1.4)); bpx = bx + (ex - bx) * f; bpy = by + (ey - by) * f - Math.sin(f * 3.14) * 14; sc = 1 - 0.55 * f; if (a.o.r === 'save' && f >= 1) { bpx = kxp; bpy = kyp - 6; } }
+    if (a) { a.t += 1 / 60; var f = clamp(a.t / 0.55, 0, 1), ex = GX(clamp(a.o.x, -1.6, 1.6)), ey = GY(clamp(a.o.h, 0, 1.4)); if (a.o.r === 'wall') ey = 268; bpx = bx + (ex - bx) * f + (m.curve ? m.curve * Math.sin(f * 3.14) * 38 : 0); bpy = by + (ey - by) * f - Math.sin(f * 3.14) * 14; sc = 1 - 0.55 * f; if (a.o.r === 'save' && f >= 1) { bpx = kxp; bpy = kyp - 6; } }
     c.fillStyle = 'rgba(0,0,0,.3)'; c.beginPath(); c.ellipse(bpx, (a ? by + (bpy - by) * 0 : by) + 12 * sc, 12 * sc, 4 * sc, 0, 0, 6.3); c.fill();
     c.fillStyle = '#fff'; c.beginPath(); c.arc(bpx, bpy, 12 * sc, 0, 6.3); c.fill(); c.fillStyle = '#222'; c.beginPath(); c.arc(bpx, bpy, 4 * sc, 0, 6.3); c.fill();
     jersey(c, 180, 380, '#2aa9ff', 1.1, 0);
@@ -355,8 +435,15 @@
     jersey(c, 180, 330, '#2aa9ff', 1.8, 0); c.fillStyle = '#fff'; c.beginPath(); c.arc(180, 372, 10, 0, 6.3); c.fill();
     c.fillStyle = '#fffb'; c.fillText('◀ sola / sağa ▶ kaydır ya da butona bas', 180, 250);
   }
+  function drawKayma(c, m, t) {
+    var p = 0.5 + 0.5 * Math.sin((t - m.tk0) * m.tkSpd), z = m.tkZ, ay = 110 + 40 * Math.sin(t * 3);
+    jersey(c, 180 + 20 * Math.sin(t * 2), ay, '#ff5d6c', 1.7, 0); c.fillStyle = '#fff'; c.beginPath(); c.arc(180 + 20 * Math.sin(t * 2), ay + 36, 9, 0, 6.3); c.fill();
+    jersey(c, 180, 250, '#2aa9ff', 1.7, -0.5 * p);
+    c.fillStyle = 'rgba(0,0,0,.45)'; c.fillRect(40, 320, 280, 26); c.fillStyle = 'rgba(255,200,60,.35)'; c.fillRect(40 + 280 * (0.5 - z * 2.4), 320, 280 * z * 4.8, 26); c.fillStyle = 'rgba(80,255,120,.75)'; c.fillRect(40 + 280 * (0.5 - z), 320, 280 * z * 2, 26);
+    c.fillStyle = '#fff'; c.fillRect(40 + 280 * p - 3, 314, 6, 38); c.font = '12px system-ui'; c.textAlign = 'center'; c.fillText('Doğru anı yakala', 180, 372);
+  }
   function drawPas(c, m, t) {
-    var pos = [[90, 250, '#7be0ff'], [180, 170, '#ffd54a'], [270, 90, '#ff9a5c']];
+    var pos = [[90, 250, '#7be0ff'], [180, 170, '#ffd54a'], [270, 90, '#ff9a5c'], [60, 120, '#b58cff']];
     jersey(c, 180, 350, '#2aa9ff', 1.6, 0); c.fillStyle = '#fff'; c.beginPath(); c.arc(180, 386, 10, 0, 6.3); c.fill();
     m.opts.forEach(function (o, i) { var p = pos[i]; c.strokeStyle = p[2]; c.lineWidth = 3; c.setLineDash([6, 6]); c.beginPath(); c.moveTo(180, 340); c.lineTo(p[0], p[1] + 10); c.stroke(); c.setLineDash([]); jersey(c, p[0], p[1], p[2], 1.3, 0); c.fillStyle = '#fff'; c.font = 'bold 11px system-ui'; c.textAlign = 'center'; c.fillText(o.n, p[0], p[1] - 24); });
     jersey(c, 230, 60, '#ff5d6c', 1.1, 0); jersey(c, 120, 200, '#ff5d6c', 1.1, 0);
@@ -377,7 +464,7 @@
     else { h = ({ hub: viewHub, train: viewTrain, shop: viewShop, live: viewLive, career: viewCareer, board: viewBoard })[ui.tab](); h += nav(); }
     $app.innerHTML = h; wire(); window.scrollTo(0, 0);
     if (ui.view === 'duel') startDuelScene();
-    if (ui.view === 'match' && MC && MC.state !== 'over' && (MC.kind === 'sut' || MC.kind === 'pen' || MC.kind === 'drib' || MC.kind === 'pas')) startScene();
+    if (ui.view === 'match' && MC && MC.state !== 'over' && hasCv(MC.kind)) startScene();
   }
   function q(s) { return $app.querySelector(s); } function qa(s) { return $app.querySelectorAll(s); }
   function wire() {
@@ -387,7 +474,7 @@
     if ((b = q('#goCreate'))) b.onclick = function () { var n = q('#pn').value.trim().slice(0, 18) || uname; newCareer(n, createPos); ui.view = 'main'; ui.tab = 'hub'; startPresence(); render(); };
     if ((b = q('#newCareer'))) b.onclick = function () { S = null; ui.view = 'create'; render(); };
     if ((b = q('#goBoard'))) b.onclick = function () { loadBoard(); };
-    qa('[data-tab]').forEach(function (e) { e.onclick = function () { ui.tab = e.getAttribute('data-tab'); if (ui.tab === 'board') loadBoard(); render(); }; });
+    qa('[data-tab]').forEach(function (e) { e.onclick = function () { ui.tab = e.getAttribute('data-tab'); loadBoard(); render(); }; });
     qa('[data-bd]').forEach(function (e) { e.onclick = function () { ui.board = e.getAttribute('data-bd'); render(); }; });
     if ((b = q('#goMatch'))) b.onclick = startMatch;
     qa('[data-train]').forEach(function (e) { e.onclick = function () { train(e.getAttribute('data-train')); }; });
@@ -401,6 +488,11 @@
     qa('[data-offer]').forEach(function (e) { e.onclick = function () { var o = S.offers[+e.getAttribute('data-offer')]; S.club = o.club; S.tier = o.tier; S.money += o.sign; toast('Transfer tamam: ' + o.club); nextSeason(); }; });
     if ((b = q('#stay'))) b.onclick = nextSeason;
     if ((b = q('#doRetire'))) b.onclick = retire;
+    qa('[data-fc]').forEach(function (e) { e.onclick = function () { MC.curve = +e.getAttribute('data-fc'); qa('[data-fc]').forEach(function (x) { x.classList.toggle('pri', x === e); }); }; });
+    qa('[data-tr]').forEach(function (e) { e.onclick = function () { resolveTrick(e.getAttribute('data-tr')); }; });
+    qa('[data-hk]').forEach(function (e) { e.onclick = function () { resolveRef(+e.getAttribute('data-hk')); }; });
+    if ((b = q('#tackle'))) b.onclick = resolveTackle;
+    if ((b = q('#skipMatch'))) b.onclick = skipMatch;
     qa('[data-ch]').forEach(function (e) { e.onclick = function () { challenge(e.getAttribute('data-ch')); }; });
     qa('[data-dv]').forEach(function (e) { e.onclick = function () { duelPick(+e.getAttribute('data-dv')); }; });
     if ((b = q('#duelCancel'))) b.onclick = closeDuel;
@@ -416,6 +508,7 @@
     if (!db || !uid || !S || presOn) return; presOn = true;
     try { db.ref('rp/kariyer/lobby/' + uid).onDisconnect().remove(); } catch (e) {}
     setPresence(false);
+    loadBoard(); setInterval(loadBoard, 90000);
     db.ref('rp/kariyer/lobby').on('value', function (s) { lobbyData = s.val() || {}; if (ui.view === 'main' && ui.tab === 'live' && S && S.phase === 'play') { var sc = window.scrollY; render(); window.scrollTo(0, sc); } });
     db.ref('rp/kariyer/inv/' + uid).on('value', function (s) { inv = s.val() || {}; showInv(); });
   }
@@ -536,8 +629,10 @@
     if (!db) return h + '<div class="card mu">Çevrimiçi mod için bağlantı yok.</div>';
     rows.forEach(function (r) { h += '<div class="card row"><div class="sp"><b>' + esc(r.nm) + '</b> <span class="mu">(' + esc(r.n) + ')</span><div class="mu">Genel ' + r.o + ' · ' + esc(r.c || '') + (r.b ? ' · maçta' : '') + '</div></div><button class="btn sm hot" data-ch="' + r.id + '"' + (r.b ? ' disabled' : '') + '>⚔ Meydan oku</button></div>'; });
     if (!rows.length) h += '<div class="card mu">Şu an kimse çevrimiçi değil. Arkadaşların Altın Ayak\'ı açınca burada görünür.</div>';
+    var fr = Object.keys(boardData || {}).filter(function (k) { return k !== uid; }).map(function (k) { return boardData[k]; });
+    h += '<h2>Arkadaşların ve kulüpleri</h2><div class="card">' + (fr.length ? fr.map(function (f) { var same = f.c === S.club && f.t === S.tier; return '<div class="stat" style="gap:6px"><div class="sp"><b>' + esc(f.nm || f.n) + '</b><div class="mu">' + esc(f.c || '—') + ' · ' + (TIERS[f.t] ? TIERS[f.t].n : '') + ' · Genel ' + (f.o || '?') + (f.ret ? ' · emekli' : '') + '</div></div>' + (same ? '<span class="pill" style="border-color:var(--ok)">Aynı takım ✔</span>' : '') + '</div>'; }).join('') : '<span class="mu">Henüz kimse yok</span>') + '</div><div class="mu">İpucu: Sezon sonunda arkadaşının kulübünden teklif gelirse kabul edip aynı takımda oynayabilirsin.</div>';
     return h;
   }
-  window.__KR = { S: function () { return S; }, MC: function () { return MC; }, ui: ui, shot: function (x, pw) { resolveShot(x, pw); }, ovr: ovr, train: train, startMatch: startMatch, shotOutcome: shotOutcome, seasonEnd: seasonEnd };
+  window.__KR = { S: function () { return S; }, MC: function () { return MC; }, ui: ui, shot: function (x, pw) { resolveShot(x, pw); }, ovr: ovr, train: train, startMatch: startMatch, shotOutcome: shotOutcome, seasonEnd: seasonEnd, next: nextMoment, resolveRef: resolveRef, skip: skipMatch, mates: mates, offers: makeOffers };
   boot();
 })();
