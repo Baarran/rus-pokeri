@@ -62,6 +62,31 @@ table { width:100%; border-collapse:collapse; font-size:14px; } td, th { padding
 tr.me td { background:rgba(255,211,77,.12); } .tT { color:#ff9a4d; } .tCT { color:#6db0ff; }
 #rot { position:fixed; inset:0; z-index:60; background:#0b1220; display:none; align-items:center; justify-content:center; text-align:center; font-size:20px; padding:30px; }
 @media (orientation:portrait) { body.playing #rot { display:flex; } }
+
+/* --- v2 dokunmatik düzen --- */
+#money { left:50%; transform:translateX(-50%); bottom:auto; top:46px; font-size:15px; }
+#joyZone { position:absolute; left:0; top:0; width:45%; bottom:0; pointer-events:auto; touch-action:none; }
+#joy { left:30px; bottom:calc(40px + env(safe-area-inset-bottom)); width:130px; height:130px; opacity:.55; pointer-events:none !important; } #joy.act { opacity:1; }
+#joy i { left:41px; top:41px; width:48px; height:48px; }
+#bFire { right:22px; bottom:calc(70px + env(safe-area-inset-bottom)); width:96px; height:96px; font-size:16px; }
+#bFire2 { left:24px; bottom:calc(190px + env(safe-area-inset-bottom)); width:72px; height:72px; background:rgba(255,80,50,.35); font-size:13px; }
+#bJump { right:132px; bottom:calc(46px + env(safe-area-inset-bottom)); width:70px; height:70px; }
+#bReload { right:24px; bottom:calc(178px + env(safe-area-inset-bottom)); width:66px; height:66px; }
+#bScope { right:104px; bottom:calc(138px + env(safe-area-inset-bottom)); width:66px; height:66px; }
+#bGren { right:104px; bottom:calc(214px + env(safe-area-inset-bottom)); width:56px; height:56px; font-size:13px; }
+#bSwap { right:30px; bottom:calc(252px + env(safe-area-inset-bottom)); width:56px; height:56px; left:auto; top:auto; }
+#bBuy { left:18px; top:122px; width:54px; height:54px; } #bScore { left:80px; top:122px; width:54px; height:54px; } #bMenu { left:142px; top:122px; width:54px; height:54px; }
+.tb.on { background:rgba(255,255,255,.4); transform:scale(.94); }
+@media (max-height:430px) { #bFire { width:84px; height:84px; bottom:calc(46px + env(safe-area-inset-bottom)); } #bJump { right:118px; bottom:calc(30px + env(safe-area-inset-bottom)); width:60px; height:60px; } #bReload { bottom:calc(138px + env(safe-area-inset-bottom)); width:56px; height:56px; } #bScope { right:96px; bottom:calc(104px + env(safe-area-inset-bottom)); width:56px; height:56px; } #bGren { right:100px; bottom:calc(168px + env(safe-area-inset-bottom)); width:50px; height:50px; } #bSwap { bottom:calc(204px + env(safe-area-inset-bottom)); right:24px; width:50px; height:50px; } #bFire2 { bottom:calc(140px + env(safe-area-inset-bottom)); width:62px; height:62px; } #joy { bottom:calc(20px + env(safe-area-inset-bottom)); } }
+/* sol elini kullan */
+body.lefty #joyZone { left:auto; right:0; } body.lefty #look { right:auto; left:0; } body.lefty #joy { left:auto; right:30px; }
+body.lefty #bFire { right:auto; left:22px; } body.lefty #bFire2 { left:auto; right:24px; } body.lefty #bJump { right:auto; left:132px; } body.lefty #bReload { right:auto; left:24px; } body.lefty #bScope { right:auto; left:104px; } body.lefty #bGren { right:auto; left:104px; } body.lefty #bSwap { right:auto; left:30px; }
+body.lefty #bBuy { left:auto; right:18px; } body.lefty #bScore { left:auto; right:80px; } body.lefty #bMenu { left:auto; right:142px; }
+#radar { position:absolute; left:12px; top:8px; width:110px; height:110px; border-radius:50%; border:2px solid rgba(255,255,255,.3); }
+body.lefty #radar { left:auto; right:12px; }
+#dmgDir { position:absolute; left:50%; top:50%; width:0; height:0; margin:0; opacity:0; transition:opacity .4s; pointer-events:none; }
+#dmgDir::before { content:""; position:absolute; left:-60px; top:-150px; width:120px; height:26px; border-radius:50%; background:radial-gradient(closest-side, rgba(255,40,40,.85), rgba(255,40,40,0)); }
+.set { display:flex; justify-content:space-between; align-items:center; gap:10px; padding:9px 4px; border-bottom:1px solid rgba(255,255,255,.08); font-size:14px; } .set input[type=range] { width:46%; } .set select { background:#1f2a44; color:#fff; border:1px solid #3a4870; border-radius:8px; padding:6px; } .set input[type=checkbox] { width:22px; height:22px; }
 </style>
 </head>
 <body>
@@ -69,7 +94,7 @@ tr.me td { background:rgba(255,211,77,.12); } .tT { color:#ff9a4d; } .tCT { colo
 <div id="rot">📱↻<br><br>Telefonu yan çevir<br><small style="font-size:14px;color:#93a1c4">Oyun yatay ekranda oynanır</small></div>
 
 <div id="hud" hidden>
-  <div id="scopeOv" hidden></div><div id="vign"></div><div id="cross"></div>
+  <div id="scopeOv" hidden></div><div id="vign"></div><div id="dmgDir"></div><div id="cross"></div><canvas id="radar" width="110" height="110"></canvas>
   <div class="hudbox" id="top"><span class="t" id="sT">0</span><span id="tmr">0:00</span><span class="ct" id="sCT">0</span></div>
   <div id="feed"></div><div id="msg"></div>
   <div class="hudbox" id="hp">❤ 100<small>🛡 0</small></div><div class="hudbox" id="money">$800</div>
@@ -78,11 +103,12 @@ tr.me td { background:rgba(255,211,77,.12); } .tT { color:#ff9a4d; } .tCT { colo
 </div>
 
 <div id="touch" hidden>
-  <div id="joy"><i></i></div><div id="look"></div>
-  <div class="tb" id="bFire">ATEŞ</div><div class="tb" id="bJump">ZIPLA</div><div class="tb" id="bReload">ŞARJÖR</div><div class="tb" id="bScope">NİŞAN</div>
+  <div id="joyZone"></div><div id="joy"><i></i></div><div id="look"></div>
+  <div class="tb" id="bFire">ATEŞ</div><div class="tb" id="bFire2">ATEŞ</div><div class="tb" id="bGren">💣<br>0</div><div class="tb" id="bJump">ZIPLA</div><div class="tb" id="bReload">ŞARJÖR</div><div class="tb" id="bScope">NİŞAN</div>
   <div class="tb" id="bBuy">SATIN<br>AL</div><div class="tb" id="bScore">SKOR</div><div class="tb" id="bSwap">SİLAH</div><div class="tb" id="bMenu">MENÜ</div>
 </div>
 
+<div class="ov" id="pause" hidden><div class="card" style="max-width:420px"><h3 style="margin:0 0 6px">⚙ Ayarlar</h3><div id="pauseBody"></div><div style="display:flex;gap:8px;margin-top:10px"><button class="btn pri" id="pauseClose" type="button" style="flex:1">Tamam</button><button class="btn" id="pauseLeave" type="button">Menüye dön</button></div></div></div>
 <div class="ov" id="shop" hidden><div class="card shop"><h3 style="margin:0 0 6px">🛒 Silah Dükkânı <span id="shopMoney" style="float:right;color:#ffd34d"></span></h3><div id="shopList"></div><button class="btn" id="shopClose" type="button" style="width:100%;margin-top:6px">Kapat</button></div></div>
 <div class="ov" id="board" hidden><div class="card"><h3 style="margin:0 0 6px">Skor tablosu</h3><div id="boardBody"></div><button class="btn" id="boardClose" type="button" style="width:100%;margin-top:6px">Kapat</button></div></div>
 
@@ -91,7 +117,7 @@ tr.me td { background:rgba(255,211,77,.12); } .tT { color:#ff9a4d; } .tCT { colo
     <h1>❄ BUZ OPERASYONU</h1>
     <p class="sub">Takım savaşı · Kızıllar (T) vs Mavililer (CT) · buz haritası</p>
     <div id="rooms"></div>
-    <button class="btn pri" id="btnBot" type="button" style="width:100%;margin-top:6px">🤖 Antrenman (botlara karşı)</button>
+    <button class="btn pri" id="btnBot" type="button" style="width:100%;margin-top:6px">🤖 Antrenman (botlara karşı)</button><button class="btn" id="btnSet" type="button" style="width:100%;margin-top:6px">⚙ Ayarlar (duyarlılık, nişan yardımı, sol el…)</button>
     <div id="menuMsg"></div>
     <div class="help"><b>Kontroller (bilgisayar):</b> WASD yürü · fare bak/ateş · boşluk zıpla · R şarjör · 1-4 silah · B satın al · Tab skor · sağ tık / Z dürbün<br><b>Telefon:</b> sol çubuk yürü · sağ yarıyı sürükle bak · ATEŞ düğmesi.<br>Tur başında 8 sn satın alma süresi vardır; rakip takımı tamamen elerseniz tur sizindir. Her tur para kazanırsınız.</div>
     <p class="help"><a href="../" style="color:#93a1c4">‹ Ana lobi</a></p>

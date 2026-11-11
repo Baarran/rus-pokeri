@@ -10,6 +10,11 @@
   var db = firebase.database(), auth = firebase.auth(), tOff = 0;
   try { db.ref('.info/serverTimeOffset').on('value', function (s) { tOff = s.val() || 0; }); } catch (e) {}
   var online = false;
+  var SET = { sens: 1, assist: true, auto: false, vib: true, left: false, q: TOUCH ? 'med' : 'high', diff: 'med' };
+  try { var sv = JSON.parse(localStorage.getItem('cs_set') || '{}'); Object.keys(sv).forEach(function (k) { SET[k] = sv[k]; }); } catch (e) {}
+  function saveSet() { try { localStorage.setItem('cs_set', JSON.stringify(SET)); } catch (e) {} applySet(); }
+  function vib(p) { if (SET.vib && navigator.vibrate) { try { navigator.vibrate(p); } catch (e) {} } }
+  var DIFF = { easy: { react: 0.9, hit: 0.55, fire: 1.4 }, med: { react: 0.55, hit: 1, fire: 1 }, hard: { react: 0.28, hit: 1.45, fire: 0.75 } };
   function snow() { return Date.now() + (online ? tOff : 0); }
 
   /* ---------------- sabitler ---------------- */
@@ -21,11 +26,14 @@
     rifle:  { n: 'Tüfek', slot: 1, dmg: 31, rate: 0.1, mag: 30, res: 90, reload: 2.4, spread: 0.02, auto: true, price: 2500, kick: 0.009, len: 0.75, col: 0x3a2f24 },
     sniper: { n: 'Keskin Nişancı', slot: 1, dmg: 98, rate: 1.25, mag: 8, res: 32, reload: 3.0, spread: 0.07, scopedSpread: 0.0008, auto: false, price: 4000, kick: 0.03, len: 1.0, col: 0x23262d, scope: true }
   };
-  var ARMOR_PRICE = 650;
+  WP.shotgun = { n: 'Pompalı', slot: 1, dmg: 12, pellets: 8, rate: 0.85, mag: 6, res: 30, reload: 2.8, spread: 0.055, auto: false, price: 1800, kick: 0.035, len: 0.7, col: 0x4a3524 };
+  WP.he = { n: 'El bombası', slot: 4, dmg: 100, mag: 0, res: 0, price: 300 };
+  var ARMOR_PRICE = 650, HE_MAX = 2;
 
   /* ---------------- sahne ---------------- */
   var canvas = $('gl'), renderer = new T.WebGLRenderer({ canvas: canvas, antialias: !TOUCH, powerPreference: 'high-performance' });
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, TOUCH ? 1.5 : 2));
+  function applySet() { var q = SET.q === 'low' ? 1 : SET.q === 'med' ? 1.25 : 2; renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, q)); if (typeof cam !== 'undefined' && cam) resize(); document.body.classList.toggle('lefty', !!SET.left); }
+  applySet();
   var scene = new T.Scene(); scene.background = new T.Color(0xbcd7ec); scene.fog = new T.Fog(0xbcd7ec, 25, 95);
   var cam = new T.PerspectiveCamera(75, 1, 0.05, 200); cam.rotation.order = 'YXZ'; scene.add(cam);
   scene.add(new T.HemisphereLight(0xe8f4ff, 0x8aa0b8, 0.95));
@@ -213,19 +221,24 @@
     me.nextShot = now + w.rate; if (w.mag) am.mag--;
     var spread = w.spread || 0; if (w.scope) spread = me.scoped ? w.scopedSpread : w.spread;
     if (!me.ground) spread *= 3; else if (Math.hypot(me.vx, me.vz) > 3) spread *= 1.8;
-    var cp = Math.cos(me.pitch), dx = -Math.sin(me.yaw) * cp, dy = Math.sin(me.pitch), dz = -Math.cos(me.yaw) * cp;
-    dx += (Math.random() - 0.5) * 2 * spread; dy += (Math.random() - 0.5) * 2 * spread; dz += (Math.random() - 0.5) * 2 * spread; var l = Math.hypot(dx, dy, dz); dx /= l; dy /= l; dz /= l;
-    var ox = me.x, oy = me.y + EYE, oz = me.z, range = me.cw === 'knife' ? w.range : 120, h = hitTest(ox, oy, oz, dx, dy, dz, range, me.team, me);
-    var ex = ox + dx * h.t, ey = oy + dy * h.t, ez = oz + dz * h.t;
-    if (me.cw !== 'knife') { var rx = Math.cos(me.yaw), rz = -Math.sin(me.yaw); tracer(ox + rx * 0.2 - Math.sin(me.yaw) * 0.6, oy - 0.2, oz + rz * 0.2 - Math.cos(me.yaw) * 0.6, ex, ey, ez); flashT = performance.now() + 45; }
+    var np = w.pellets || 1, ox = me.x, oy = me.y + EYE, oz = me.z, range = me.cw === 'knife' ? w.range : 120, hits = {}, lastE = null, rx = Math.cos(me.yaw), rz = -Math.sin(me.yaw);
+    for (var pi = 0; pi < np; pi++) {
+      var cp = Math.cos(me.pitch), dx = -Math.sin(me.yaw) * cp, dy = Math.sin(me.pitch), dz = -Math.cos(me.yaw) * cp;
+      dx += (Math.random() - 0.5) * 2 * spread; dy += (Math.random() - 0.5) * 2 * spread; dz += (Math.random() - 0.5) * 2 * spread; var l = Math.hypot(dx, dy, dz); dx /= l; dy /= l; dz /= l;
+      var h = hitTest(ox, oy, oz, dx, dy, dz, range, me.team, me), ex = ox + dx * h.t, ey = oy + dy * h.t, ez = oz + dz * h.t; lastE = [ex, ey, ez];
+      if (me.cw !== 'knife' && (pi < 3 || np === 1)) tracer(ox + rx * 0.2 - Math.sin(me.yaw) * 0.6, oy - 0.2, oz + rz * 0.2 - Math.cos(me.yaw) * 0.6, ex, ey, ez);
+      if (h.who) {
+        var fall = me.cw === 'shotgun' ? Math.max(0.15, 1 - h.t / 28) : Math.max(0.55, 1 - h.t / 160), dmg = w.dmg * (h.head ? (me.cw === 'sniper' ? 2 : me.cw === 'shotgun' ? 1.5 : 3.2) : 1) * (me.cw === 'knife' ? 1 : fall);
+        var k = h.who.uid || 'me'; hits[k] = hits[k] || { who: h.who, dmg: 0, head: false }; hits[k].dmg += dmg; if (h.head) hits[k].head = true;
+      } else if (pi < 3) puff(ex, ey, ez);
+    }
+    if (me.cw !== 'knife') flashT = performance.now() + 45;
     sfx(me.cw, 0.5); vmKick = 1; me.pitch += (w.kick || 0) * (0.6 + Math.random() * 0.8); me.sinceShot = 0;
-    if (h.who) {
-      var dmg = w.dmg * (h.head ? (me.cw === 'sniper' ? 2 : 3.2) : 1) * (me.cw === 'knife' ? 1 : Math.max(0.55, 1 - h.t / 160));
-      dmg = Math.round(dmg); hitT = performance.now() + 140; sfx('hit', 0.35); $('cross').classList.add('hit');
-      if (G.mode === 'bots' || h.who.bot) botHurt(h.who, dmg, h.head, me.cw);
-      else netDamage(h.who.uid, dmg, h.head, me.cw);
-    } else puff(ex, ey, ez);
-    if (online) netEvent(me.cw, ox, oy, oz, ex, ey, ez);
+    Object.keys(hits).forEach(function (k) {
+      var ht = hits[k], dmg = Math.round(ht.dmg); hitT = performance.now() + 140; sfx('hit', 0.35); $('cross').classList.add('hit'); vib(15);
+      if (G.mode === 'bots' || ht.who.bot) botHurt(ht.who, dmg, ht.head, me.cw); else netDamage(ht.who.uid, dmg, ht.head, me.cw);
+    });
+    if (online && lastE) netEvent(me.cw, ox, oy, oz, lastE[0], lastE[1], lastE[2]);
     if (w.mag && am.mag === 0 && am.res > 0) setTimeout(reload, 250);
     if (me.cw === 'sniper' && me.scoped) { setTimeout(function () { setScope(false); }, 80); }
   }
@@ -246,10 +259,49 @@
   function hurtMe(dmg, fromUid, fromName, wid, head) {
     if (!me.alive || G.R.ph !== 'live') return;
     if (me.armor > 0) { var ab = Math.min(me.armor, dmg * 0.5); me.armor -= ab; dmg = dmg - ab * 0.5; }
-    me.hp -= dmg; G.hurtT = performance.now() + 250; $('vign').classList.add('hurt'); sfx('hit', 0.5);
-    if (me.hp <= 0) { me.hp = 0; me.alive = false; me.d++; setScope(false); me.primary = null; say('Öldün', 'Turun bitmesini bekle'); netKill(fromUid, fromName, wid, head); }
+    me.hp -= dmg; G.hurtT = performance.now() + 250; $('vign').classList.add('hurt'); sfx('hit', 0.5); vib(me.hp <= 0 ? [60, 40, 120] : 35); dmgDir(fromUid);
+    if (me.hp <= 0) { me.hp = 0; me.alive = false; me.d++; setScope(false); me.primary = null; me.gren = 0; say('Öldün', 'Turun bitmesini bekle'); netKill(fromUid, fromName, wid, head); }
+  }
+  function dmgDir(fromUid) {
+    var p = G.ents[fromUid]; if (!p || p.x === undefined) return; var el = $('dmgDir'), brg = Math.atan2(-(p.x - me.x), -(p.z - me.z)), rel = brg - me.yaw;
+    el.style.transform = 'rotate(' + (-rel * 180 / Math.PI) + 'deg)'; el.style.opacity = 1; G.dirT = performance.now() + 900;
   }
   function killFeedLine(kn, vn, wid, head) { return kn + '  ▸ ' + (head ? '🎯 ' : '') + (WP[wid] ? WP[wid].n : '') + ' ▸  ' + vn; }
+
+  /* ---------------- el bombası ---------------- */
+  var gl = [];
+  function throwHE() {
+    if (!me.alive || (me.gren || 0) <= 0 || G.R.ph === 'buy') return; me.gren--; renderSlots();
+    var cp = Math.cos(me.pitch), dx = -Math.sin(me.yaw) * cp, dy = Math.sin(me.pitch), dz = -Math.cos(me.yaw) * cp;
+    var m = new T.Mesh(new T.SphereGeometry(0.14, 8, 6), new T.MeshBasicMaterial({ color: 0x2b3a2b })); m.position.set(me.x + dx * 0.6, me.y + EYE - 0.1, me.z + dz * 0.6); scene.add(m);
+    gl.push({ m: m, x: m.position.x, y: m.position.y, z: m.position.z, vx: dx * 15 + me.vx * 0.5, vy: dy * 15 + 4.5, vz: dz * 15 + me.vz * 0.5, t: performance.now() + 1700 }); sfx('knife', 0.4); vib(20);
+  }
+  function stepGren(dt, now) {
+    gl = gl.filter(function (g) {
+      g.vy -= 20 * dt; var nx = g.x + g.vx * dt, ny = g.y + g.vy * dt, nz = g.z + g.vz * dt;
+      var d = Math.hypot(nx - g.x, ny - g.y, nz - g.z) + 1e-6, th = rayWorld(g.x, g.y, g.z, (nx - g.x) / d, (ny - g.y) / d, (nz - g.z) / d, d + 0.15);
+      if (th < d + 0.15) { g.vx *= -0.35; g.vz *= -0.35; g.vy *= -0.3; } else { g.x = nx; g.y = ny; g.z = nz; }
+      if (g.y < 0.15) { g.y = 0.15; g.vy = Math.abs(g.vy) * 0.4; g.vx *= 0.75; g.vz *= 0.75; }
+      g.m.position.set(g.x, g.y, g.z);
+      if (now >= g.t) { scene.remove(g.m); explode(g.x, g.y, g.z, true); return false; } return true;
+    });
+    if (G.fxs) G.fxs = G.fxs.filter(function (f) { var k = (now - f.t0) / 450; if (k >= 1) { scene.remove(f.m); return false; } f.m.scale.setScalar(1 + k * 7); f.m.material.opacity = 0.7 * (1 - k); return true; });
+  }
+  function boomFx(x, y, z) {
+    var m = new T.Mesh(new T.SphereGeometry(1, 12, 10), new T.MeshBasicMaterial({ color: 0xff9b3a, transparent: true, opacity: 0.7 })); m.position.set(x, y, z); scene.add(m); G.fxs = G.fxs || []; G.fxs.push({ m: m, t0: performance.now() });
+    for (var i = 0; i < 10; i++) puff(x, y, z); var d = Math.hypot(x - me.x, z - me.z); sfx('sniper', Math.min(1, 14 / (d + 3))); if (d < 18) { G.shake = Math.max(G.shake || 0, 0.5); vib(60); }
+  }
+  function explode(x, y, z, mine) {
+    boomFx(x, y, z); if (!mine) return;
+    if (online) netEvent('he', x, y, z, x, y, z);
+    var R = 7.5; allPlayers().forEach(function (p) {
+      if (!p.alive) return; var self = p === me; if (!self && p.team === me.team) return;
+      var d = Math.hypot(p.x - x, (p.y + 1) - y, p.z - z); if (d > R) return;
+      if (d > 1.5 && rayWorld(x, y + 0.2, z, (p.x - x) / d, (p.y + 1 - y) / d, (p.z - z) / d, d) < d - 0.3) return;
+      var dmg = Math.round(100 * Math.pow(1 - d / R, 1.2) * (self ? 0.5 : 1)); if (dmg < 4) return;
+      if (self) hurtMe(dmg, G.uid, G.name, 'he', false); else if (G.mode === 'bots' || p.bot) botHurt(p, dmg, false, 'he'); else netDamage(p.uid, dmg, false, 'he');
+    });
+  }
 
   /* ---------------- botlar (antrenman) ---------------- */
   var bots = [], GRID = 0.5, GN = Math.round(MAP.half * 2 / GRID), blockedG = null;
@@ -296,9 +348,9 @@
     if (seen) {
       var ang = Math.atan2(-(tgt.x - e.x), -(tgt.z - e.z)), dy = ((ang - e.yaw + Math.PI * 3) % (Math.PI * 2)) - Math.PI; e.yaw += dy * Math.min(1, dt * 7);
       e.react += dt; e.fireT -= dt;
-      if (e.react > 0.55 && e.fireT <= 0 && Math.abs(dy) < 0.25 && G.R.ph === 'live') {
-        e.fireT = 0.28 + Math.random() * 0.25; var p = Math.max(0.12, 0.5 - dist * 0.012); tracer(e.x, e.y + 1.4, e.z, tgt.x + (Math.random() - 0.5) * 0.8, tgt.y + 1.2, tgt.z + (Math.random() - 0.5) * 0.8, 0xffa070); sfx('rifle', Math.max(0.05, 0.4 - dist * 0.01));
-        if (Math.random() < p) hurtMe(13 + Math.random() * 8, e.uid, e.name, 'rifle', false);
+      if (e.react > DIFF[SET.diff].react && e.fireT <= 0 && Math.abs(dy) < 0.25 && G.R.ph === 'live') {
+        e.fireT = (0.28 + Math.random() * 0.25) * DIFF[SET.diff].fire; var p = Math.max(0.12, 0.5 - dist * 0.012); tracer(e.x, e.y + 1.4, e.z, tgt.x + (Math.random() - 0.5) * 0.8, tgt.y + 1.2, tgt.z + (Math.random() - 0.5) * 0.8, 0xffa070); sfx('rifle', Math.max(0.05, 0.4 - dist * 0.01));
+        if (Math.random() < p * DIFF[SET.diff].hit) hurtMe(13 + Math.random() * 8, e.uid, e.name, 'rifle', false);
       }
       if (dist > 14) { wx = -Math.sin(e.yaw) * 0.6; wz = -Math.cos(e.yaw) * 0.6; }
     } else {
@@ -327,7 +379,7 @@
       on(base.child('pl'), 'value', function (s) { G.roster = s.val() || {}; syncEnts(); });
       on(base.child('st'), 'value', function (s) { var st = s.val() || {}; Object.keys(st).forEach(function (u) { var e = G.ents[u]; if (e) { var v = st[u]; e.tx = v.x; e.ty = v.y; e.tz = v.z; e.yaw = v.r; e.pitch = v.p; e.alive = !!v.a; e.hp = v.h; e.w = v.w; e.k = v.k || 0; e.d = v.d || 0; if (e.x === undefined) { e.x = e.tx; e.y = e.ty; e.z = e.tz; } } }); });
       on(base.child('rd'), 'value', function (s) { var r = s.val(); if (r && (r.n !== G.R.n || r.ph !== G.R.ph)) setRound(r); });
-      on(base.child('ev'), 'child_added', function (s) { var v = s.val(); if (!v || v.u === G.uid || (v.at || 0) < NET.t0) return; var d = Math.hypot(v.ox - me.x, v.oz - me.z); sfx(v.w, Math.min(0.6, 8 / (d + 4))); tracer(v.ox, v.oy, v.oz, v.ex, v.ey, v.ez, 0xffc080); });
+      on(base.child('ev'), 'child_added', function (s) { var v = s.val(); if (!v || v.u === G.uid || (v.at || 0) < NET.t0) return; if (v.w === 'he') { boomFx(v.ex, v.ey, v.ez); return; } var d = Math.hypot(v.ox - me.x, v.oz - me.z); sfx(v.w, Math.min(0.6, 8 / (d + 4))); tracer(v.ox, v.oy, v.oz, v.ex, v.ey, v.ez, 0xffc080); });
       on(base.child('dm/' + G.uid), 'child_added', function (s) { var v = s.val(); s.ref ? s.ref.remove() : base.child('dm/' + G.uid + '/' + s.key).remove(); if (!v || (v.at || 0) < NET.t0) return; var f = G.roster[v.f]; hurtMe(v.d, v.f, f ? f.name : 'Oyuncu', v.w, !!v.h); });
       on(base.child('kf'), 'child_added', function (s) { var v = s.val(); if (!v || (v.at || 0) < NET.t0) return; feedAdd(killFeedLine(v.kn, v.vn, v.w, v.h)); if (v.k === G.uid) { me.k++; me.money = Math.min(16000, me.money + 300); } });
       NET.loop = setInterval(netLoop, 80); NET.host = setInterval(function () { if (G.mode === 'online' && isHost()) hostTick(); }, 400);
@@ -363,7 +415,7 @@
   function resetInput() { inp.f = inp.r = 0; inp.fire = false; inp.jump = false; keys = {}; }
   window.addEventListener('keydown', function (e) {
     if (G.menu) return; var k = e.key.toLowerCase(); if (e.repeat && k !== ' ') return; keys[k] = true;
-    if (k === 'r') reload(); else if (k === 'b') toggleShop(); else if (k === 'tab') { e.preventDefault(); showBoard(true); } else if (k === 'z') setScope(!me.scoped);
+    if (k === 'r') reload(); else if (k === 'b') toggleShop(); else if (k === 'tab') { e.preventDefault(); showBoard(true); } else if (k === 'z') setScope(!me.scoped); else if (k === 'g') throwHE();
     else if (k === '1' && me.primary) switchTo(me.primary); else if (k === '2') switchTo('pistol'); else if (k === '3') switchTo('knife');
     if (k === ' ') e.preventDefault();
   });
@@ -375,33 +427,58 @@
   window.addEventListener('mouseup', function (e) { if (e.button === 0) inp.fire = false; });
   canvas.addEventListener('contextmenu', function (e) { e.preventDefault(); });
   document.addEventListener('pointerlockchange', function () { locked = document.pointerLockElement === canvas; });
-  document.addEventListener('mousemove', function (e) { if (!locked || G.menu) return; var s = me.scoped ? 0.0009 : 0.0023; me.yaw -= e.movementX * s; me.pitch = Math.max(-1.5, Math.min(1.5, me.pitch - e.movementY * s)); });
+  document.addEventListener('mousemove', function (e) { if (!locked || G.menu) return; var s = (me.scoped ? 0.0009 : 0.0023) * SET.sens; me.yaw -= e.movementX * s; me.pitch = Math.max(-1.5, Math.min(1.5, me.pitch - e.movementY * s)); });
   // dokunmatik
   (function touch() {
-    if (!TOUCH) return; $('touch').hidden = false;
-    var joy = $('joy'), knob = joy.querySelector('i'), jid = null, jc = null;
-    function jmove(e) { var dx = e.clientX - jc.x, dy = e.clientY - jc.y, l = Math.hypot(dx, dy), m = 55; if (l > m) { dx *= m / l; dy *= m / l; } knob.style.transform = 'translate(' + dx + 'px,' + dy + 'px)'; inp.r = dx / m; inp.f = -dy / m; }
-    joy.addEventListener('pointerdown', function (e) { jid = e.pointerId; joy.setPointerCapture(jid); var r = joy.getBoundingClientRect(); jc = { x: r.left + r.width / 2, y: r.top + r.height / 2 }; jmove(e); });
-    joy.addEventListener('pointermove', function (e) { if (e.pointerId === jid) jmove(e); });
-    function jend(e) { if (e.pointerId === jid) { jid = null; knob.style.transform = ''; inp.r = inp.f = 0; } } joy.addEventListener('pointerup', jend); joy.addEventListener('pointercancel', jend);
-    var look = $('look'), lid = null, lx = 0, ly = 0;
-    look.addEventListener('pointerdown', function (e) { lid = e.pointerId; look.setPointerCapture(lid); lx = e.clientX; ly = e.clientY; });
-    look.addEventListener('pointermove', function (e) { if (e.pointerId !== lid) return; var s = me.scoped ? 0.0018 : 0.0048; me.yaw -= (e.clientX - lx) * s; me.pitch = Math.max(-1.5, Math.min(1.5, me.pitch - (e.clientY - ly) * s)); lx = e.clientX; ly = e.clientY; });
+    if (!TOUCH) return;
+    var zone = $('joyZone'), joy = $('joy'), knob = joy.querySelector('i'), jid = null, jc = null;
+    function jmove(e) { var dx = e.clientX - jc.x, dy = e.clientY - jc.y, l = Math.hypot(dx, dy), m = 52; if (l > m) { dx *= m / l; dy *= m / l; } knob.style.transform = 'translate(' + dx + 'px,' + dy + 'px)'; var k = Math.min(1, l / m); inp.r = dx / m; inp.f = -dy / m; }
+    zone.addEventListener('pointerdown', function (e) { if (jid !== null) return; jid = e.pointerId; try { zone.setPointerCapture(jid); } catch (x) {} jc = { x: e.clientX, y: e.clientY }; joy.style.left = (jc.x - 65) + 'px'; joy.style.top = (jc.y - 65) + 'px'; joy.style.bottom = 'auto'; joy.style.right = 'auto'; joy.classList.add('act'); jmove(e); });
+    zone.addEventListener('pointermove', function (e) { if (e.pointerId === jid) jmove(e); });
+    function jend(e) { if (e.pointerId === jid) { jid = null; knob.style.transform = ''; inp.r = inp.f = 0; joy.style.cssText = ''; joy.classList.remove('act'); } } zone.addEventListener('pointerup', jend); zone.addEventListener('pointercancel', jend);
+    var look = $('look'), lid = null, lx = 0, ly = 0, lvx = 0, lvy = 0;
+    look.addEventListener('pointerdown', function (e) { lid = e.pointerId; try { look.setPointerCapture(lid); } catch (x) {} lx = e.clientX; ly = e.clientY; lvx = lvy = 0; });
+    look.addEventListener('pointermove', function (e) {
+      if (e.pointerId !== lid) return; var base = (me.scoped ? 0.0018 : 0.0048) * SET.sens * (G.slow || 1), dx = e.clientX - lx, dy = e.clientY - ly;
+      lvx = lvx * 0.4 + dx * 0.6; lvy = lvy * 0.4 + dy * 0.6; me.yaw -= lvx * base; me.pitch = Math.max(-1.5, Math.min(1.5, me.pitch - lvy * base)); lx = e.clientX; ly = e.clientY;
+    });
     function lend(e) { if (e.pointerId === lid) lid = null; } look.addEventListener('pointerup', lend); look.addEventListener('pointercancel', lend);
-    function hold(id, on, off) { var el = $(id); el.addEventListener('pointerdown', function (e) { e.preventDefault(); el.setPointerCapture(e.pointerId); on(); }); function up() { off && off(); } el.addEventListener('pointerup', up); el.addEventListener('pointercancel', up); }
-    hold('bFire', function () { inp.fire = true; inp.edge = true; }, function () { inp.fire = false; });
+    function hold(id, on, off) { var el = $(id); if (!el) return; el.addEventListener('pointerdown', function (e) { e.preventDefault(); e.stopPropagation(); try { el.setPointerCapture(e.pointerId); } catch (x) {} el.classList.add('on'); on(); }); function up() { el.classList.remove('on'); off && off(); } el.addEventListener('pointerup', up); el.addEventListener('pointercancel', up); el.addEventListener('lostpointercapture', up); }
+    var fireOn = function () { inp.fire = true; inp.edge = true; }, fireOff = function () { inp.fire = false; };
+    hold('bFire', fireOn, fireOff); hold('bFire2', fireOn, fireOff);
     hold('bJump', function () { inp.jump = true; }, function () { inp.jump = false; });
-    hold('bReload', reload); hold('bScope', function () { setScope(!me.scoped); });
+    hold('bReload', reload); hold('bScope', function () { setScope(!me.scoped); }); hold('bGren', throwHE);
     hold('bSwap', function () { var order = [me.primary, 'pistol', 'knife'].filter(Boolean), i = order.indexOf(me.cw); switchTo(order[(i + 1) % order.length]); });
-    hold('bBuy', toggleShop); hold('bScore', function () { showBoard($('board').hidden); }); hold('bMenu', function () { if (confirm('Maçtan çıkıp menüye dönmek istiyor musun?')) leaveGame(); });
+    hold('bBuy', toggleShop); hold('bScore', function () { showBoard($('board').hidden); }); hold('bMenu', openPause);
   })();
+
+  /* ---------------- duraklat / ayarlar ---------------- */
+  function openPause(fromMenu) {
+    var o = function (v, cur, t) { return '<option value="' + v + '"' + (cur === v ? ' selected' : '') + '>' + t + '</option>'; };
+    $('pauseBody').innerHTML =
+      '<label class="set">Duyarlılık <b id="sensV">' + SET.sens.toFixed(1) + '</b><input type="range" id="sSens" min="0.4" max="2.5" step="0.1" value="' + SET.sens + '"></label>' +
+      '<label class="set"><span>Nişan yardımı (düşmana yaklaşınca yavaşlar)</span><input type="checkbox" id="sAssist"' + (SET.assist ? ' checked' : '') + '></label>' +
+      '<label class="set"><span>Otomatik ateş (nişan düşmandayken)</span><input type="checkbox" id="sAuto"' + (SET.auto ? ' checked' : '') + '></label>' +
+      '<label class="set"><span>Titreşim</span><input type="checkbox" id="sVib"' + (SET.vib ? ' checked' : '') + '></label>' +
+      '<label class="set"><span>Sol elini kullan (yerleşimi çevir)</span><input type="checkbox" id="sLeft"' + (SET.left ? ' checked' : '') + '></label>' +
+      '<label class="set"><span>Grafik</span><select id="sQ">' + o('low', SET.q, 'Düşük (akıcı)') + o('med', SET.q, 'Orta') + o('high', SET.q, 'Yüksek') + '</select></label>' +
+      '<label class="set"><span>Bot zorluğu</span><select id="sDiff">' + o('easy', SET.diff, 'Kolay') + o('med', SET.diff, 'Orta') + o('hard', SET.diff, 'Zor') + '</select></label>';
+    $('pauseLeave').hidden = fromMenu === true; $('pause').hidden = false;
+    $('sSens').oninput = function () { SET.sens = +this.value; $('sensV').textContent = SET.sens.toFixed(1); saveSet(); };
+    [['sAssist', 'assist'], ['sAuto', 'auto'], ['sVib', 'vib'], ['sLeft', 'left']].forEach(function (a) { $(a[0]).onchange = function () { SET[a[1]] = this.checked; saveSet(); }; });
+    $('sQ').onchange = function () { SET.q = this.value; saveSet(); }; $('sDiff').onchange = function () { SET.diff = this.value; saveSet(); };
+    resetInput();
+  }
+  $('pauseClose').onclick = function () { $('pause').hidden = true; };
+  $('pauseLeave').onclick = function () { $('pause').hidden = true; leaveGame(); };
+  $('btnSet').onclick = function () { openPause(true); };
 
   /* ---------------- dükkân / skor / HUD ---------------- */
   function renderSlots() {
     var h = ''; [['1', me.primary], ['2', 'pistol'], ['3', 'knife']].forEach(function (s) { if (!s[1]) return; h += '<button type="button" data-w="' + s[1] + '" class="' + (me.cw === s[1] ? 'on' : '') + '">' + s[0] + ' · ' + WP[s[1]].n + '</button>'; });
-    $('slots').innerHTML = h;
+    if ((me.gren || 0) > 0) h += '<button type="button" data-g="1">G · 💣 x' + me.gren + '</button>'; $('slots').innerHTML = h; var bg = $('bGren'); if (bg) bg.innerHTML = '💣<br>' + (me.gren || 0);
   }
-  $('slots').addEventListener('pointerdown', function (e) { var b = e.target.closest('[data-w]'); if (b) switchTo(b.dataset.w); });
+  $('slots').addEventListener('pointerdown', function (e) { var g = e.target.closest('[data-g]'); if (g) { throwHE(); return; } var b = e.target.closest('[data-w]'); if (b) switchTo(b.dataset.w); });
   function toggleShop() { if ($('shop').hidden) openShop(); else closeShop(); }
   function openShop() {
     if (!me.alive) return; if (document.exitPointerLock) document.exitPointerLock(); $('shop').hidden = false; renderShop();
@@ -409,14 +486,15 @@
   function closeShop() { $('shop').hidden = true; }
   function renderShop() {
     $('shopMoney').textContent = '$' + me.money; var can = G.R.ph === 'buy' || G.R.ph === 'wait', h = '';
-    ['smg', 'rifle', 'sniper'].forEach(function (id) { var w = WP[id]; h += '<button class="btn" type="button" data-buy="' + id + '"' + (!can || me.money < w.price || me.primary === id ? ' disabled' : '') + '><span>' + w.n + (me.primary === id ? ' ✓' : '') + '</span><span>$' + w.price + '</span></button>'; });
+    ['shotgun', 'smg', 'rifle', 'sniper'].forEach(function (id) { var w = WP[id]; h += '<button class="btn" type="button" data-buy="' + id + '"' + (!can || me.money < w.price || me.primary === id ? ' disabled' : '') + '><span>' + w.n + (me.primary === id ? ' ✓' : '') + '</span><span>$' + w.price + '</span></button>'; });
+    h += '<button class="btn" type="button" data-buy="he"' + (!can || me.money < WP.he.price || (me.gren || 0) >= HE_MAX ? ' disabled' : '') + '><span>💣 El bombası (' + (me.gren || 0) + '/' + HE_MAX + ')</span><span>$' + WP.he.price + '</span></button>';
     h += '<button class="btn" type="button" data-buy="armor"' + (!can || me.money < ARMOR_PRICE || me.armor >= 100 ? ' disabled' : '') + '><span>🛡 Zırh</span><span>$' + ARMOR_PRICE + '</span></button>';
     if (!can) h += '<p style="color:#93a1c4;font-size:13px">Satın alma yalnızca tur başında (ilk 8 sn) yapılır.</p>';
     $('shopList').innerHTML = h;
   }
   $('shopList').addEventListener('click', function (e) {
     var b = e.target.closest('[data-buy]'); if (!b || b.disabled) return; var id = b.dataset.buy;
-    if (id === 'armor') { me.money -= ARMOR_PRICE; me.armor = 100; } else { me.money -= WP[id].price; me.primary = id; giveAmmo(id); me.cw = id; buildVM(); }
+    if (id === 'armor') { me.money -= ARMOR_PRICE; me.armor = 100; } else if (id === 'he') { me.money -= WP.he.price; me.gren = (me.gren || 0) + 1; } else { me.money -= WP[id].price; me.primary = id; giveAmmo(id); me.cw = id; buildVM(); }
     renderSlots(); renderShop(); sfx('hit', 0.3);
   });
   $('shopClose').onclick = closeShop;
@@ -450,7 +528,7 @@
       var f = (keys['w'] || keys['arrowup'] ? 1 : 0) - (keys['s'] || keys['arrowdown'] ? 1 : 0) + inp.f, r = (keys['d'] ? 1 : 0) - (keys['a'] ? 1 : 0) + inp.r, l = Math.hypot(f, r); if (l > 1) { f /= l; r /= l; }
       var sy = Math.sin(me.yaw), cy = Math.cos(me.yaw), wx = -sy * f + cy * r, wz = -cy * f - sy * r, slow = keys['shift'] ? WALK : SPD, wpn = me.cw === 'knife' ? 1.08 : me.scoped ? 0.5 : 1;
       physics(me, dt, wx, wz, slow * wpn, inp.jump || keys[' ']);
-      if (inp.fire && (WP[me.cw].auto || inp.edge)) shoot(); inp.edge = false;
+      if ((inp.fire || inp.auto) && (WP[me.cw].auto || inp.edge)) shoot(); inp.edge = false; inp.auto = false;
     } else if (!me.alive) { me.vx = me.vz = 0; }
     me.sinceShot += dt;
     // kamera
@@ -474,17 +552,44 @@
     var pos = flakes.geometry.attributes.position, arr = pos.array; for (var i = 0; i < arr.length; i += 3) { arr[i + 1] -= dt * 1.6; arr[i] += Math.sin(now / 900 + i) * dt * 0.2; if (arr[i + 1] < 0) { arr[i + 1] = 18; arr[i] = cam.position.x + (Math.random() - 0.5) * 50; arr[i + 2] = cam.position.z + (Math.random() - 0.5) * 50; } } pos.needsUpdate = true;
     // çevrimdışı: yerel tur yöneticisi
     if (G.mode === 'bots' && now - hostLocalT > 400) { hostLocalT = now; hostTick(); }
+    stepGren(dt, now); aimAssist(); radar(now);
+    if (G.dirT && now > G.dirT) { $('dmgDir').style.opacity = 0; G.dirT = 0; }
+    if (G.shake > 0) { cam.position.x += (Math.random() - 0.5) * G.shake * 0.25; cam.position.y += (Math.random() - 0.5) * G.shake * 0.25; G.shake = Math.max(0, G.shake - dt * 1.6); }
     hud(); renderer.render(scene, cam);
+  }
+  /* nişan yardımı + otomatik ateş (telefon) */
+  function aimAssist() {
+    G.slow = 1; if (!me.alive || G.R.ph !== 'live') return;
+    var best = 9, bx = 0;
+    allPlayers().forEach(function (p) {
+      if (p === me || !p.alive || p.team === me.team || p.x === undefined) return;
+      var dx = p.x - me.x, dz = p.z - me.z, dist = Math.hypot(dx, dz); if (dist > 60) return;
+      var brg = Math.atan2(-dx, -dz), dy = ((brg - me.yaw + Math.PI * 3) % (Math.PI * 2)) - Math.PI, pit = Math.atan2((p.y + 1.35) - (me.y + EYE), dist), dp = pit - me.pitch, err = Math.hypot(dy * Math.cos(me.pitch), dp);
+      if (err < best && los(me, p)) { best = err; bx = dist; }
+    });
+    if (TOUCH && SET.assist && best < 0.12) G.slow = 0.45;
+    if (TOUCH && SET.auto && best < 0.05 && me.cw !== 'knife') { inp.edge = true; inp.auto = true; }
+  }
+  var rctx = $('radar').getContext('2d'), rT = 0;
+  function radar(now) {
+    if (now - rT < 70) return; rT = now; var c = rctx, S = 110, R = 42, sc = S / 2 / R; c.clearRect(0, 0, S, S); c.save(); c.beginPath(); c.arc(S / 2, S / 2, S / 2 - 1, 0, 7); c.clip(); c.fillStyle = 'rgba(8,14,28,.6)'; c.fillRect(0, 0, S, S);
+    c.translate(S / 2, S / 2); c.rotate(me.yaw); c.fillStyle = 'rgba(150,190,230,.35)';
+    MAP.boxes.forEach(function (b) { if (b.h < 1.2 || b.y > 1) return; var dx = b.x - me.x, dz = b.z - me.z; if (Math.abs(dx) > R + b.w || Math.abs(dz) > R + b.d) return; c.fillRect((dx - b.w / 2) * sc, (dz - b.d / 2) * sc, b.w * sc, b.d * sc); });
+    allPlayers().forEach(function (p) {
+      if (p === me || !p.alive || p.x === undefined) return; var mate = p.team === me.team; if (!mate && !los(me, p)) return;
+      var dx = p.x - me.x, dz = p.z - me.z; if (Math.hypot(dx, dz) > R) return; c.fillStyle = mate ? '#5aa2ff' : '#ff5a4a'; c.beginPath(); c.arc(dx * sc, dz * sc, 3.2, 0, 7); c.fill();
+    });
+    c.restore(); c.fillStyle = '#fff'; c.beginPath(); c.moveTo(S / 2, S / 2 - 6); c.lineTo(S / 2 - 4, S / 2 + 4); c.lineTo(S / 2 + 4, S / 2 + 4); c.closePath(); c.fill();
   }
 
   /* ---------------- menü / başlat ---------------- */
   function startGame(mode, room) {
     G.mode = null; G.menu = false; document.body.classList.add('playing'); $('menu').hidden = true; $('hud').hidden = false; resetInput(); G.R = { n: 0, ph: 'wait', t0: snow(), sT: 0, sCT: 0, win: '' }; G.lastN = -1; G.awarded = -1; G.feed = [];
-    me.money = 800; me.primary = null; me.k = 0; me.d = 0; me.armor = 0; me.alive = false; me.hp = 0; Object.keys(G.ents).forEach(function (u) { scene.remove(G.ents[u].mesh); }); G.ents = {};
+    me.money = 800; me.gren = 0; me.primary = null; me.k = 0; me.d = 0; me.armor = 0; me.alive = false; me.hp = 0; Object.keys(G.ents).forEach(function (u) { scene.remove(G.ents[u].mesh); }); G.ents = {};
     if (mode === 'bots') { online = false; G.mode = 'bots'; me.team = 'T'; buildGrid(); spawnBots(); commit({ n: 1, ph: 'buy', t0: snow(), sT: 0, sCT: 0, win: '' }); }
     else netJoin(room).then(function () { if (isHost()) hostTick(); }, function (e) { alert('Odaya girilemedi: ' + (e && e.message)); leaveGame(); });
     if (mode === 'bots' && !me.alive) resetMe();
-    me.cw = 'pistol'; renderSlots(); if (TOUCH) $('touch').hidden = false; audio();
+    me.cw = 'pistol'; renderSlots(); if (TOUCH) { $('touch').hidden = false; try { var de = document.documentElement; if (!document.fullscreenElement && de.requestFullscreen) de.requestFullscreen().then(function () { if (screen.orientation && screen.orientation.lock) screen.orientation.lock('landscape').catch(function () {}); }, function () {}); } catch (e) {} } audio();
   }
   function leaveGame() {
     netLeave(); G.mode = null; G.menu = true; online = false; document.body.classList.remove('playing'); $('menu').hidden = false; $('hud').hidden = true; setScope(false); closeShop(); showBoard(false); if (document.exitPointerLock) document.exitPointerLock();
@@ -507,6 +612,6 @@
     if (!u) { G.uid = null; $('menuMsg').innerHTML = 'Önce <a href="../" style="color:#9cf">ana sayfadan</a> giriş yap, sonra buraya dön.'; return; }
     G.uid = u.uid; try { var pr = db.ref('rp/online/' + u.uid); pr.onDisconnect().remove(); pr.set('cs'); } catch (e) {} db.ref('rp/users/' + u.uid + '/name').once('value').then(function (s) { G.name = s.val() || 'Oyuncu'; $('menuMsg').textContent = 'Merhaba ' + G.name + '!'; refreshRooms(); });
   });
-  window.__cs = { me: me, G: G, WP: WP, hostTick: hostTick, shoot: shoot, ents: function () { return G.ents; }, rayWorld: rayWorld, los: los };
+  window.__cs = { throwHE: throwHE, explode: explode, SET: SET, inp: inp, me: me, G: G, WP: WP, hostTick: hostTick, shoot: shoot, ents: function () { return G.ents; }, rayWorld: rayWorld, los: los };
   requestAnimationFrame(frame);
 })();
