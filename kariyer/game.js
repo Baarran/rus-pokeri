@@ -51,7 +51,7 @@
   }
   function afterLogin() {
     try { var pr = db.ref('rp/online/' + uid); pr.onDisconnect().remove(); pr.set('kariyer'); } catch (e) {}
-    function use(v) { S = v || null; if (S && !S.retired && S.v === 1) { ui.view = 'main'; ui.tab = 'hub'; } else { ui.view = S && S.retired ? 'retired' : 'create'; } render(); }
+    function use(v) { S = v || null; if (S && !S.retired && S.v === 1) { ui.view = 'main'; ui.tab = 'hub'; startPresence(); } else { ui.view = S && S.retired ? 'retired' : 'create'; } render(); }
     db.ref('rp/kariyer/top/' + uid).once('value').then(function (s) { topMine = s.val() || null; }, function () {}).then(function () {
       return db.ref('rp/kariyer/p/' + uid).once('value');
     }).then(function (s) { var v = s.val(); if (v && typeof v === 'string') { try { v = JSON.parse(v); } catch (e) { v = null; } } use(v || lsLoad()); }, function () { use(lsLoad()); });
@@ -65,7 +65,7 @@
   function worth() { return S.money + HOUSES[S.house][1] * 0.5 + CARS[S.car][1] * 0.3; }
   function pushTop() {
     var t = topMine || {}, avg = Math.max(t.r || 0, S.best.avg), g = Math.max(t.g || 0, S.goals), m = Math.max(t.m || 0, Math.round(worth()));
-    topMine = { n: uname, g: g, a: Math.max(t.a || 0, S.assists), r: avg, bm: Math.max(t.bm || 0, S.best.match), m: m, o: ovr(), age: S.age, c: S.club, ret: !!S.retired, t: S.tier, nm: S.name };
+    topMine = { n: uname, g: g, a: Math.max(t.a || 0, S.assists), r: avg, bm: Math.max(t.bm || 0, S.best.match), m: m, o: ovr(), age: S.age, c: S.club, ret: !!S.retired, t: S.tier, nm: S.name, dw: Math.max(t.dw || 0, S.dw || 0) };
     db.ref('rp/kariyer/top/' + uid).set(topMine);
   }
 
@@ -273,8 +273,8 @@
     var key = ui.board, rows = Object.keys(boardData || {}).map(function (k) { var v = boardData[k]; v.id = k; return v; });
     if (topMine && uid) { var mm = rows.filter(function (r) { return r.id === uid; })[0]; if (!mm) rows.push(Object.assign({ id: uid }, topMine)); }
     rows.sort(function (a, b) { return (b[key] || 0) - (a[key] || 0); });
-    var lab = { g: 'Gol', r: 'Sezon ort. puan', m: 'Servet' }, fmt = function (r) { return key === 'm' ? money(r.m || 0) : key === 'r' ? (r.r || 0).toFixed(2) : (r.g || 0); };
-    var h = '<h2>Skor tablosu</h2><div class="tabs"><button data-bd="g" class="' + (key === 'g' ? 'on' : '') + '">⚽ En çok gol</button><button data-bd="r" class="' + (key === 'r' ? 'on' : '') + '">⭐ En yüksek puan</button><button data-bd="m" class="' + (key === 'm' ? 'on' : '') + '">💰 En zengin</button></div><div class="card"><table><tr><th>#</th><th>Oyuncu</th><th>Kulüp</th><th>' + lab[key] + '</th></tr>';
+    var lab = { g: 'Gol', r: 'Sezon ort. puan', m: 'Servet', dw: 'Canlı galibiyet' }, fmt = function (r) { return key === 'm' ? money(r.m || 0) : key === 'r' ? (r.r || 0).toFixed(2) : key === 'dw' ? (r.dw || 0) : (r.g || 0); };
+    var h = '<h2>Skor tablosu</h2><div class="tabs"><button data-bd="g" class="' + (key === 'g' ? 'on' : '') + '">⚽ En çok gol</button><button data-bd="r" class="' + (key === 'r' ? 'on' : '') + '">⭐ En yüksek puan</button><button data-bd="m" class="' + (key === 'm' ? 'on' : '') + '">💰 En zengin</button><button data-bd="dw" class="' + (key === 'dw' ? 'on' : '') + '">⚔ Canlı</button></div><div class="card"><table><tr><th>#</th><th>Oyuncu</th><th>Kulüp</th><th>' + lab[key] + '</th></tr>';
     rows.slice(0, 30).forEach(function (r, i) { h += '<tr class="' + (r.id === uid ? 'me' : '') + '"><td>' + (i + 1) + '</td><td>' + esc(r.nm || r.n) + '<div class="mu">' + esc(r.n) + (r.ret ? ' · emekli' : '') + '</div></td><td class="mu">' + esc(r.c || '') + '</td><td><b>' + fmt(r) + '</b></td></tr>'; });
     return h + '</table>' + (rows.length ? '' : '<div class="mu">Henüz kimse yok</div>') + '</div>';
   }
@@ -362,7 +362,7 @@
     jersey(c, 230, 60, '#ff5d6c', 1.1, 0); jersey(c, 120, 200, '#ff5d6c', 1.1, 0);
   }
   /* ---- render ---- */
-  function nav() { var t = [['hub', '🏟', 'Ana'], ['train', '💪', 'Antrenman'], ['shop', '🛍', 'Mağaza'], ['career', '📈', 'Kariyer'], ['board', '🏆', 'Sıralama']]; return '<nav>' + t.map(function (x) { return '<button data-tab="' + x[0] + '" class="' + (ui.tab === x[0] ? 'on' : '') + '"><b>' + x[1] + '</b>' + x[2] + '</button>'; }).join('') + '</nav>'; }
+  function nav() { var t = [['hub', '🏟', 'Ana'], ['train', '💪', 'Antrenman'], ['shop', '🛍', 'Mağaza'], ['live', '⚔', 'Canlı'], ['career', '📈', 'Kariyer'], ['board', '🏆', 'Sıralama']]; return '<nav>' + t.map(function (x) { return '<button data-tab="' + x[0] + '" class="' + (ui.tab === x[0] ? 'on' : '') + '"><b>' + x[1] + '</b>' + x[2] + '</button>'; }).join('') + '</nav>'; }
   function render() {
     cancelAnimationFrame(raf); var h = '';
     if (ui.view === 'boot') h = '<h1>ALTIN AYAK</h1><p class="sub">Yükleniyor…</p>';
@@ -370,11 +370,13 @@
     else if (ui.view === 'create') h = viewCreate();
     else if (ui.view === 'retired') h = viewRetired() + (boardData ? viewBoard() : '');
     else if (ui.view === 'match') h = viewMatch();
+    else if (ui.view === 'duel') h = duelHTML();
     else if (S.phase === 'seasonEnd') h = viewSeasonEnd();
     else if (S.phase === 'offers') h = viewOffers();
     else if (S.phase === 'retireAsk') h = viewRetireAsk();
-    else { h = ({ hub: viewHub, train: viewTrain, shop: viewShop, career: viewCareer, board: viewBoard })[ui.tab](); h += nav(); }
+    else { h = ({ hub: viewHub, train: viewTrain, shop: viewShop, live: viewLive, career: viewCareer, board: viewBoard })[ui.tab](); h += nav(); }
     $app.innerHTML = h; wire(); window.scrollTo(0, 0);
+    if (ui.view === 'duel') startDuelScene();
     if (ui.view === 'match' && MC && MC.state !== 'over' && (MC.kind === 'sut' || MC.kind === 'pen' || MC.kind === 'drib' || MC.kind === 'pas')) startScene();
   }
   function q(s) { return $app.querySelector(s); } function qa(s) { return $app.querySelectorAll(s); }
@@ -382,7 +384,7 @@
     var b;
     if ((b = q('#goLogin'))) b.onclick = function () { usernameLogin(q('#un').value); };
     qa('[data-pos]').forEach(function (e) { e.onclick = function () { createPos = e.getAttribute('data-pos'); var n = q('#pn').value; render(); q('#pn').value = n; }; });
-    if ((b = q('#goCreate'))) b.onclick = function () { var n = q('#pn').value.trim().slice(0, 18) || uname; newCareer(n, createPos); ui.view = 'main'; ui.tab = 'hub'; render(); };
+    if ((b = q('#goCreate'))) b.onclick = function () { var n = q('#pn').value.trim().slice(0, 18) || uname; newCareer(n, createPos); ui.view = 'main'; ui.tab = 'hub'; startPresence(); render(); };
     if ((b = q('#newCareer'))) b.onclick = function () { S = null; ui.view = 'create'; render(); };
     if ((b = q('#goBoard'))) b.onclick = function () { loadBoard(); };
     qa('[data-tab]').forEach(function (e) { e.onclick = function () { ui.tab = e.getAttribute('data-tab'); if (ui.tab === 'board') loadBoard(); render(); }; });
@@ -399,7 +401,142 @@
     qa('[data-offer]').forEach(function (e) { e.onclick = function () { var o = S.offers[+e.getAttribute('data-offer')]; S.club = o.club; S.tier = o.tier; S.money += o.sign; toast('Transfer tamam: ' + o.club); nextSeason(); }; });
     if ((b = q('#stay'))) b.onclick = nextSeason;
     if ((b = q('#doRetire'))) b.onclick = retire;
+    qa('[data-ch]').forEach(function (e) { e.onclick = function () { challenge(e.getAttribute('data-ch')); }; });
+    qa('[data-dv]').forEach(function (e) { e.onclick = function () { duelPick(+e.getAttribute('data-dv')); }; });
+    if ((b = q('#duelCancel'))) b.onclick = closeDuel;
+    if ((b = q('#duelOut'))) b.onclick = closeDuel;
     if ((b = q('#oneMore'))) b.onclick = function () { S.phase = 'play'; save(true); render(); };
+  }
+
+  /* ---- canlı düello (arkadaşla gerçek zamanlı) ---- */
+  var lobbyData = {}, inv = {}, DM = null, DREF = null, presOn = false, dTimer = 0;
+  function refOf() { return Math.round((S.st.fit + S.st.spd) / 2); }
+  function setPresence(busy) { if (!db || !uid || !S) return; try { db.ref('rp/kariyer/lobby/' + uid).set({ n: uname, nm: S.name, o: ovr(), c: S.club, b: busy ? 1 : 0, ts: Date.now() }); } catch (e) {} }
+  function startPresence() {
+    if (!db || !uid || !S || presOn) return; presOn = true;
+    try { db.ref('rp/kariyer/lobby/' + uid).onDisconnect().remove(); } catch (e) {}
+    setPresence(false);
+    db.ref('rp/kariyer/lobby').on('value', function (s) { lobbyData = s.val() || {}; if (ui.view === 'main' && ui.tab === 'live' && S && S.phase === 'play') { var sc = window.scrollY; render(); window.scrollTo(0, sc); } });
+    db.ref('rp/kariyer/inv/' + uid).on('value', function (s) { inv = s.val() || {}; showInv(); });
+  }
+  function showInv() {
+    var old = document.getElementById('invB'); if (old) old.remove();
+    if (!S || ui.view === 'duel' || ui.view === 'match') return;
+    var ids = Object.keys(inv).filter(function (k) { return inv[k] && Date.now() - (inv[k].ts || 0) < 180000; }); if (!ids.length) return;
+    var f = ids[0], v = inv[f], d = document.createElement('div'); d.id = 'invB';
+    d.style.cssText = 'position:fixed;left:10px;right:10px;bottom:84px;z-index:60;max-width:460px;margin:0 auto;background:#23306a;border:2px solid #c6ff3d;border-radius:14px;padding:12px';
+    d.innerHTML = '<b>⚔ ' + esc(v.nm) + '</b> <span class="mu">(Genel ' + v.o + ')</span> seni canlı maça davet ediyor!<div class="row" style="margin-top:8px"><button class="btn sm pri" id="invY">Kabul et</button><button class="btn sm" id="invN">Reddet</button></div>';
+    document.body.appendChild(d);
+    document.getElementById('invY').onclick = function () { acceptInv(f, v); };
+    document.getElementById('invN').onclick = function () { try { db.ref('rp/kariyer/duel/' + v.id + '/st').set('declined'); } catch (e) {} db.ref('rp/kariyer/inv/' + uid + '/' + f).remove(); };
+  }
+  function challenge(tid) {
+    if (!db || !S || DM) return; var id = uid.slice(0, 5) + Date.now().toString(36);
+    db.ref('rp/kariyer/duel/' + id).set({ a: uid, an: S.name, au: uname, ao: ovr(), as: eff('shot'), ar: refOf(), st: 'wait', cur: 0, n: 10, t: 0, sc: [0, 0] });
+    db.ref('rp/kariyer/inv/' + tid + '/' + uid).set({ id: id, nm: S.name, o: ovr(), ts: Date.now() });
+    openDuel(id, true);
+  }
+  function acceptInv(from, v) {
+    db.ref('rp/kariyer/duel/' + v.id).once('value').then(function (s) {
+      var d = s.val(); db.ref('rp/kariyer/inv/' + uid + '/' + from).remove();
+      if (!d || d.st !== 'wait') { toast('Davet artık geçerli değil'); return; }
+      db.ref('rp/kariyer/duel/' + v.id).update({ b: uid, bn: S.name, bu: uname, bo: ovr(), bs: eff('shot'), br: refOf(), st: 'play', t: snow(), cur: 0 });
+      openDuel(v.id, false);
+    });
+  }
+  var tOff = 0; try { if (db) db.ref('.info/serverTimeOffset').on('value', function (s) { tOff = s.val() || 0; }); } catch (e) {}
+  function snow() { return Date.now() + tOff; }
+  function openDuel(id, host) {
+    DM = { id: id, host: host, d: null, rk: '', paid: false, anim: null, shownN: -1, resolving: false, ended: false }; DREF = db.ref('rp/kariyer/duel/' + id);
+    try { DREF.child('gone/' + uid).onDisconnect().set(true); } catch (e) {}
+    setPresence(true); ui.view = 'duel'; ui.tab = 'live'; showInv(); render();
+    DREF.on('value', onDuel); clearInterval(dTimer); dTimer = setInterval(duelTick, 1000);
+  }
+  function closeDuel() {
+    clearInterval(dTimer); var d = DM && DM.d;
+    try { if (DREF) { DREF.off(); if (d && d.st === 'play') DREF.child('gone/' + uid).set(true); else if (DM.host) DREF.remove(); } } catch (e) {}
+    DM = null; DREF = null; ui.view = 'main'; ui.tab = 'live'; setPresence(false); render();
+  }
+  function duelRole(d) { var n = d.cur, att = n % 2 === 0 ? d.a : d.b; return att === uid ? 'att' : 'def'; }
+  function onDuel(snap) {
+    if (!DM) return; var d = snap.val();
+    if (!d) { if (DM && !DM.ended) toast('Maç iptal edildi'); DM.ended = true; closeDuel(); return; }
+    DM.d = d;
+    if (d.st === 'declined') { toast('Davet reddedildi'); closeDuel(); return; }
+    if (d.st === 'wait') { var k0 = 'wait'; if (DM.rk !== k0) { DM.rk = k0; render(); } return; }
+    var opp = d.a === uid ? d.b : d.a;
+    if (d.st === 'play' && d.gone && d.gone[opp]) { DREF.update({ st: 'end', w: uid, ff: 1 }); return; }
+    var n = d.cur, r = (d.r || {})[n] || {};
+    if (d.st === 'play' && DM.host && r.s && r.d !== undefined && !r.res && !DM.resolving) hostResolve(n, r);
+    if (d.st === 'play' && r.res && DM.shownN !== n) { DM.shownN = n; DM.anim = { t: 0, o: r.res }; if (DM.host) setTimeout(function () { advance(n); }, 2900); }
+    var role = d.st === 'play' ? duelRole(d) : 'end', my = role === 'att' ? r.s : r.d, ph = d.st === 'end' ? 'end' : r.res ? 'res' : (my !== undefined ? 'wait' : 'pick');
+    var key = d.st + ':' + n + ':' + ph + ':' + d.n; if (key !== DM.rk) { DM.rk = key; if (ph === 'pick') DM.anim = null; render(); } else duelTexts();
+    if (d.st === 'end' && !DM.paid) payDuel(d);
+  }
+  function duelShot(sh, rf, x, pw, dive) {
+    var sd = Math.max(0.06, 0.52 - sh / 99 * 0.4), h = 0.12 + 0.9 * clamp(pw, 0, 1.1), fx = x + gauss() * sd, fh = h + gauss() * sd * 0.35, kx = dive * 0.65;
+    if (pw > 1.12) fh += 0.25;
+    if (fh > 1.02) return { r: 'over', x: fx, h: fh, kx: kx }; if (Math.abs(fx) > 1.06) return { r: 'wide', x: fx, h: fh, kx: kx }; if (Math.abs(fx) > 1.0) return { r: 'post', x: fx, h: fh, kx: kx };
+    var reach = (0.27 + rf / 99 * 0.2) * (1.2 - 0.55 * clamp(fh, 0, 1)) * (pw < 0.3 ? 1.9 : 1); if (fh > 0.75 && Math.abs(fx) > 0.6) reach *= 0.55;
+    return { r: Math.abs(fx - kx) < reach ? 'save' : 'goal', x: fx, h: fh, kx: kx };
+  }
+  function hostResolve(n, r) {
+    DM.resolving = true; var d = DM.d, aIsA = n % 2 === 0, sh = aIsA ? d.as : d.bs, rf = aIsA ? d.br : d.ar, res = duelShot(sh, rf, r.s.x, r.s.pw, r.d), sc = (d.sc || [0, 0]).slice();
+    if (res.r === 'goal') sc[aIsA ? 0 : 1]++;
+    DREF.child('r/' + n + '/res').set(res); DREF.child('sc').set(sc); DM.resolving = false;
+  }
+  function advance(n) {
+    var d = DM && DM.d; if (!d || d.st !== 'play' || d.cur !== n) return; var nx = n + 1, sc = d.sc || [0, 0];
+    if (nx >= d.n) { if (sc[0] === sc[1] && d.n < 16) DREF.update({ n: d.n + 2, cur: nx, t: snow() }); else DREF.update({ st: 'end', w: sc[0] > sc[1] ? d.a : sc[1] > sc[0] ? d.b : 'draw' }); }
+    else DREF.update({ cur: nx, t: snow() });
+  }
+  function duelTick() {
+    var d = DM && DM.d; if (!d || d.st !== 'play') return; var n = d.cur, r = (d.r || {})[n] || {}, el = (snow() - (d.t || 0)) / 1000;
+    var tm = document.getElementById('dtm'); if (tm) tm.textContent = r.res ? '' : Math.max(0, Math.ceil(15 - el)) + ' sn';
+    if (DM.host && el > 16 && !r.res) { if (!r.s) DREF.child('r/' + n + '/s').set({ x: 0, pw: 0.2, to: 1 }); if (r.d === undefined) DREF.child('r/' + n + '/d').set(0); }
+  }
+  function duelPick(dv) { var d = DM && DM.d; if (!d || d.st !== 'play') return; DREF.child('r/' + d.cur + '/d').set(dv); }
+  function payDuel(d) {
+    DM.paid = true; var win = d.w === uid, draw = d.w === 'draw';
+    if (win) { S.dw = (S.dw || 0) + 1; var g = 400 * (1 + S.tier); S.money += g; S.rep += 2; DM.reward = '+' + money(g) + ' · +2 itibar'; } else if (draw) { S.money += 150; DM.reward = '+' + money(150); } else { S.dl = (S.dl || 0) + 1; S.money += 100; DM.reward = '+' + money(100); }
+    save(true);
+  }
+  function duelText(res, d) {
+    var n = d.cur, aN = n % 2 === 0 ? d.an : d.bn, who = aN;
+    return { goal: 'GOOOL! ⚽ ' + who + ' attı', save: 'Kaleci kurtardı!', post: 'DİREK!', wide: 'Auta gitti', over: 'Üstünden uçtu' }[res.r];
+  }
+  function duelHTML() {
+    var d = DM && DM.d; if (!d) return '<div class="card">Bağlanıyor…</div>';
+    if (d.st === 'wait') return '<h1>⚔ CANLI MAÇ</h1><div class="card" style="text-align:center"><b>Rakip bekleniyor…</b><p class="mu">Davet gönderildi. Arkadaşın kabul edince maç başlar.</p></div><button class="btn" id="duelCancel">İptal</button>';
+    var sc = d.sc || [0, 0];
+    if (d.st === 'end') {
+      var win = d.w === uid, draw = d.w === 'draw';
+      return '<h1>' + (draw ? 'BERABERE' : win ? '🏆 KAZANDIN!' : 'Kaybettin') + '</h1><div class="card" style="text-align:center"><div class="mu">' + esc(d.an) + ' vs ' + esc(d.bn) + '</div><div style="font-size:50px;font-weight:900">' + sc[0] + ' - ' + sc[1] + '</div>' + (d.ff ? '<div class="mu">Rakip oyundan ayrıldı</div>' : '') + '<div class="gold">' + (DM.reward || '') + '</div></div><button class="btn pri" id="duelOut">Tamam</button>';
+    }
+    var role = duelRole(d), n = d.cur, r = (d.r || {})[n] || {}, my = role === 'att' ? r.s : r.d, ph = r.res ? 'res' : (my !== undefined ? 'wait' : 'pick');
+    var h = '<div class="card row"><b>' + esc(d.an) + '</b><span class="sp" style="text-align:center;font-size:24px;font-weight:900" id="dsc">' + sc[0] + ' - ' + sc[1] + '</span><b>' + esc(d.bn) + '</b></div>';
+    h += '<div class="card" style="padding:8px"><div class="row"><b>' + (role === 'att' ? '🎯 Şutçusun' : '🧤 Kalecisin') + '</b><span class="sp"></span><span class="mu">Tur ' + (n + 1) + '/' + d.n + ' · <span id="dtm"></span></span></div><canvas id="cv" width="720" height="800"></canvas><div class="res" id="dmsg">' + (ph === 'res' ? esc(duelText(r.res, d)) : ph === 'wait' ? 'Rakip bekleniyor…' : role === 'att' ? 'Kaydır: yana = yön, yukarı = güç' : 'Hangi tarafa atlarsın?') + '</div>';
+    if (role === 'def' && ph === 'pick') h += '<div class="row"><button class="btn" data-dv="-1">◀ Sol</button><button class="btn" data-dv="0">▲ Orta</button><button class="btn" data-dv="1">Sağ ▶</button></div>';
+    return h + '</div>';
+  }
+  function duelTexts() { var d = DM && DM.d; if (!d) return; var el = document.getElementById('dsc'); if (el) el.textContent = (d.sc || [0, 0]).join(' - '); var r = (d.r || {})[d.cur] || {}, m = document.getElementById('dmsg'); if (m && r.res) m.textContent = duelText(r.res, d); }
+  function startDuelScene() {
+    cancelAnimationFrame(raf); setTimeout(function () {
+      cv = document.getElementById('cv'); if (!cv || !DM || !DM.d || DM.d.st !== 'play') return; cx = cv.getContext('2d'); cx.setTransform(2, 0, 0, 2, 0, 0);
+      cv.onpointerdown = function (e) { var d = DM && DM.d; if (!d || duelRole(d) !== 'att') return; var rr = (d.r || {})[d.cur] || {}; if (rr.s) return; var b = cv.getBoundingClientRect(); drag = { x: e.clientX, y: e.clientY, dx: 0, dy: 0, k: 360 / b.width }; try { cv.setPointerCapture(e.pointerId); } catch (x) {} };
+      cv.onpointermove = function (e) { if (!drag) return; drag.dx = (e.clientX - drag.x) * drag.k; drag.dy = (e.clientY - drag.y) * drag.k; };
+      cv.onpointerup = function () { if (!drag) return; var dd = drag; drag = null; var pw = clamp(-dd.dy / 150, 0, 1.3), x = clamp(dd.dx / 90, -1.4, 1.4); if (pw < 0.08) return; var d = DM.d; DREF.child('r/' + d.cur + '/s').set({ x: Math.round(x * 100) / 100, pw: Math.round(pw * 100) / 100 }); };
+      (function dl() { if (!cv || !document.body.contains(cv) || !DM) return; var d = DM.d, r = d && (d.r || {})[d.cur] || {}; var c = cx; var g = c.createLinearGradient(0, 0, 0, 400); g.addColorStop(0, '#0b3d1e'); g.addColorStop(1, '#14803c'); c.fillStyle = g; c.fillRect(0, 0, 360, 400); for (var i = 0; i < 8; i++) { c.fillStyle = i % 2 ? 'rgba(255,255,255,.04)' : 'rgba(0,0,0,.05)'; c.fillRect(0, i * 50, 360, 50); }
+        var att = d && duelRole(d) === 'att'; drawShot(c, { kind: 'sut', state: att && !r.s ? 'wait' : 'x', anim: DM.anim }, performance.now() / 1000); raf = requestAnimationFrame(dl); })();
+    }, 30);
+  }
+  function viewLive() {
+    var rows = Object.keys(lobbyData).filter(function (k) { return k !== uid; }).map(function (k) { var v = lobbyData[k]; v.id = k; return v; });
+    var h = '<h2>Canlı maç</h2><div class="card"><b>Arkadaşınla gerçek zamanlı düello</b><div class="mu">10 tur: sırayla biri şutçu, diğeri kaleci olur. Şutçu yön ve gücü seçer, kaleci aynı anda hangi köşeye atlayacağını seçer. Şut ve refleks değerlerin önemli. Kariyerini etkilemez; kazanana para + itibar.</div><div class="mu" style="margin-top:6px">Galibiyet: <b class="gold">' + (S.dw || 0) + '</b> · Mağlubiyet: ' + (S.dl || 0) + '</div></div><h2>Çevrimiçi oyuncular</h2>';
+    if (!db) return h + '<div class="card mu">Çevrimiçi mod için bağlantı yok.</div>';
+    rows.forEach(function (r) { h += '<div class="card row"><div class="sp"><b>' + esc(r.nm) + '</b> <span class="mu">(' + esc(r.n) + ')</span><div class="mu">Genel ' + r.o + ' · ' + esc(r.c || '') + (r.b ? ' · maçta' : '') + '</div></div><button class="btn sm hot" data-ch="' + r.id + '"' + (r.b ? ' disabled' : '') + '>⚔ Meydan oku</button></div>'; });
+    if (!rows.length) h += '<div class="card mu">Şu an kimse çevrimiçi değil. Arkadaşların Altın Ayak\'ı açınca burada görünür.</div>';
+    return h;
   }
   window.__KR = { S: function () { return S; }, MC: function () { return MC; }, ui: ui, shot: function (x, pw) { resolveShot(x, pw); }, ovr: ovr, train: train, startMatch: startMatch, shotOutcome: shotOutcome, seasonEnd: seasonEnd };
   boot();
