@@ -20,6 +20,10 @@ h1 { margin:0 0 4px; text-align:center; letter-spacing:.1em; font-size:28px; col
 #menuMsg { color:#ffb4a8; text-align:center; min-height:20px; font-size:14px; }
 .help { color:#a3acd6; font-size:12.5px; line-height:1.5; margin-top:10px; }
 .row { display:flex; justify-content:space-between; padding:6px 10px; border-radius:8px; font-size:15px; } .row:nth-child(odd) { background:#1c2650; } .row.me { outline:1px solid #ff8ae8; }
+#lobby { position:fixed; inset:0; z-index:35; background:rgba(5,10,24,.72); display:flex; align-items:center; justify-content:center; padding:14px; overflow:auto; }
+.lrow { display:flex; align-items:center; gap:10px; padding:8px 10px; border-radius:10px; background:#1c2650; margin:5px 0; font-size:15px; } .lrow i { width:16px; height:16px; border-radius:50%; display:inline-block; } .lrow span { flex:1; } .lrow.emp { opacity:.45; } .lrow b.ok { color:#6dffa0; } .lrow b.wt { color:#ffb86d; }
+.lopt { display:flex; gap:14px; align-items:center; justify-content:space-between; margin-top:10px; font-size:14px; color:#cfd6ff; } .lopt select { background:#1f2a55; color:#fff; border:1px solid #3b4690; border-radius:8px; padding:5px; }
+.btn[disabled] { opacity:.45; }
 #hud { position:fixed; inset:0; pointer-events:none; z-index:10; }
 #pos { position:absolute; left:12px; top:calc(10px + env(safe-area-inset-top)); font-size:44px; font-weight:900; text-shadow:0 0 12px #ff40d0, 0 2px 4px #000; } #pos small { font-size:20px; opacity:.8; }
 #lap { position:absolute; left:14px; top:calc(62px + env(safe-area-inset-top)); font-weight:800; font-size:16px; text-shadow:0 2px 4px #000; }
@@ -43,6 +47,7 @@ h1 { margin:0 0 4px; text-align:center; letter-spacing:.1em; font-size:28px; col
 <div id="pad" hidden><div class="g"><button id="bL">◀</button><button id="bR">▶</button></div><div class="g"><button id="bB">⏹</button><button id="bK" style="width:60px;height:60px;font-size:22px">↩</button><button id="bI">⚡</button></div></div>
 <button class="btn" id="leave" hidden>✕ Çık</button><button class="btn" id="mute" hidden style="position:fixed;left:8px;bottom:calc(196px + env(safe-area-inset-bottom));z-index:12;padding:6px 10px;font-size:15px;opacity:.8">🔊</button>
 <div id="menu"><div class="card" id="mcard"></div></div>
+<div id="lobby" hidden></div>
 <div id="res" hidden><div class="card" id="rcard"></div></div>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>

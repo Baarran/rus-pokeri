@@ -10,7 +10,7 @@
   var db = firebase.database(), auth = firebase.auth(), tOff = 0;
   try { db.ref('.info/serverTimeOffset').on('value', function (s) { tOff = s.val() || 0; }); } catch (e) {}
   function snow() { return Date.now() + tOff; }
-  var LAPS = 3, ROOMS = 4, MAXP = 8, N = 720, W = 13, COLORS = [0xff3b6b, 0x3bd4ff, 0xffd23b, 0x7bff3b, 0xb23bff, 0xff8a3b, 0xffffff, 0x3bffb2], CN = ['Kırmızı', 'Mavi', 'Sarı', 'Yeşil', 'Mor', 'Turuncu', 'Beyaz', 'Turkuaz'];
+  var LAPS = 3, ROOMS = 6, MAXP = 8, N = 720, W = 13, COLORS = [0xff3b6b, 0x3bd4ff, 0xffd23b, 0x7bff3b, 0xb23bff, 0xff8a3b, 0xffffff, 0x3bffb2], CN = ['Kırmızı', 'Mavi', 'Sarı', 'Yeşil', 'Mor', 'Turuncu', 'Beyaz', 'Turkuaz'];
 
   /* ---------- pist ---------- */
   var CP = [[0, 0], [130, -15], [215, 45], [225, 140], [165, 205], [70, 175], [25, 235], [-65, 270], [-155, 225], [-150, 125], [-70, 85], [-125, 20], [-85, -45]];
@@ -114,7 +114,7 @@
   }
 
   /* ---------- oyun durumu ---------- */
-  var G = { room: 0, base: null, uid: null, name: 'Oyuncu', st: null, pl: {}, me: null, cars: {}, bots: {}, mines: {}, evSeen: {}, joinAt: 0, active: false, rooms: {}, lastNo: -1, shownRes: false, flash: 0 };
+  var G = { room: 0, base: null, uid: null, name: 'Oyuncu', st: null, pl: {}, me: null, cars: {}, bots: {}, mines: {}, evSeen: {}, joinAt: 0, active: false, rooms: {}, lastNo: -1, shownRes: false, flash: 0, inLobby: false, ready: false, cfg: { bots: true, laps: 3 } };
   var keys = { l: 0, r: 0, g: 0, b: 0 }, steerIn = 0, wantItem = false, running = false;
 
   function newCar(slot, uid) {
@@ -164,19 +164,20 @@
   }
   function roomIds() { var now = snow(); return Object.keys(G.pl).filter(function (u) { var p = G.pl[u]; return now - p.a < 6000 && (!p.b || true); }); }
   function joinRoom(n) {
-    G.room = n; G.base = db.ref('rp/car/' + n); G.pl = {}; G.st = null; G.me = null; G.mines = {}; G.evSeen = {}; G.joinAt = snow(); G.lastNo = -1; G.cars = {}; G.bots = {}; G.shownRes = false;
+    G.room = n; G.base = db.ref('rp/car/' + n); G.pl = {}; G.st = null; G.me = null; G.mines = {}; G.evSeen = {}; G.joinAt = snow(); G.lastNo = -1; G.cars = {}; G.bots = {}; G.shownRes = false; G.inLobby = true; G.ready = false; G.cfg = { bots: true, laps: 3 };
     init3d();
     var me = G.base.child('pl/' + G.uid); me.onDisconnect().remove();
-    me.set({ n: G.name, x: 0, z: 0, h: 0, v: 0, p: 0, f: 0, a: snow() });
+    me.set({ n: G.name, x: 0, z: 0, h: 0, v: 0, p: 0, f: 0, l: 1, r: 0, a: snow() });
     G.base.child('pl').on('value', function (s) { G.pl = s.val() || {}; });
     G.base.child('st').on('value', function (s) { G.st = s.val(); onStChange(); });
     G.base.child('ev').on('child_added', onEv);
+    G.base.child('cfg').on('value', function (s) { var v = s.val(); if (v) G.cfg = { bots: v.bots !== false, laps: v.laps || 3 }; renderLobby(true); });
     audio(); $('menu').hidden = true; $('hud').hidden = false; $('mute').hidden = false; $('leave').hidden = false; $('pad').hidden = !TOUCH; running = true; last = performance.now();
     try { var pr = db.ref('rp/online/' + G.uid); pr.onDisconnect().remove(); pr.set('car'); } catch (e) {}
   }
   function leaveRoom() {
     if (!G.base) return; running = false;
-    G.base.child('pl').off(); G.base.child('st').off(); G.base.child('ev').off();
+    G.base.child('pl').off(); G.base.child('st').off(); G.base.child('ev').off(); G.base.child('cfg').off(); $('lobby').hidden = true;
     G.base.child('pl/' + G.uid).remove().catch(function () {});
     Object.keys(G.bots).forEach(function (b) { G.base.child('pl/' + b).remove().catch(function () {}); });
     Object.keys(carMeshes).forEach(function (u) { scene.remove(carMeshes[u]); }); carMeshes = {};
@@ -185,20 +186,57 @@
     try { db.ref('rp/online/' + G.uid).set('car'); } catch (e) {}
     showMenu();
   }
-  function startRace(botsOn) {
-    var now = snow(), humans = roomIds().filter(function (u) { return !G.pl[u].b; }).sort().slice(0, MAXP), grid = {}, k = 0;
+  function lobbyHumans() { var now = snow(); return Object.keys(G.pl).filter(function (u) { var p = G.pl[u]; return !p.b && now - p.a < 6000 && p.l === 1; }).sort(); }
+  function lobbyHost() { return lobbyHumans()[0] || null; }
+  function raceBusy() {
+    var st = G.st, now = snow(); if (!st || !st.grid || now < st.t0 || now - st.t0 > 420000) return false;
+    return Object.keys(st.grid).some(function (u) { var p = G.pl[u]; return u.indexOf('bot') !== 0 && p && now - p.a < 6000 && !p.f && p.l !== 1; });
+  }
+  function canStart() {
+    var hs = lobbyHumans(), host = lobbyHost(); if (host !== G.uid) return 'Başlatma yetkisi oda sahibinde';
+    if (raceBusy()) return 'Önceki yarış sürüyor';
+    var wait = hs.filter(function (u) { return u !== host && !G.pl[u].r; }); if (wait.length) return wait.length + ' kişi hazır değil';
+    if (hs.length < 2 && !G.cfg.bots) return 'En az 2 oyuncu gerekir (ya da botları aç)';
+    return '';
+  }
+  function startRace() {
+    if (canStart()) return; var now = snow(), humans = lobbyHumans().slice(0, MAXP), grid = {}, k = 0;
     humans.forEach(function (u) { grid[u] = k++; });
-    var nb = 0; if (botsOn) while (k < MAXP) { grid['bot' + (++nb)] = k++; }
+    var nb = 0; if (G.cfg.bots) while (k < MAXP) { grid['bot' + (++nb)] = k++; }
     var no = (G.st && G.st.no || 0) + 1;
     G.base.child('ev').remove().catch(function () {});
-    G.base.child('st').set({ no: no, t0: now + 6000, grid: grid, nb: nb });
+    G.base.child('st').set({ no: no, t0: now + 5000, grid: grid, nb: nb, laps: G.cfg.laps || 3 });
   }
+  function setCfg(o) { G.cfg = Object.assign({}, G.cfg, o); G.base.child('cfg').set(G.cfg).catch(function () {}); renderLobby(true); }
+  function toggleReady() { G.ready = !G.ready; renderLobby(true); }
+  function backToLobby() { G.inLobby = true; G.ready = false; G.me = null; G.shownRes = true; $('res').hidden = true; $('cnt').textContent = ''; renderLobby(true); }
+  var lobSig = '';
+  function renderLobby(force) {
+    var el = $('lobby'); if (!G.base) { el.hidden = true; return; }
+    el.hidden = !G.inLobby; $('hud').hidden = G.inLobby; $('pad').hidden = G.inLobby || !TOUCH; $('leave').hidden = G.inLobby; if (!G.inLobby) return;
+    var now = snow(), hs = lobbyHumans(), host = lobbyHost(), others = Object.keys(G.pl).filter(function (u) { var p = G.pl[u]; return !p.b && now - p.a < 6000 && p.l !== 1; });
+    var why = canStart(), isHost = host === G.uid;
+    var sig = JSON.stringify([hs.map(function (u) { return [u, G.pl[u].n, G.pl[u].r]; }), others.length, host, G.cfg, why, G.ready, raceBusy()]); if (sig === lobSig && !force) return; lobSig = sig;
+    var rows = ''; for (var i = 0; i < MAXP; i++) {
+      var u = hs[i], c = '#' + ('000000' + COLORS[i].toString(16)).slice(-6);
+      if (u) { var p = G.pl[u]; rows += '<div class="lrow"><i style="background:' + c + '"></i><span>' + esc(p.n) + (u === G.uid ? ' <small>(sen)</small>' : '') + (u === host ? ' 👑' : '') + '</span><b class="' + (u === host || p.r ? 'ok' : 'wt') + '">' + (u === host ? 'Oda sahibi' : p.r ? '✓ Hazır' : 'Bekliyor') + '</b></div>'; }
+      else rows += '<div class="lrow emp"><i style="background:#2a3463"></i><span>' + (G.cfg.bots ? '🤖 Bot' : 'Boş koltuk') + '</span><b></b></div>';
+    }
+    var h = '<div class="card"><h1>ODA ' + G.room + '</h1><div class="sub">' + hs.length + '/' + MAXP + ' oyuncu · ' + G.cfg.laps + ' tur' + (others.length ? ' · ' + others.length + ' kişi yarışta' : '') + '</div>' + rows;
+    if (isHost) h += '<div class="lopt"><label>Tur <select id="oLaps">' + [1, 2, 3, 5].map(function (n) { return '<option' + (G.cfg.laps === n ? ' selected' : '') + '>' + n + '</option>'; }).join('') + '</select></label><label><input type="checkbox" id="oBots"' + (G.cfg.bots ? ' checked' : '') + '> Boşları botla doldur</label></div>';
+    h += '<div style="display:flex;gap:8px;margin-top:12px">' + (isHost ? '<button class="btn pri" id="lStart" type="button" style="flex:1"' + (why ? ' disabled' : '') + '>🏁 Yarışı başlat</button>' : '<button class="btn pri" id="lReady" type="button" style="flex:1">' + (G.ready ? '✓ Hazırsın (iptal)' : '✋ Hazırım') + '</button>') + '<button class="btn" id="lOut" type="button">Çık</button></div>';
+    h += '<div class="help" style="text-align:center">' + (isHost ? (why || 'Herkes hazır — başlatabilirsin!') : (G.ready ? 'Oda sahibi başlatınca yarış açılır.' : 'Hazır olunca “Hazırım”a bas.')) + '</div></div>';
+    el.innerHTML = h;
+    if ($('lStart')) $('lStart').onclick = startRace; if ($('lReady')) $('lReady').onclick = toggleReady; $('lOut').onclick = leaveRoom;
+    if ($('oLaps')) $('oLaps').onchange = function () { setCfg({ laps: +this.value }); }; if ($('oBots')) $('oBots').onchange = function () { setCfg({ bots: this.checked }); };
+  }
+  setInterval(function () { renderLobby(false); }, 400);
   function onStChange() {
     var st = G.st; if (!st || st.no === G.lastNo) return;
     G.lastNo = st.no; G.mines = {}; G.shownRes = false; $('res').hidden = true; G.bots = {}; G.evSeen = {};
     Object.keys(mineMeshes).forEach(function (u) { scene.remove(mineMeshes[u]); }); mineMeshes = {};
     var slot = st.grid && st.grid[G.uid];
-    if (slot != null) { G.me = newCar(slot, G.uid); G.me.name = G.name; G.active = true; }
+    LAPS = st.laps || 3; if (slot != null) { G.me = newCar(slot, G.uid); G.me.name = G.name; G.active = true; G.inLobby = false; G.ready = false; }
     else { G.me = null; G.active = false; }
     pickMeshes.forEach(function (p) { p.off = 0; });
   }
@@ -302,7 +340,7 @@
     // yayın
     sendT += dt; if (sendT > 0.1) {
       sendT = 0; var u = G.me;
-      G.base.child('pl/' + G.uid).set({ n: G.name, x: u ? +u.x.toFixed(2) : 0, z: u ? +u.z.toFixed(2) : 0, h: u ? +u.h.toFixed(3) : 0, v: u ? +(u.speed || 0).toFixed(1) : 0, p: u ? +u.total.toFixed(2) : 0, f: u ? u.fin : 0, bo: u && u.boost > 0 ? 1 : 0, sp: u && u.stun > 0 ? 1 : 0, sh: u && u.shield > 0 ? 1 : 0, a: snow() }).catch(function () {});
+      G.base.child('pl/' + G.uid).set({ n: G.name, x: u ? +u.x.toFixed(2) : 0, z: u ? +u.z.toFixed(2) : 0, h: u ? +u.h.toFixed(3) : 0, v: u ? +(u.speed || 0).toFixed(1) : 0, p: u ? +u.total.toFixed(2) : 0, f: u ? u.fin : 0, l: G.inLobby ? 1 : 0, r: G.ready ? 1 : 0, bo: u && u.boost > 0 ? 1 : 0, sp: u && u.stun > 0 ? 1 : 0, sh: u && u.shield > 0 ? 1 : 0, a: snow() }).catch(function () {});
       Object.keys(G.bots).forEach(function (id) { var b = G.bots[id]; G.base.child('pl/' + id).set({ n: b.name, b: 1, x: +b.x.toFixed(2), z: +b.z.toFixed(2), h: +b.h.toFixed(3), v: +(b.speed || 0).toFixed(1), p: +b.total.toFixed(2), f: b.fin, bo: b.boost > 0 ? 1 : 0, sp: b.stun > 0 ? 1 : 0, a: snow() }).catch(function () {}); });
     }
     render(dt, phase); hud(phase); results(phase);
@@ -328,6 +366,8 @@
     Object.keys(mineMeshes).forEach(function (id) { if (!G.mines[id]) { scene.remove(mineMeshes[id]); delete mineMeshes[id]; } });
     pickMeshes.forEach(function (p) { if (p.off > 0) p.off -= dt; p.m.visible = p.off <= 0; p.m.rotation.y += dt * 2; p.m.rotation.x += dt; });
     // kamera
+    if (G.inLobby) { Object.keys(carMeshes).forEach(function (u) { carMeshes[u].visible = false; }); var ang = Date.now() / 5000, c0 = PTS[0]; camera.position.set(c0.x + Math.cos(ang) * 28, 12, c0.z + Math.sin(ang) * 28); camera.lookAt(c0.x, 2, c0.z); $('fx').style.opacity = 0; renderer.render(scene, camera); return; }
+    Object.keys(carMeshes).forEach(function (u) { carMeshes[u].visible = true; });
     var tgt = m || (function () { var rk = allRank(); var l = rk.find(function (r) { return G.cars[r.id]; }); return l ? G.cars[l.id] : null; })();
     if (tgt) {
       var spd = m ? m.speed || 0 : tgt.v || 0, bo = m ? m.boost > 0 : tgt.bo, f = { x: Math.sin(tgt.h), z: Math.cos(tgt.h) };
@@ -355,8 +395,7 @@
     if (!st) cnt = ''; else if (phase === 'count') cnt = String(Math.max(1, Math.ceil((st.t0 - now) / 1000))); else if (now - st.t0 < 900) cnt = 'GO!';
     if (cnt !== lastCnt) { if (cnt && cnt !== 'GO!') blip(440, .15); else if (cnt === 'GO!') blip(880, .4); lastCnt = cnt; }
     $('cnt').textContent = cnt;
-    if (!st && !toastT) $('msg').innerHTML = rk.length + ' kişi odada — yarışı başlat';
-    else if (st && !m && phase !== 'wait' && !toastT) $('msg').textContent = 'Yarış sürüyor, bir sonrakini bekle';
+    if (st && !m && !G.inLobby && phase !== 'wait' && !toastT) $('msg').textContent = 'Yarışı izliyorsun';
     else if (st && m && phase === 'race' && !toastT && !m.fin && m.hit > 0 && false) $('msg').textContent = '';
     else if (m && !toastT && st) $('msg').textContent = '';
     // minimap
@@ -377,9 +416,9 @@
     if (!G.shownRes && (humDone || (myDone && (allDone || t - earliest > 25000)) || (earliest && t - earliest > 60000))) {
       G.shownRes = true; var h = '<h1>Sonuçlar</h1><div class="sub">' + LAPS + ' tur</div>';
       h += rk.map(function (r, i) { return '<div class="row' + (r.id === G.uid ? ' me' : '') + '"><span>' + (i + 1) + '. ' + esc(r.name) + '</span><b>' + (r.fin ? fmtT(r.fin) : 'bitiremedi') + '</b></div>'; }).join('');
-      h += '<div style="display:flex;gap:8px;margin-top:12px"><button class="btn pri" id="again" type="button" style="flex:1">Yeni yarış</button><button class="btn" id="out" type="button">Çık</button></div><label class="help" style="display:flex;gap:8px;align-items:center;margin-top:10px"><input type="checkbox" id="bots2" ' + (localStorage.getItem('car_bots') === '0' ? '' : 'checked') + '> Boş yerleri botlarla doldur</label>';
+      h += '<div style="display:flex;gap:8px;margin-top:12px"><button class="btn pri" id="again" type="button" style="flex:1">↩ Odaya dön</button><button class="btn" id="out" type="button">Çık</button></div>';
       $('rcard').innerHTML = h; $('res').hidden = false;
-      $('again').onclick = function () { localStorage.setItem('car_bots', $('bots2').checked ? '1' : '0'); startRace($('bots2').checked); }; $('out').onclick = leaveRoom;
+      $('again').onclick = backToLobby; $('out').onclick = leaveRoom;
     }
   }
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
@@ -409,18 +448,13 @@
     for (var i = 1; i <= ROOMS; i++) {
       var pl = (G.rooms[i] && G.rooms[i].pl) || {}, n = Object.keys(pl).filter(function (u) { return now - (pl[u].a || 0) < 6000 && !pl[u].b; }).length, st = G.rooms[i] && G.rooms[i].st;
       var ph = st && st.t0 && now - st.t0 < 600000 && now > st.t0 ? 'yarış sürüyor' : 'bekliyor';
-      html += '<div class="room"><div><b>Oda ' + i + '</b><small>' + n + '/' + MAXP + ' oyuncu · ' + ph + '</small></div><button class="btn pri" type="button" data-room="' + i + '"' + (n >= MAXP ? ' disabled' : '') + '>Katıl</button></div>';
+      var names = Object.keys(pl).filter(function (u) { return now - (pl[u].a || 0) < 6000 && !pl[u].b; }).map(function (u) { return esc(pl[u].n); }).join(', ');
+      html += '<div class="room"><div><b>Oda ' + i + '</b><small>' + n + '/' + MAXP + ' oyuncu · ' + ph + (names ? ' · ' + names : '') + '</small></div><button class="btn pri" type="button" data-room="' + i + '"' + (n >= MAXP ? ' disabled' : '') + '>Katıl</button></div>';
     }
     el.innerHTML = html; el.onclick = function (e) { var b = e.target.closest('[data-room]'); if (b && !b.disabled) joinRoom(+b.getAttribute('data-room')); };
   }
   setInterval(function () { if (!$('menu').hidden) refreshRooms(); }, 2000);
   try { db.ref('rp/car').on('value', function (s) { G.rooms = s.val() || {}; if (!$('menu').hidden) refreshRooms(); }, function () {}); } catch (e) {}
-  // başlat düğmesi (oda bekleme / yarış bitince)
-  function startBar() {
-    var b = $('startBar'); if (!b) { b = document.createElement('div'); b.id = 'startBar'; b.style.cssText = 'position:fixed;left:50%;top:58%;transform:translateX(-50%);z-index:30;text-align:center'; b.innerHTML = '<button class="btn pri" id="goBtn" type="button" style="font-size:22px;padding:16px 28px">🏁 Yarışı başlat</button><label class="help" style="display:flex;gap:8px;justify-content:center;align-items:center"><input type="checkbox" id="bots1" checked> Boş yerleri botlarla doldur</label>'; document.body.appendChild(b); $('goBtn').onclick = function () { localStorage.setItem('car_bots', $('bots1').checked ? '1' : '0'); startRace($('bots1').checked); }; $('bots1').checked = localStorage.getItem('car_bots') !== '0'; }
-    b.hidden = !(G.base && !G.st);
-  }
-  setInterval(startBar, 400);
   auth.onAuthStateChanged(function (u) {
     if (!u) { G.uid = null; showMenu(); return; } G.uid = u.uid;
     db.ref('rp/users/' + u.uid + '/name').once('value').then(function (s) { G.name = s.val() || 'Oyuncu'; if (!G.base) showMenu(); }, function () { showMenu(); });
