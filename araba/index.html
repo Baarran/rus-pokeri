@@ -40,8 +40,8 @@ h1 { margin:0 0 4px; text-align:center; letter-spacing:.1em; font-size:28px; col
 <div id="hud" hidden>
   <div id="pos"></div><div id="lap"></div><div id="item"></div><canvas id="mini" width="220" height="220"></canvas><div id="spd"></div><div id="cnt"></div><div id="msg"></div>
 </div>
-<div id="pad" hidden><div class="g"><button id="bL">◀</button><button id="bR">▶</button></div><div class="g"><button id="bB">⏹</button><button id="bI">⚡</button></div></div>
-<button class="btn" id="leave" hidden>✕ Çık</button>
+<div id="pad" hidden><div class="g"><button id="bL">◀</button><button id="bR">▶</button></div><div class="g"><button id="bB">⏹</button><button id="bK" style="width:60px;height:60px;font-size:22px">↩</button><button id="bI">⚡</button></div></div>
+<button class="btn" id="leave" hidden>✕ Çık</button><button class="btn" id="mute" hidden style="position:fixed;left:8px;bottom:calc(196px + env(safe-area-inset-bottom));z-index:12;padding:6px 10px;font-size:15px;opacity:.8">🔊</button>
 <div id="menu"><div class="card" id="mcard"></div></div>
 <div id="res" hidden><div class="card" id="rcard"></div></div>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>

@@ -107,7 +107,7 @@
     var cab = new T.Mesh(new T.BoxGeometry(1.7, 0.7, 2), new T.MeshLambertMaterial({ color: 0x111827 })); cab.position.set(0, 1.5, -0.2); g.add(cab);
     var wm = new T.MeshLambertMaterial({ color: 0x111111 }); [[-1.15, 1.4], [1.15, 1.4], [-1.15, -1.4], [1.15, -1.4]].forEach(function (w) { var wh = new T.Mesh(new T.CylinderGeometry(.55, .55, .5, 10), wm); wh.rotation.z = Math.PI / 2; wh.position.set(w[0], .55, w[1]); g.add(wh); });
     var glow = new T.Mesh(new T.PlaneGeometry(2.6, 5), new T.MeshBasicMaterial({ color: color, transparent: true, opacity: .55 })); glow.rotation.x = -Math.PI / 2; glow.position.y = 0.08; g.add(glow);
-    var fl = new T.Mesh(new T.ConeGeometry(.55, 2.6, 8), new T.MeshBasicMaterial({ color: 0x66ccff })); fl.rotation.x = -Math.PI / 2; fl.position.set(0, .8, -3.6); fl.visible = false; g.add(fl); g.userData.flame = fl;
+    var fl = new T.Mesh(new T.ConeGeometry(.55, 2.6, 8), new T.MeshBasicMaterial({ color: 0x66ccff })); fl.rotation.x = -Math.PI / 2; fl.position.set(0, .8, -3.6); fl.visible = false; g.add(fl); g.userData.flame = fl; var sh = new T.Mesh(new T.SphereGeometry(3.2, 14, 10), new T.MeshBasicMaterial({ color: 0x40e0ff, transparent: true, opacity: .28 })); sh.position.y = 1.2; sh.visible = false; g.add(sh); g.userData.shield = sh;
     var cv = document.createElement('canvas'); cv.width = 256; cv.height = 64; var cx = cv.getContext('2d'); cx.font = 'bold 34px system-ui'; cx.textAlign = 'center'; cx.fillStyle = 'rgba(0,0,0,.5)'; cx.fillRect(0, 8, 256, 48); cx.fillStyle = '#fff'; cx.fillText(String(name).slice(0, 12), 128, 46);
     var sp = new T.Sprite(new T.SpriteMaterial({ map: new T.CanvasTexture(cv), depthTest: false, transparent: true })); sp.scale.set(6, 1.5, 1); sp.position.y = 4.6; sp.renderOrder = 9; g.add(sp);
     scene.add(g); return g;
@@ -132,10 +132,11 @@
     if (inp.g) vf += (maxv - vf) * (c.boost > 0 ? 1.6 : 0.62) * dt;
     if (inp.b) vf -= 60 * dt; vf *= Math.exp(-0.22 * dt); if (vf > maxv && c.boost <= 0) vf -= (vf - maxv) * 3 * dt;
     if (vf < -12) vf = -12;
+    if (inp.d && Math.abs(c.steer) > 0.3 && vf > 20) c.dr = (c.dr || 0) + dt; else { if (c.dr > 0.9 && c.stun <= 0) { c.boost = Math.max(c.boost, 1.2); c.mt = 1; } c.dr = 0; }
     var grip = inp.d ? 2.4 : 7.5; vl *= Math.exp(-grip * dt);
     c.steer += (inp.s - c.steer) * Math.min(1, 9 * dt);
     var turn = 2.15 / (1 + Math.max(0, vf) / 55) * (inp.d ? 1.5 : 1);
-    c.h += c.steer * turn * Math.max(-1, Math.min(1, vf / 14)) * dt;
+    c.h -= c.steer * turn * Math.max(-1, Math.min(1, vf / 14)) * dt;
     f = { x: Math.sin(c.h), z: Math.cos(c.h) }; r = { x: Math.cos(c.h), z: -Math.sin(c.h) };
     c.vx = f.x * vf + r.x * vl; c.vz = f.z * vf + r.z * vl;
     c.x += c.vx * dt; c.z += c.vz * dt;
@@ -154,7 +155,7 @@
     var tx = tp.x + tp.nx * lane, tz = tp.z + tp.nz * lane, want = Math.atan2(tx - c.x, tz - c.z), dh = want - c.h; while (dh > Math.PI) dh -= 2 * Math.PI; while (dh < -Math.PI) dh += 2 * Math.PI;
     var a = PTS[c.idx], b = PTS[(c.idx + 30) % N], curv = Math.abs(a.tx * b.tz - a.tz * b.tx), skill = c.skill || 0.9;
     var cap = Math.max(34, 64 - curv * 32) * skill * (1 + Math.min(.08, Math.max(-.05, ((leaderTotal || 0) - c.total) / 3000)));
-    return { g: c.speed < cap ? 1 : 0, b: c.speed > cap + 14 ? 1 : 0, s: Math.max(-1, Math.min(1, dh * 2.4)), d: 0 };
+    return { g: c.speed < cap ? 1 : 0, b: c.speed > cap + 14 ? 1 : 0, s: Math.max(-1, Math.min(1, -dh * 2.4)), d: 0 };
   }
 
   /* ---------- ağ ---------- */
@@ -170,7 +171,7 @@
     G.base.child('pl').on('value', function (s) { G.pl = s.val() || {}; });
     G.base.child('st').on('value', function (s) { G.st = s.val(); onStChange(); });
     G.base.child('ev').on('child_added', onEv);
-    $('menu').hidden = true; $('hud').hidden = false; $('leave').hidden = false; $('pad').hidden = !TOUCH; running = true; last = performance.now();
+    audio(); $('menu').hidden = true; $('hud').hidden = false; $('mute').hidden = false; $('leave').hidden = false; $('pad').hidden = !TOUCH; running = true; last = performance.now();
     try { var pr = db.ref('rp/online/' + G.uid); pr.onDisconnect().remove(); pr.set('car'); } catch (e) {}
   }
   function leaveRoom() {
@@ -180,7 +181,7 @@
     Object.keys(G.bots).forEach(function (b) { G.base.child('pl/' + b).remove().catch(function () {}); });
     Object.keys(carMeshes).forEach(function (u) { scene.remove(carMeshes[u]); }); carMeshes = {};
     Object.keys(mineMeshes).forEach(function (u) { scene.remove(mineMeshes[u]); }); mineMeshes = {};
-    G.base = null; G.me = null; G.bots = {}; $('hud').hidden = true; $('pad').hidden = true; $('leave').hidden = true; $('res').hidden = true; $('cnt').textContent = '';
+    G.base = null; G.me = null; G.bots = {}; $('hud').hidden = true; $('pad').hidden = true; $('leave').hidden = true; $('mute').hidden = true; $('res').hidden = true; $('cnt').textContent = '';
     try { db.ref('rp/online/' + G.uid).set('car'); } catch (e) {}
     showMenu();
   }
@@ -205,32 +206,55 @@
     var e = s.val(), key = s.key; if (!e || G.evSeen[key]) return; G.evSeen[key] = 1;
     var now = snow(); if (now - e.at > 40000) return;
     var host = hostUid() === G.uid;
-    if (e.t === 'mine') { G.mines[e.id] = { x: e.x, z: e.z, at: e.at }; }
+    if (e.t === 'mine' || e.t === 'oil') { G.mines[e.id] = { x: e.x, z: e.z, at: e.at, k: e.t, from: e.from }; }
+    else if (e.t === 'emp') {
+      if (e.from !== G.uid && G.me && Math.hypot(G.me.x - e.x, G.me.z - e.z) < e.r) hitMe(0.9, .5);
+      if (host) Object.keys(G.bots).forEach(function (u) { var b = G.bots[u]; if (Math.hypot(b.x - e.x, b.z - e.z) < e.r) { b.stun = 0.9; b.boost = 0; } });
+    }
     else if (e.t === 'mh') { delete G.mines[e.id]; }
     else if (e.t === 'shock' || e.t === 'bolt') {
-      if (e.to === G.uid && G.me) { G.me.stun = e.t === 'bolt' ? 2.0 : 1.4; G.me.boost = 0; G.flash = 1; }
+      if (e.to === G.uid && G.me) hitMe(e.t === 'bolt' ? 2.0 : 1.4, 1);
       else if (host && G.bots[e.to]) { G.bots[e.to].stun = e.t === 'bolt' ? 2.0 : 1.4; G.bots[e.to].boost = 0; }
     }
   }
   function sendEv(o) { o.at = snow(); o.from = G.uid; G.base.child('ev/' + o.at.toString(36) + Math.random().toString(36).slice(2, 5)).set(o).catch(function () {}); }
 
   /* ---------- güçlendirme ---------- */
-  var ITEMS = { nitro: { ic: '🚀', n: 'Nitro' }, shock: { ic: '⚡', n: 'Şok' }, mine: { ic: '💣', n: 'Mayın' }, bolt: { ic: '🌩', n: 'Yıldırım' } };
-  function rollItem() { var r = Math.random(); return r < .4 ? 'nitro' : r < .65 ? 'shock' : r < .85 ? 'mine' : 'bolt'; }
+  var ITEMS = { nitro: { ic: '🚀', n: 'Nitro' }, shield: { ic: '🛡', n: 'Kalkan' }, shock: { ic: '⚡', n: 'Şok' }, mine: { ic: '💣', n: 'Mayın' }, oil: { ic: '🛢', n: 'Yağ' }, bolt: { ic: '🌩', n: 'Yıldırım' }, emp: { ic: '📡', n: 'EMP' } };
+  function rollItem() {
+    var rk = allRank(), my = rk.findIndex(function (r) { return r.id === G.uid; }), back = rk.length > 2 && my >= rk.length / 2, r = Math.random();
+    var tbl = back ? [['nitro', .3], ['bolt', .22], ['shield', .12], ['emp', .12], ['shock', .1], ['mine', .07], ['oil', .07]] : [['nitro', .2], ['shield', .18], ['shock', .17], ['mine', .15], ['oil', .12], ['emp', .12], ['bolt', .06]];
+    for (var i = 0; i < tbl.length; i++) { r -= tbl[i][1]; if (r <= 0) return tbl[i][0]; } return 'nitro';
+  }
+  function hitMe(t, flash) {
+    var m = G.me; if (!m) return false;
+    if (m.shield > 0) { m.shield = 0; toast('🛡 Kalkan seni korudu!'); blip(520, .15); return false; }
+    m.stun = t; m.boost = 0; G.flash = flash || 1; blip(120, .3); return true;
+  }
   function allRank() {
     var list = []; list.push({ id: G.uid, key: G.me ? (G.me.fin ? 1e9 - G.me.fin : G.me.total) : -1, name: G.name, fin: G.me ? G.me.fin : 0 });
     Object.keys(G.pl).forEach(function (u) { if (u === G.uid) return; var p = G.pl[u]; if (snow() - p.a > 6000) return; list.push({ id: u, key: p.f ? 1e9 - p.f : p.p, name: p.n, fin: p.f }); });
     list.sort(function (a, b) { return b.key - a.key; }); return list;
   }
-  function useItem() {
+  function useItem(back) {
     var m = G.me; if (!m || !m.item || m.stun > 0) return; var it = m.item;
-    var rank = allRank(), my = rank.findIndex(function (r) { return r.id === G.uid; });
+    var rank = allRank(), my = rank.findIndex(function (r) { return r.id === G.uid; }), tg = rank[my + (back ? 1 : -1)], fx = Math.sin(m.h), fz = Math.cos(m.h), dist = back ? -4 : 20;
     if (it === 'nitro') { m.boost = 3; }
-    else if (it === 'mine') { var id = G.uid + snow().toString(36); sendEv({ t: 'mine', id: id, x: m.x - Math.sin(m.h) * 4, z: m.z - Math.cos(m.h) * 4 }); }
-    else if (it === 'shock') { var tg = rank[my - 1]; if (!tg) { toast('Önünde kimse yok!'); return; } sendEv({ t: 'shock', to: tg.id }); toast('Şok → ' + tg.name); }
-    else if (it === 'bolt') { var ld = rank[0]; if (!ld || ld.id === G.uid) { toast('Liderin sensin!'); return; } sendEv({ t: 'bolt', to: ld.id }); toast('Yıldırım → ' + ld.name); }
-    m.item = null;
+    else if (it === 'shield') { m.shield = 9; toast('🛡 Kalkan açık'); }
+    else if (it === 'mine' || it === 'oil') { sendEv({ t: it, id: G.uid + snow().toString(36), x: m.x + fx * dist, z: m.z + fz * dist }); }
+    else if (it === 'emp') { sendEv({ t: 'emp', x: m.x, z: m.z, r: 50 }); toast('📡 EMP yayıldı'); }
+    else if (it === 'shock') { if (!tg) { toast(back ? 'Arkanda kimse yok!' : 'Önünde kimse yok!'); return; } sendEv({ t: 'shock', to: tg.id }); toast('⚡ Şok → ' + tg.name); }
+    else if (it === 'bolt') { var ld = rank[0]; if (!ld || ld.id === G.uid) { toast('Liderin sensin!'); return; } sendEv({ t: 'bolt', to: ld.id }); toast('🌩 Yıldırım → ' + ld.name); }
+    blip(it === 'nitro' ? 700 : 400, .2); m.item = null;
   }
+  function respawn() {
+    var m = G.me; if (!m) return; var p = PTS[m.idx]; m.x = p.x; m.z = p.z; m.h = Math.atan2(p.tx, p.tz); m.vx = m.vz = 0; m.stun = 0; m.boost = 0; m.stuck = 0; m.hint = m.idx; m.steer = 0; toast('Yola geri konuldun');
+  }
+  var AC = null, eng = null, muted = false;
+  function audio() {
+    if (AC || muted) return; try { AC = new (window.AudioContext || window.webkitAudioContext)(); eng = AC.createOscillator(); var gn = AC.createGain(); eng.type = 'sawtooth'; gn.gain.value = 0.025; eng.connect(gn); gn.connect(AC.destination); eng.frequency.value = 50; eng.start(); eng.g = gn; } catch (e) { AC = null; }
+  }
+  function blip(f, d) { if (!AC || muted) return; try { var o = AC.createOscillator(), g = AC.createGain(); o.frequency.value = f; o.type = 'square'; g.gain.value = .05; g.gain.exponentialRampToValueAtTime(.001, AC.currentTime + d); o.connect(g); g.connect(AC.destination); o.start(); o.stop(AC.currentTime + d); } catch (e) {} }
   var toastT = 0; function toast(t) { $('msg').textContent = t; toastT = 1.6; }
 
   /* ---------- döngü ---------- */
@@ -247,11 +271,14 @@
         else {
           var inp = m.fin || m.auto ? botInput(m, 0, 0) : { g: TOUCH ? 1 : keys.g, b: keys.b, s: steerTarget, d: keys.b && Math.abs(steerTarget) ? 1 : 0 };
           if (m.fin) { inp = botInput(m, 0, 0); inp.g = 1; }
-          stepCar(m, 1 / 60, inp);
+          stepCar(m, 1 / 60, inp); if (m.shield > 0) m.shield -= 1 / 60;
+          if (m.speed < 4 && !m.fin) { m.stuck = (m.stuck || 0) + 1 / 60; if (m.stuck > 3.5) respawn(); } else m.stuck = 0;
+          if (m.mt) { m.mt = 0; toast('🔥 Drift turbo!'); blip(800, .2); }
+          if (m.lap > (m.lapSeen || 0)) { m.lapSeen = m.lap; var lt = snow() - (m.lapT || st.t0); m.lapT = snow(); if (m.lap < LAPS) toast('Tur ' + m.lap + ' · ' + fmtT(lt)); }
           // güçlendirme kutusu
-          pickMeshes.forEach(function (p) { if (p.off > 0) return; if (!m.item && Math.hypot(m.x - p.x, m.z - p.z) < 3.2) { m.item = rollItem(); p.off = 5; } else if (m.item && Math.hypot(m.x - p.x, m.z - p.z) < 3.2) p.off = 3; });
+          pickMeshes.forEach(function (p) { if (p.off > 0) return; if (!m.item && Math.hypot(m.x - p.x, m.z - p.z) < 3.2) { m.item = rollItem(); p.off = 5; blip(660, .12); } else if (m.item && Math.hypot(m.x - p.x, m.z - p.z) < 3.2) p.off = 3; });
           // mayın
-          Object.keys(G.mines).forEach(function (id) { var mi = G.mines[id]; if (Math.hypot(m.x - mi.x, m.z - mi.z) < 3.4 && m.stun <= 0) { m.stun = 1.2; m.boost = 0; G.flash = .6; sendEv({ t: 'mh', id: id }); delete G.mines[id]; } if (mi && snow() - mi.at > 40000) delete G.mines[id]; });
+          Object.keys(G.mines).forEach(function (id) { var mi = G.mines[id]; if (Math.hypot(m.x - mi.x, m.z - mi.z) < 3.4 && m.stun <= 0 && !(mi.from === G.uid && snow() - mi.at < 3500)) { hitMe(mi.k === 'oil' ? 0.7 : 1.2, .6); sendEv({ t: 'mh', id: id }); delete G.mines[id]; } if (mi && snow() - mi.at > 40000) delete G.mines[id]; });
           // araç çarpışması
           Object.keys(G.pl).forEach(function (u) { var c = G.cars[u]; if (!c || u === G.uid) return; var dx = m.x - c.x, dz = m.z - c.z, d = Math.hypot(dx, dz); if (d < 3.4 && d > .01) { var pu = (3.4 - d) * .5; m.x += dx / d * pu; m.z += dz / d * pu; m.vx *= .985; m.vz *= .985; } });
           if (!m.fin && m.lap >= LAPS) { m.fin = Math.max(1, Math.round(snow() - st.t0)); }
@@ -267,15 +294,15 @@
           if (!b.fin && b.lap >= LAPS) b.fin = Math.max(1, Math.round(snow() - st.t0));
           var bi = botInput(b, 0, leader); if (b.fin) bi.g = 1;
           stepCar(b, 1 / 60, bi);
-          Object.keys(G.mines).forEach(function (id) { var mi = G.mines[id]; if (mi && b.stun <= 0 && Math.hypot(b.x - mi.x, b.z - mi.z) < 3.4) { b.stun = 1.2; sendEv({ t: 'mh', id: id }); delete G.mines[id]; } });
+          Object.keys(G.mines).forEach(function (id) { var mi = G.mines[id]; if (mi && b.stun <= 0 && Math.hypot(b.x - mi.x, b.z - mi.z) < 3.4 && !(mi.from === u && snow() - mi.at < 3500)) { b.stun = mi.k === 'oil' ? 0.7 : 1.2; sendEv({ t: 'mh', id: id }); delete G.mines[id]; } });
         });
       }
     }
-    if (wantItem) { wantItem = false; useItem(); }
+    if (wantItem) { var wi = wantItem; wantItem = false; useItem(wi === 2); }
     // yayın
     sendT += dt; if (sendT > 0.1) {
       sendT = 0; var u = G.me;
-      G.base.child('pl/' + G.uid).set({ n: G.name, x: u ? +u.x.toFixed(2) : 0, z: u ? +u.z.toFixed(2) : 0, h: u ? +u.h.toFixed(3) : 0, v: u ? +(u.speed || 0).toFixed(1) : 0, p: u ? +u.total.toFixed(2) : 0, f: u ? u.fin : 0, bo: u && u.boost > 0 ? 1 : 0, sp: u && u.stun > 0 ? 1 : 0, a: snow() }).catch(function () {});
+      G.base.child('pl/' + G.uid).set({ n: G.name, x: u ? +u.x.toFixed(2) : 0, z: u ? +u.z.toFixed(2) : 0, h: u ? +u.h.toFixed(3) : 0, v: u ? +(u.speed || 0).toFixed(1) : 0, p: u ? +u.total.toFixed(2) : 0, f: u ? u.fin : 0, bo: u && u.boost > 0 ? 1 : 0, sp: u && u.stun > 0 ? 1 : 0, sh: u && u.shield > 0 ? 1 : 0, a: snow() }).catch(function () {});
       Object.keys(G.bots).forEach(function (id) { var b = G.bots[id]; G.base.child('pl/' + id).set({ n: b.name, b: 1, x: +b.x.toFixed(2), z: +b.z.toFixed(2), h: +b.h.toFixed(3), v: +(b.speed || 0).toFixed(1), p: +b.total.toFixed(2), f: b.fin, bo: b.boost > 0 ? 1 : 0, sp: b.stun > 0 ? 1 : 0, a: snow() }).catch(function () {}); });
     }
     render(dt, phase); hud(phase); results(phase);
@@ -290,14 +317,14 @@
       var p = G.pl[u]; if (u === G.uid) return; if (now - p.a > 6000) { if (carMeshes[u]) { scene.remove(carMeshes[u]); delete carMeshes[u]; delete G.cars[u]; } return; }
       if (G.bots[u]) return; // yerelde sürülüyor
       var c = G.cars[u] || (G.cars[u] = { x: p.x, z: p.z, h: p.h }); var age = Math.min(0.35, (now - p.a) / 1000), tx = p.x + Math.sin(p.h) * p.v * age, tz = p.z + Math.cos(p.h) * p.v * age, k = Math.min(1, 12 * dt);
-      c.x += (tx - c.x) * k; c.z += (tz - c.z) * k; var dh = p.h - c.h; while (dh > Math.PI) dh -= 2 * Math.PI; while (dh < -Math.PI) dh += 2 * Math.PI; c.h += dh * k; c.bo = p.bo; c.sp = p.sp; c.v = p.v;
+      c.x += (tx - c.x) * k; c.z += (tz - c.z) * k; var dh = p.h - c.h; while (dh > Math.PI) dh -= 2 * Math.PI; while (dh < -Math.PI) dh += 2 * Math.PI; c.h += dh * k; c.bo = p.bo; c.sp = p.sp; c.sh = p.sh; c.v = p.v;
     });
     Object.keys(G.bots).forEach(function (u) { G.cars[u] = G.bots[u]; G.cars[u].bo = G.bots[u].boost > 0; G.cars[u].sp = G.bots[u].stun > 0; G.cars[u].v = G.bots[u].speed; });
     var drawList = Object.keys(G.cars).filter(function (u) { return u !== G.uid && G.pl[u] && now - G.pl[u].a < 6000; });
-    drawList.forEach(function (u) { var c = G.cars[u], mesh = carFor(u, slotOf(u), G.pl[u].n); mesh.position.set(c.x, 0, c.z); mesh.rotation.y = c.h + (c.sp ? Date.now() / 60 : 0); mesh.userData.flame.visible = !!c.bo; });
-    var m = G.me; if (m) { var mm = carFor(G.uid, m.slot, G.name); mm.children[mm.children.length - 1].visible = false; mm.position.set(m.x, 0, m.z); mm.rotation.y = m.h + (m.stun > .5 ? Date.now() / 60 : 0); mm.rotation.z = -m.steer * Math.min(1, (m.speed || 0) / 60) * .12; mm.userData.flame.visible = m.boost > 0; }
+    drawList.forEach(function (u) { var c = G.cars[u], mesh = carFor(u, slotOf(u), G.pl[u].n); mesh.position.set(c.x, 0, c.z); mesh.rotation.y = c.h + (c.sp ? Date.now() / 60 : 0); mesh.userData.flame.visible = !!c.bo; mesh.userData.shield.visible = !!c.sh; });
+    var m = G.me; if (m) { var mm = carFor(G.uid, m.slot, G.name); mm.children[mm.children.length - 1].visible = false; mm.position.set(m.x, 0, m.z); mm.rotation.y = m.h + (m.stun > .5 ? Date.now() / 60 : 0); mm.rotation.z = -m.steer * Math.min(1, (m.speed || 0) / 60) * .12; mm.userData.flame.visible = m.boost > 0; mm.userData.shield.visible = m.shield > 0; }
     // mayınlar
-    Object.keys(G.mines).forEach(function (id) { if (!mineMeshes[id]) { var c2 = new T.Mesh(new T.ConeGeometry(1.2, 1.8, 7), new T.MeshBasicMaterial({ color: 0xff3300 })); c2.position.set(G.mines[id].x, 1, G.mines[id].z); scene.add(c2); mineMeshes[id] = c2; } mineMeshes[id].rotation.y += dt * 3; });
+    Object.keys(G.mines).forEach(function (id) { if (!mineMeshes[id]) { var oil = G.mines[id].k === 'oil', c2 = oil ? new T.Mesh(new T.CircleGeometry(3, 16), new T.MeshBasicMaterial({ color: 0x050508 })) : new T.Mesh(new T.ConeGeometry(1.2, 1.8, 7), new T.MeshBasicMaterial({ color: 0xff3300 })); if (oil) { c2.rotation.x = -Math.PI / 2; c2.position.set(G.mines[id].x, 0.09, G.mines[id].z); } else c2.position.set(G.mines[id].x, 1, G.mines[id].z); c2.userData.oil = oil; scene.add(c2); mineMeshes[id] = c2; } if (!mineMeshes[id].userData.oil) mineMeshes[id].rotation.y += dt * 3; });
     Object.keys(mineMeshes).forEach(function (id) { if (!G.mines[id]) { scene.remove(mineMeshes[id]); delete mineMeshes[id]; } });
     pickMeshes.forEach(function (p) { if (p.off > 0) p.off -= dt; p.m.visible = p.off <= 0; p.m.rotation.y += dt * 2; p.m.rotation.x += dt; });
     // kamera
@@ -322,8 +349,11 @@
     $('lap').textContent = m ? 'Tur ' + Math.min(LAPS, Math.max(1, m.lap + 1)) + '/' + LAPS : (G.st ? 'İzliyorsun' : '');
     $('spd').innerHTML = m ? Math.round((m.speed || 0) * 3.6) + '<small> km/sa</small>' : '';
     $('item').innerHTML = m && m.item ? ITEMS[m.item].ic + '<small>' + ITEMS[m.item].n + '</small>' : '<span style="opacity:.35;font-size:26px">▢</span>';
+    if (m && phase === 'race' && !m.fin) { var tp = PTS[m.idx]; if (m.vx * tp.tx + m.vz * tp.tz < -5 && (m.speed || 0) > 12) { $('msg').textContent = '⚠ TERS YÖN!'; toastT = 0.3; } }
+    if (AC && eng) eng.frequency.value = muted ? 0 : 45 + (m ? m.speed || 0 : 0) * 2.2 + (m && m.boost > 0 ? 30 : 0);
     var cnt = '';
     if (!st) cnt = ''; else if (phase === 'count') cnt = String(Math.max(1, Math.ceil((st.t0 - now) / 1000))); else if (now - st.t0 < 900) cnt = 'GO!';
+    if (cnt !== lastCnt) { if (cnt && cnt !== 'GO!') blip(440, .15); else if (cnt === 'GO!') blip(880, .4); lastCnt = cnt; }
     $('cnt').textContent = cnt;
     if (!st && !toastT) $('msg').innerHTML = rk.length + ' kişi odada — yarışı başlat';
     else if (st && !m && phase !== 'wait' && !toastT) $('msg').textContent = 'Yarış sürüyor, bir sonrakini bekle';
@@ -336,6 +366,7 @@
     PTS.forEach(function (p, i) { var X = p.x * sc + ox, Y = p.z * sc + oz; if (!i) c.moveTo(X, Y); else c.lineTo(X, Y); }); c.closePath(); c.stroke();
     Object.keys(G.pl).forEach(function (u) { var p = G.pl[u]; if (now - p.a > 6000) return; var x = u === G.uid && m ? m.x : p.x, z = u === G.uid && m ? m.z : p.z; c.fillStyle = u === G.uid ? '#fff' : '#' + ('000000' + COLORS[(st && st.grid && st.grid[u] != null ? st.grid[u] : 0) % 8].toString(16)).slice(-6); c.beginPath(); c.arc(x * sc + ox, z * sc + oz, u === G.uid ? 7 : 5, 0, 7); c.fill(); });
   }
+  var lastCnt = '';
   function fmtT(ms) { var s = ms / 1000, mm = Math.floor(s / 60); return mm + ':' + ('0' + (s - mm * 60).toFixed(2)).slice(-5); }
   function results(phase) {
     var st = G.st; if (!st || phase !== 'race') return;
@@ -355,20 +386,22 @@
 
   /* ---------- giriş ---------- */
   var KM = { ArrowLeft: 'l', a: 'l', A: 'l', ArrowRight: 'r', d: 'r', D: 'r', ArrowUp: 'g', w: 'g', W: 'g', ArrowDown: 'b', s: 'b', S: 'b', Shift: 'b' };
-  addEventListener('keydown', function (e) { if (e.key === ' ' || e.key === 'e' || e.key === 'E') { wantItem = true; e.preventDefault(); return; } var k = KM[e.key]; if (k) { keys[k] = 1; e.preventDefault(); } });
+  addEventListener('keydown', function (e) { audio(); if (e.key === ' ' || e.key === 'e' || e.key === 'E') { wantItem = 1; e.preventDefault(); return; } if (e.key === 'q' || e.key === 'Q') { wantItem = 2; return; } if (e.key === 'r' || e.key === 'R') { respawn(); return; } var k = KM[e.key]; if (k) { keys[k] = 1; e.preventDefault(); } });
   addEventListener('keyup', function (e) { var k = KM[e.key]; if (k) keys[k] = 0; });
   [['bL', 'l'], ['bR', 'r'], ['bB', 'b']].forEach(function (a) {
     var b = $(a[0]); b.addEventListener('pointerdown', function (e) { e.preventDefault(); keys[a[1]] = 1; b.classList.add('on'); try { b.setPointerCapture(e.pointerId); } catch (x) {} });
     ['pointerup', 'pointercancel', 'lostpointercapture'].forEach(function (ev) { b.addEventListener(ev, function () { keys[a[1]] = 0; b.classList.remove('on'); }); });
   });
-  $('bI').addEventListener('pointerdown', function (e) { e.preventDefault(); wantItem = true; });
+  $('bI').addEventListener('pointerdown', function (e) { e.preventDefault(); audio(); wantItem = 1; });
+  $('bK').addEventListener('pointerdown', function (e) { e.preventDefault(); wantItem = 2; });
+  $('mute').onclick = function () { muted = !muted; $('mute').textContent = muted ? '🔇' : '🔊'; if (muted && eng) eng.frequency.value = 0; };
   $('leave').onclick = leaveRoom;
 
   /* ---------- menü ---------- */
   function showMenu() {
     $('menu').hidden = false; $('hud').hidden = true;
     var h = '<h1>NEON YARIŞ</h1><div class="sub">8 kişiye kadar · 3 tur · nitro, şok, mayın, yıldırım</div><div id="menuMsg">' + (G.uid ? 'Merhaba ' + esc(G.name) + '!' : 'Önce <a href="../" style="color:#9cf">ana sayfadan</a> giriş yap, sonra buraya dön.') + '</div><div id="rooms"></div>' +
-      '<div class="help">Telefon: ◀ ▶ ile dön (gaz otomatik), ⏹ el freni/fren, ⚡ güçlendirmeyi kullan. Bilgisayar: ← → / A D, ↑ gaz, ↓ fren, Boşluk güçlendirme.<br>Sarı kutulardan güçlendirme topla. Şok önündeki arabayı, yıldırım lideri yavaşlatır; mayın arkana bırakılır.</div><div style="text-align:center;margin-top:12px"><a class="btn" href="../">‹ Ana lobi</a></div>';
+      '<div class="help">Telefon: ◀ ▶ ile dön (gaz otomatik), ⏹ el freni (dönerken basılı tutarsan drift, bırakınca turbo), ⚡ güçlendirmeyi öne, ↩ arkaya at. Bilgisayar: ← → / A D, ↑ gaz, ↓ fren, Boşluk güçlendirmeyi öne, Q arkaya at, R yola geri dön.<br>Sarı kutulardan güçlendirme topla: 🚀 nitro, 🛡 kalkan, ⚡ şok (öndeki/arkadaki arabayı yavaşlatır), 💣 mayın ve 🛢 yağ (öne fırlatılır ya da arkana bırakılır), 🌩 yıldırım (lideri vurur), 📡 EMP (yakındakilerin hepsini yavaşlatır). Geride olanlara daha iyi güçlendirme çıkar.</div><div style="text-align:center;margin-top:12px"><a class="btn" href="../">‹ Ana lobi</a></div>';
     $('mcard').innerHTML = h; refreshRooms();
   }
   function refreshRooms() {
