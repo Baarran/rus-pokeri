@@ -822,6 +822,12 @@ body.sl-lock { overflow: hidden; overscroll-behavior: none; }
       <div class="gc-sub">Arcade futbol · 1v1, 2v2, 3v3, 4v4 (8 kişiye kadar) · botlarla doldurma · altın gol</div>
       <div class="tbls"><a class="btn primary" href="sokak/" style="display:block;text-align:center;text-decoration:none;padding:12px">Oyna →</a></div>
     </div>
+    <div class="game-card">
+      <div class="gc-art" style="font-size:36px;line-height:48px;letter-spacing:6px">🏟👟🏆</div>
+      <div class="gc-title">Altın Ayak — Kariyer</div>
+      <div class="gc-sub">Kendi futbolcunu yarat · 17 yaşında başla, transfer ol, ödül kazan, emekli ol · ortak skor tablosu</div>
+      <div class="tbls"><a class="btn primary" href="kariyer/" style="display:block;text-align:center;text-decoration:none;padding:12px">Oyna →</a></div>
+    </div>
   </div>
   <div id="lobbyBoard"></div>
   <p class="lobby-note">Her oyunun 3 ayrı masası var; kalabalıksanız farklı masalara dağılın. Çipin bitince lobiden admin'den çip iste. Masadan lobiye sol üstteki ‹ düğmesiyle dönülür.</p>
@@ -3977,7 +3983,7 @@ window.CORE = (function () {
     var v = String(CORE.online[uid] || ''); if (!v) return '';
     var p = v.split('/'), g = p[0];
     if (CORE.GAME_NAMES[g] && p[1]) return CORE.GAME_NAMES[g] + ' · Masa ' + p[1];
-    return { lobby: 'Lobide', chat: 'Sohbette', kayit: 'Kayıtlarda', admin: 'Admin panelinde', cs: 'Buz Operasyonu (3B)', kule: 'Buz Kule', car: 'Neon Yarış', sokak: 'Sokak Futbolu' }[g] || 'Sitede';
+    return { lobby: 'Lobide', chat: 'Sohbette', kayit: 'Kayıtlarda', admin: 'Admin panelinde', cs: 'Buz Operasyonu (3B)', kule: 'Buz Kule', car: 'Neon Yarış', sokak: 'Sokak Futbolu', kariyer: 'Altın Ayak (kariyer)' }[g] || 'Sitede';
   }
 
   // ---------- giriş ----------
