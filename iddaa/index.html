@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Canlı Fırsatlar · iddaa</title>
+<meta name="robots" content="noindex">
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<style>
+  :root{
+    --bg:#0e1014; --panel:#161920; --panel2:#1d212a; --line:#272c37; --line2:#323847;
+    --ink:#eef0f4; --muted:#9aa3b2; --dim:#697284;
+    --gol:#5fd08a; --kor:#56c6f2; --bilgi:#aab2c2; --acc:#ffb547; --bad:#ff7a6b; --ok:#5fd08a; --warn:#ffb547;
+    --shadow:0 1px 0 rgba(255,255,255,.03) inset, 0 6px 18px rgba(0,0,0,.25);
+  }
+  @media (prefers-color-scheme: light){
+    :root{--bg:#f4f5f8; --panel:#ffffff; --panel2:#f0f2f6; --line:#e1e4ec; --line2:#cfd4e0;
+      --ink:#161a22; --muted:#596175; --dim:#8a93a6; --gol:#17824a; --kor:#0b78a8; --bilgi:#667085; --acc:#b86a00; --bad:#c9372c; --ok:#17824a; --warn:#b86a00;
+      --shadow:0 1px 2px rgba(20,30,50,.06), 0 6px 16px rgba(20,30,50,.06)}
+  }
+  *{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+  .wrap{max-width:820px;margin:0 auto;padding:18px 14px 60px}
+  header{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap}
+  h1{font-size:23px;margin:0;letter-spacing:-.015em}
+  .sub{color:var(--muted);font-size:13px;margin-top:2px}
+  .live{display:inline-flex;align-items:center;gap:8px;background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:6px 12px;font-size:13px;color:var(--muted);box-shadow:var(--shadow)}
+  .dot{width:9px;height:9px;border-radius:50%;background:var(--ok);box-shadow:0 0 0 0 rgba(95,208,138,.6);animation:pulse 2s infinite}
+  .live.mid .dot{background:var(--warn);animation:none}
+  .live.old .dot{background:var(--bad);animation:none}
+  @keyframes pulse{70%{box-shadow:0 0 0 8px rgba(95,208,138,0)}100%{box-shadow:0 0 0 0 rgba(95,208,138,0)}}
+  .stale{display:none;margin:14px 0 0;background:rgba(255,122,107,.12);border:1px solid rgba(255,122,107,.45);color:var(--bad);border-radius:12px;padding:10px 12px;font-size:14px}
+  .tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(104px,1fr));gap:10px;margin:16px 0 4px}
+  .tile{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px 12px;box-shadow:var(--shadow)}
+  .tile .k{font-size:11.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+  .tile .v{font-size:24px;font-weight:780;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+  .tile .s{font-size:12px;color:var(--dim)}
+  h2{font-size:12.5px;text-transform:uppercase;letter-spacing:.09em;color:var(--muted);margin:30px 0 12px;font-weight:700;display:flex;align-items:center;gap:8px}
+  h2 .n{background:var(--panel2);border:1px solid var(--line);border-radius:99px;padding:0 8px;font-size:12px;color:var(--ink)}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;margin-bottom:14px;overflow:hidden;box-shadow:var(--shadow);transition:opacity .4s}
+  .card.old{opacity:.55}
+  .chead{display:flex;justify-content:space-between;gap:10px;align-items:center;padding:12px 14px 6px;flex-wrap:wrap}
+  .mac{font-size:17px;font-weight:700;letter-spacing:-.01em}
+  .now{font-size:13px;color:var(--muted);display:flex;gap:8px;align-items:center}
+  .now b{color:var(--ink);font-variant-numeric:tabular-nums;font-size:15px}
+  .row{padding:10px 14px 12px;border-top:1px solid var(--line);border-left:4px solid var(--gol)}
+  .row.KORNER{border-left-color:var(--kor)} .row.BİLGİ{border-left-color:var(--bilgi)}
+  .rtop{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  .tag{font-weight:800;font-size:11px;letter-spacing:.07em;padding:2px 8px;border-radius:6px;background:rgba(95,208,138,.14);color:var(--gol)}
+  .KORNER .tag{background:rgba(86,198,242,.14);color:var(--kor)} .BİLGİ .tag{background:rgba(170,178,194,.16);color:var(--bilgi)}
+  .badge{font-size:11.5px;font-weight:700;border-radius:99px;padding:2px 9px;border:1px solid var(--line2);color:var(--muted)}
+  .badge.taze{color:var(--ok);border-color:rgba(95,208,138,.5);background:rgba(95,208,138,.1)}
+  .badge.eski{color:var(--warn);border-color:rgba(255,181,71,.5)}
+  .badge.skor{color:var(--bad);border-color:rgba(255,122,107,.5)}
+  .oyna{font-size:19px;font-weight:800;color:var(--acc);margin:6px 0 8px;letter-spacing:-.01em}
+  .odds{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+  .box{background:var(--panel2);border-radius:10px;padding:8px 10px;min-width:0}
+  .box .k{font-size:11.5px;color:var(--muted)}
+  .box .v{font-size:21px;font-weight:780;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+  .box .v small{font-size:12px;font-weight:600;color:var(--dim)}
+  .bar{height:6px;background:var(--line);border-radius:99px;overflow:hidden;margin-top:5px}
+  .bar i{display:block;height:100%;background:var(--acc);border-radius:99px}
+  .life{height:3px;background:var(--line);margin-top:10px;border-radius:99px;overflow:hidden}
+  .life i{display:block;height:100%;background:var(--ok);transition:width 1s linear}
+  .note{font-size:13px;color:var(--muted);margin-top:8px}
+  .rule{font-size:12.5px;color:var(--warn);margin-top:6px}
+  .empty{background:var(--panel);border:1px dashed var(--line2);border-radius:14px;padding:18px;color:var(--muted);font-size:14px}
+  .empty b{color:var(--ink)}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px}
+  .mt{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px 14px;box-shadow:var(--shadow)}
+  .mt .t{font-weight:700;font-size:15px;line-height:1.25}
+  .mt .l{font-size:12px;color:var(--dim);margin-top:1px}
+  .mt .sc{display:flex;gap:8px;align-items:baseline;margin:6px 0}
+  .mt .sc b{font-size:22px;font-variant-numeric:tabular-nums}
+  .opt{display:flex;justify-content:space-between;gap:8px;font-size:13px;padding:6px 0;border-top:1px solid var(--line)}
+  .opt .nm{min-width:0}
+  .opt .nm i{font-style:normal;color:var(--muted);display:block;font-size:12px}
+  .ev{font-weight:800;font-variant-numeric:tabular-nums;text-align:right;white-space:nowrap}
+  .ev.g{color:var(--ok)} .ev.y{color:var(--warn)} .ev.n{color:var(--dim)}
+  .ev small{display:block;font-weight:600;font-size:11px;color:var(--dim)}
+  .tablew{overflow-x:auto;border:1px solid var(--line);border-radius:14px;background:var(--panel)}
+  table{width:100%;border-collapse:collapse;font-size:13.5px;min-width:600px}
+  th{text-align:left;color:var(--muted);font-weight:700;font-size:11.5px;text-transform:uppercase;letter-spacing:.06em;padding:9px 10px;border-bottom:1px solid var(--line)}
+  td{padding:9px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+  tr:last-child td{border-bottom:0}
+  td.n{font-variant-numeric:tabular-nums;white-space:nowrap}
+  .res{font-weight:800;font-size:12px;border-radius:6px;padding:2px 8px;display:inline-block}
+  .res.tuttu{background:rgba(95,208,138,.16);color:var(--ok)} .res.tutmadi{background:rgba(255,122,107,.16);color:var(--bad)}
+  .res.devam{background:rgba(255,181,71,.14);color:var(--warn)} .res.bil{background:var(--panel2);color:var(--dim)}
+  .filters{display:flex;gap:6px;margin:0 0 10px;flex-wrap:wrap}
+  .filters button{background:var(--panel);border:1px solid var(--line);color:var(--muted);border-radius:99px;padding:5px 12px;font:inherit;font-size:12.5px;cursor:pointer}
+  .filters button.on{color:var(--ink);border-color:var(--acc)}
+  .hit{display:flex;align-items:center;gap:8px}
+  .hit .bar{flex:1;margin:0;min-width:60px}
+  details{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin-bottom:12px}
+  summary{cursor:pointer;font-weight:700;font-size:14px}
+  details p,details li{color:var(--muted);font-size:13.5px}
+  details ul{padding-left:18px;margin:8px 0 0}
+  .chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+  .chip{background:var(--panel2);border:1px solid var(--line);border-radius:99px;padding:3px 10px;font-size:12px;color:var(--muted)}
+  .foot{margin-top:28px;color:var(--dim);font-size:12.5px;text-align:center}
+  .izr{padding:8px 0;border-top:1px solid var(--line)} .izr:first-child{border-top:0}
+  .izr .t{font-weight:700;font-size:14px}
+  .yak{display:grid;gap:8px;margin-top:10px}
+  .yk{display:flex;justify-content:space-between;gap:10px;align-items:center;background:var(--panel2);border-radius:10px;padding:9px 11px}
+  .yk .a{min-width:0;font-size:13.5px} .yk .a i{display:block;font-style:normal;color:var(--muted);font-size:12px}
+  .yk .b{text-align:right;font-weight:800;font-variant-numeric:tabular-nums;white-space:nowrap} .yk .b small{display:block;color:var(--dim);font-weight:600;font-size:11px}
+  .two{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px}
+  .pn{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px 14px;box-shadow:var(--shadow)}
+  .pn h3{margin:0 0 8px;font-size:13.5px}
+  .spark{width:100%;height:96px;display:block}
+  .hc{display:inline-flex;gap:6px;align-items:center;font-size:12px;color:var(--muted);margin-top:8px}
+  .hc i{width:8px;height:8px;border-radius:50%;background:var(--ok);display:inline-block} .hc.bad i{background:var(--bad)}
+  @media (max-width:640px){
+    .tablew.cardsw{border:0;background:none}
+    table.cards{min-width:0} table.cards thead{display:none}
+    table.cards tr{display:block;background:var(--panel);border:1px solid var(--line);border-radius:12px;margin-bottom:10px;padding:6px 10px}
+    table.cards td{display:flex;justify-content:space-between;gap:12px;border:0;padding:5px 0;text-align:right}
+    table.cards td:before{content:attr(data-l);color:var(--dim);font-size:11.5px;text-transform:uppercase;letter-spacing:.05em;text-align:left;flex:none}
+    table.cards td.mc{display:block;text-align:left} table.cards td.mc:before{display:none}
+  }
+  .play{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:10px}
+  .pbtn{font:inherit;font-weight:700;font-size:13.5px;border-radius:10px;padding:8px 14px;border:1px solid var(--acc);background:transparent;color:var(--acc);cursor:pointer}
+  .pbtn.on{background:var(--ok);border-color:var(--ok);color:#06210f}
+  .who{font-size:12.5px;color:var(--muted)}
+  .gate{position:fixed;inset:0;background:rgba(8,10,14,.82);display:none;align-items:center;justify-content:center;z-index:50;padding:18px}
+  .gate.on{display:flex}
+  .gate .bx{background:var(--panel);border:1px solid var(--line2);border-radius:16px;padding:20px;max-width:360px;width:100%;box-shadow:var(--shadow)}
+  .gate h3{margin:0 0 6px;font-size:18px} .gate p{margin:0 0 12px;color:var(--muted);font-size:13.5px}
+  .gate input{width:100%;font:inherit;padding:10px 12px;border-radius:10px;border:1px solid var(--line2);background:var(--panel2);color:var(--ink);margin-bottom:10px}
+  .gate button{width:100%;font:inherit;font-weight:800;padding:10px;border-radius:10px;border:0;background:var(--acc);color:#1b1200;cursor:pointer}
+  .me{background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:6px 12px;font-size:13px;color:var(--muted);cursor:pointer}
+  .hdr2{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1>Canlı Fırsatlar</h1>
+      <div class="sub">iddaa canlı futbol · olasılık, oran ve beklenen değer</div>
+    </div>
+    <div class="hdr2"><div class="live" id="live"><span class="dot"></span><span id="liveTxt">yükleniyor…</span></div><button class="me" id="meBtn" type="button">Giriş</button></div>
+  </header>
+  <div class="gate on" id="gate"><div class="bx"><h3>Giriş</h3><p>Poker sitesindeki ad ve şifrenle gir. Hesabın yoksa aynı kutudan aç. Kart altındaki "Oynadım" düğmesi yalnız kaydını tutar, bahis yapmaz.</p><input id="adIn" maxlength="16" placeholder="Adın" autocomplete="username"><input id="pwIn" type="password" placeholder="Şifre" autocomplete="current-password"><div id="gErr" class="who" style="color:var(--bad);min-height:18px;margin-bottom:8px"></div><button id="adGo" type="button">Giriş yap</button><button id="adReg" type="button" style="margin-top:8px;background:transparent;color:var(--muted);border:1px solid var(--line2)">Hesap aç</button></div></div>
+  <div class="stale" id="stale"></div>
+  <div class="tiles" id="tiles"></div>
+
+  <h2>Şimdi girilebilecekler <span class="n" id="nF">0</span></h2>
+  <div id="firsat"></div>
+
+  <div id="izleW" style="display:none">
+    <h2>İzlemede <span class="n" id="nI">0</span></h2>
+    <div id="izle"></div>
+  </div>
+
+  <h2>Her maç için en mantıklı seçenek <span class="n" id="nM">0</span></h2>
+  <div class="grid" id="maclar"></div>
+
+  <h2>Önceki uyarılar</h2>
+  <div class="filters" id="filters"></div>
+  <div class="tablew cardsw"><table class="cards"><thead><tr><th>Saat</th><th>Maç ve bahis</th><th>Oran / en az</th><th>Olasılık</th><th>Durum</th><th>Sonuç</th></tr></thead><tbody id="gec"></tbody></table></div>
+
+  <h2>Karne</h2>
+  <div class="tiles" id="karneT"></div>
+  <div class="tablew" style="margin-top:12px"><table><thead><tr><th>Tür</th><th>Uyarı</th><th>Tuttu</th><th>Tutmadı</th><th>İsabet</th><th>Birim</th></tr></thead><tbody id="tip"></tbody></table></div>
+  <div class="note" id="karneN" style="margin-top:8px"></div>
+
+  <h2>Gidişat</h2>
+  <div class="two">
+    <div class="pn"><h3>Birim eğrisi <span class="chip" id="serN"></span></h3><div id="seri"></div></div>
+    <div class="pn"><h3>Model doğru mu? <span class="chip">olasılık ↔ gerçek</span></h3><div id="kal"></div></div>
+  </div>
+  <div id="kisiW" style="display:none"><h2>Girenler ve oynayanlar <span class="n" id="nP">0</span></h2>
+  <div class="pn" id="kisiler"><p class="note">Yükleniyor…</p></div></div>
+
+  <h2>Eşiğin altında kalanlar</h2>
+  <div class="pn" id="yakin"></div>
+
+  <h2>Model ve veri</h2>
+  <details open><summary>Öğrenme durumu</summary><div class="chips" id="veri"></div></details>
+  <details><summary>Okunamayan pazarlar <span class="chip" id="nB">0</span></summary><p>Bu pazar adları henüz modele tanıtılmadı, uyarı üretmez. Yanlış eşleşme riskini görmek için burada listeleniyor.</p><div class="chips" id="bil"></div></details>
+  <details><summary>Yaklaşan maçlar için izleme listesi <span class="chip" id="izT"></span></summary><div id="izlist"></div></details>
+  <details><summary>Nasıl okunur</summary>
+    <ul>
+      <li><b>İddaa oranı</b> sitede o an görünen orandır. <b>En az</b>, modelin olasılığına göre adil orandır: iddaa oranı bundan küçükse değer kalmamıştır, girme.</li>
+      <li><b>Taze</b> rozeti uyarının ilk 6 dakikası ve skorun değişmediği durumdur. Sonrasında kart solar, oran değişmiş olabilir.</li>
+      <li>Aynı maçtaki uyarılar tek kartta toplanır. Birbirine bağlıdır, hepsini birlikte oynamak riski katlar.</li>
+      <li>Oranı okunamayan korner ve bilgi uyarıları "İzlemede" bölümüne düşer. Oynanabilir sayılmaz.</li>
+      <li>Düşük güvenli liglerde (U19, yedek takım, bilinmeyen lig) uyarı için EV en az 1.14 aranır. Elenenler "Eşiğin altında kalanlar" bölümüne kaydedilir.</li>
+      <li>Karne, her uyarıya 1 birim oynansaydı sonucunu gösterir. Veri azken bu sonuç yanıltıcıdır, anlamlı olması için 2–3 hafta gerekir.</li>
+    </ul>
+  </details>
+  <div class="foot">Olasılıklar tahmindir, kesinlik taşımaz. Bilgi amaçlıdır. Bahis yapmak ve para riski kullanıcıya aittir.</div>
+</div>
+<script>
+const $=s=>document.querySelector(s);
+const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+let D=null,IZ=null,FILT='hepsi';
+const LIFE=6;
+const istNow=()=>{const p=new Intl.DateTimeFormat('tr-TR',{timeZone:'Europe/Istanbul',hour:'2-digit',minute:'2-digit',hour12:false,year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date());const g=t=>p.find(x=>x.type===t).value;return{min:(+g('hour')%24)*60+(+g('minute')),date:g('year')+'-'+g('month')+'-'+g('day')}};
+const ageOf=a=>{const n=istNow();if(a.d!==n.date)return 9999;const[h,m]=a.at.split(':').map(Number);return((n.min-(h*60+m))%1440+1440)%1440};
+const dataAge=()=>D?Math.max(0,Math.round((Date.now()-new Date(D.guncel))/60000)):999;
+const f2=x=>x==null?'—':(+x).toFixed(2);
+const tipTR={KORNER:'KORNER',GOL:'GOL',PAZAR:'PAZAR','BİLGİ':'BİLGİ'};
+
+function renderHead(){
+  const a=dataAge(),L=$('#live');
+  L.className='live'+(a>20?' old':a>8?' mid':'');
+  $('#liveTxt').textContent=D?`${D.canli} canlı · ${D.eslesen} analizli · veri ${a<1?'şimdi':a+' dk önce'} (${D.saat})`:'veri bekleniyor';
+  const S=$('#stale');
+  if(a>12){S.style.display='block';S.textContent=`Veri ${a} dakikadır güncellenmedi. Takip durmuş olabilir, kartlardaki oranlara güvenme.`}else S.style.display='none';
+  if(!D)return;
+  const k=D.karne.bugun;
+  $('#tiles').innerHTML=[
+    ['Canlı maç',D.canli,D.eslesen+' analizli'],
+    ['Bugün uyarı',k.n,k.suruyor+' sürüyor'],
+    ['Tuttu',k.tuttu,k.tutmadi+' tutmadı'],
+    ['Birim',(k.birim>0?'+':'')+k.birim,k.oynanan+' oranlı uyarı']
+  ].map(t=>`<div class="tile"><div class="k">${t[0]}</div><div class="v">${t[1]}</div><div class="s">${t[2]}</div></div>`).join('');
+}
+
+/* --- giriş, kişi ve oynadım kaydı (Firebase) --- */
+const FB_CONFIG={apiKey:"AIzaSyBsP1VNPJpt1Y6MN0FwDCmvuHeZxaDoTGU",authDomain:"ruspokeri-de28e.firebaseapp.com",databaseURL:"https://ruspokeri-de28e-default-rtdb.europe-west1.firebasedatabase.app",projectId:"ruspokeri-de28e"};
+const ADMIN_EMAIL='baran@ruspokeri-masa.com';
+const slug=n=>String(n||'').toLocaleLowerCase('tr-TR').replace(/ç/g,'c').replace(/ğ/g,'g').replace(/ı/g,'i').replace(/i̇/g,'i').replace(/ö/g,'o').replace(/ş/g,'s').replace(/ü/g,'u').replace(/[^a-z0-9]/g,'');
+const emailOf=n=>slug(n)+'@ruspokeri-masa.com';
+let ME={ad:'',uid:null,oy:{}},ISADMIN=false,PEOPLE=[],FBOK=false,GIR={},OYS={},auth=null,fdb=null;
+const fmtTs=ts=>ts?new Intl.DateTimeFormat('tr-TR',{timeZone:'Europe/Istanbul',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hour12:false}).format(new Date(ts)):'—';
+const keyOf=a=>(a.d||'')+'|'+a.mac+'|'+a.oyna;
+const fk=k=>encodeURIComponent(k).replace(/\./g,'%2E');
+function playHTML(a){
+  const k=fk(keyOf(a)),mine=ME.oy[k];
+  const oth=ISADMIN?PEOPLE.filter(p=>p.id!==ME.uid&&p.oy&&p.oy[k]).map(p=>esc(p.ad||'?')+' ('+esc(fmtTs(p.oy[k].ts).slice(-5))+')'):[];
+  return `<div class="play"><button class="pbtn ${mine?'on':''}" data-k="${esc(keyOf(a))}" type="button">${mine?'✓ Oynadım · '+esc(fmtTs(mine.ts).slice(-5)):'Oynadım'}</button>${oth.length?`<span class="who">Oynayan: ${oth.join(', ')}</span>`:''}</div>`}
+function renderMe(){$('#meBtn').textContent=ME.uid?'👤 '+ME.ad+(ISADMIN?' · Admin':'')+' · çıkış':'Giriş'}
+function renderKisi(){
+  const W=$('#kisiW');if(!W)return;
+  if(!ISADMIN){W.style.display='none';return}
+  W.style.display='block';
+  const L=PEOPLE.slice().sort((x,y)=>(y.son||0)-(x.son||0));$('#nP').textContent=L.length;
+  $('#kisiler').innerHTML=L.length?'<div class="tablew" style="border:0"><table style="min-width:0"><thead><tr><th>Ad</th><th>Son giriş</th><th>Giriş</th><th>Oynadığı</th></tr></thead><tbody>'+L.map(p=>{const oy=Object.values(p.oy||{}).sort((a,b)=>(b.ts||0)-(a.ts||0));
+    return `<tr><td><b>${esc(p.ad||'?')}</b></td><td class="n">${esc(fmtTs(p.son))}</td><td class="n">${p.n||0}</td><td>${oy.length?oy.slice(0,3).map(o=>`<div style="font-size:12.5px"><span style="color:var(--dim)">${esc(fmtTs(o.ts))}</span> ${esc(o.mac)} · <span style="color:var(--acc)">${esc(o.oyna)}</span>${o.o?' · '+f2(o.o):''}</div>`).join('')+(oy.length>3?`<div class="who">+${oy.length-3} daha</div>`:''):'<span class="who">—</span>'}</td></tr>`}).join('')+'</tbody></table></div>':'<p class="note">Henüz kimse kayıt bırakmadı.</p>'}
+function rebuildPeople(){const ids=new Set(Object.keys(GIR).concat(Object.keys(OYS)));PEOPLE=[...ids].map(id=>Object.assign({id,oy:OYS[id]||{}},GIR[id]||{}));renderKisi();renderFirsat()}
+function gErr(m){$('#gErr').textContent=m||''}
+const authMsg=e=>{const c=String(e&&e.code||'');if(/user-not-found|wrong-password|invalid-credential|invalid-login/.test(c))return'Ad ya da şifre yanlış.';if(/email-already/.test(c))return'Bu ad kayıtlı, "Giriş yap"ı dene.';if(/weak-password/.test(c))return'Şifre en az 6 karakter olmalı.';if(/network/.test(c))return'İnternet bağlantısı yok.';if(/too-many/.test(c))return'Çok deneme yapıldı, biraz bekle.';return'Giriş yapılamadı.'};
+async function doLogin(reg){
+  const name=$('#adIn').value.trim().replace(/\s+/g,' ').slice(0,16),pw=$('#pwIn').value;
+  if(!slug(name)){gErr('Adında en az bir harf ya da rakam olmalı.');return}
+  if(!pw){gErr('Şifre yaz.');return}
+  gErr('');try{
+    if(reg){const c=await auth.createUserWithEmailAndPassword(emailOf(name),pw);await fdb.ref('rp/users/'+c.user.uid).update({name:name,slug:slug(name),createdAt:Date.now(),lastIn:Date.now()})}
+    else await auth.signInWithEmailAndPassword(emailOf(name),pw);
+  }catch(e){gErr(authMsg(e))}}
+async function onUser(u){
+  if(!u){ME={ad:'',uid:null,oy:{}};ISADMIN=false;PEOPLE=[];$('#gate').classList.add('on');renderMe();renderKisi();renderFirsat();return}
+  ME.uid=u.uid;ISADMIN=String(u.email||'').toLowerCase()===ADMIN_EMAIL;
+  let ad='';try{const s=await fdb.ref('rp/users/'+u.uid+'/name').once('value');ad=s.val()||''}catch(e){}
+  ME.ad=ad||(u.email||'').split('@')[0];$('#gate').classList.remove('on');renderMe();
+  try{await fdb.ref('iddaa/gir/'+u.uid).update({ad:ME.ad,son:firebase.database.ServerValue.TIMESTAMP,n:firebase.database.ServerValue.increment(1)})}catch(e){FBOK=false}
+  fdb.ref('iddaa/oy/'+u.uid).on('value',s=>{ME.oy=s.val()||{};renderFirsat()},()=>{});
+  if(ISADMIN){fdb.ref('iddaa/gir').on('value',s=>{GIR=s.val()||{};rebuildPeople()},()=>{});fdb.ref('iddaa/oy').on('value',s=>{OYS=s.val()||{};rebuildPeople()},()=>{})}
+}
+function initFb(){
+  try{firebase.initializeApp(FB_CONFIG);auth=firebase.auth();fdb=firebase.database();FBOK=true;auth.onAuthStateChanged(onUser)}
+  catch(e){gErr('Bağlantı kurulamadı.')}
+}
+document.addEventListener('click',async e=>{const b=e.target.closest('.pbtn');if(!b||!ME.uid)return;
+  const raw=b.dataset.k,k=fk(raw),ref=fdb.ref('iddaa/oy/'+ME.uid+'/'+k);
+  b.disabled=true;
+  try{if(ME.oy[k])await ref.remove();else{const a=((D&&D.firsat)||[]).concat((D&&D.gecmis)||[]).find(x=>keyOf(x)===raw)||{};
+    const v={ts:firebase.database.ServerValue.TIMESTAMP,ad:ME.ad,mac:a.mac||raw.split('|')[1],oyna:a.oyna||raw.split('|')[2]};if(a.oran!=null)v.o=a.oran;if(a.dk)v.dk=a.dk;if(a.sk)v.sk=a.sk;await ref.set(v)}}
+  catch(er){alert('Kayıt yazılamadı. Admin Firebase kurallarını açmamış olabilir.')}
+  b.disabled=false});
+$('#adGo').onclick=()=>doLogin(false);$('#adReg').onclick=()=>doLogin(true);
+$('#pwIn').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin(false)});
+$('#meBtn').onclick=()=>{if(ME.uid&&confirm('Çıkış yapılsın mı?'))auth.signOut()};
+
+function rowHTML(a){
+  const age=ageOf(a),stale=dataAge()>12,dead=age>LIFE||stale;
+  let b=dead?'<span class="badge eski">süre doldu</span>':'<span class="badge taze">taze · '+age+' dk</span>';
+  if(a.sn&&a.sk&&a.sn!==a.sk)b='<span class="badge skor">skor değişti</span>';
+  const pct=Math.min(100,Math.round(age/LIFE*100));
+  const odd=a.oran!=null;
+  return `<div class="row ${esc(a.tur)}">
+    <div class="rtop"><span class="tag">${esc(tipTR[a.tur]||a.tur)}</span>${b}<span class="badge">${esc(a.dk)} · skor ${esc(a.sk)}</span>${a.mbs&&a.mbs!==1?`<span class="badge skor">MBS ${a.mbs}</span>`:''}</div>
+    <div class="oyna">${esc(a.oyna)}</div>
+    <div class="odds">
+      <div class="box"><div class="k">İddaa oranı</div><div class="v">${odd?f2(a.oran):'—'}</div></div>
+      <div class="box"><div class="k">En az olmalı</div><div class="v">${f2(a.adil)}</div></div>
+      <div class="box"><div class="k">Olasılık</div><div class="v">%${a.p}${a.fark!=null?` <small>+%${a.fark}</small>`:''}</div><div class="bar"><i style="width:${Math.min(100,a.p)}%"></i></div></div>
+    </div>
+    ${a.not?`<div class="note">${esc(a.not)}</div>`:''}
+    <div class="note">Nerede: ${esc(a.nerede||'maça tıkla')}</div>
+    <div class="rule">Güncel oran ${f2(a.adil)} altındaysa girme.</div>
+    ${a.oran!=null?playHTML(a):''}
+    <div class="life"><i style="width:${100-pct}%;background:${dead?'var(--dim)':'var(--ok)'}"></i></div>
+  </div>`;
+}
+
+function groupBy(list){const g={};list.forEach(a=>{(g[a.mac]=g[a.mac]||[]).push(a)});return Object.entries(g)}
+
+function renderFirsat(){
+  if(!D)return;
+  const F=D.firsat||[];$('#nF').textContent=F.length;
+  if(!F.length){
+    const C=[];(D.maclar||[]).forEach(m=>(m.pz&&m.pz.best||[]).forEach(b=>{if(b.p>=40)C.push({m,b})}));
+    C.sort((x,y)=>y.b.ev-x.b.ev);const T=C.slice(0,3);
+    $('#firsat').innerHTML='<div class="empty"><b>Şu an eşiği geçen fırsat yok.</b> Uyarı için beklenen değer en az 1.08, olasılık da %45–50 üstünde olmalı.'+(T.length?'<div class="yak">'+T.map(({m,b})=>{const gap=Math.max(0,1.08-b.ev);return `<div class="yk"><div class="a"><b>${esc(m.mac)}</b> · ${esc(m.dk)} · ${esc(m.sk)}<i>${esc(b.m)} → ${esc(b.s)} · iddaa ${f2(b.o)} · en az ${f2(b.adil)} · %${b.p}</i></div><div class="b">${b.ev.toFixed(2)}<small>${gap>0?'eşiğe '+gap.toFixed(2)+' kaldı':'eşikte'}</small></div></div>`}).join('')+'</div><div class="note">Bunlar uyarı değildir. En yakın üç seçeneği gösterir, oynanabilir sayılmaz.</div>':'')+'</div>';return}
+  const cur={};(D.maclar||[]).forEach(m=>cur[m.mac]=m);
+  $('#firsat').innerHTML=groupBy(F).map(([mac,rows])=>{
+    const m=cur[mac]||{},old=rows.every(a=>ageOf(a)>LIFE)||dataAge()>12;
+    return `<div class="card ${old?'old':''}"><div class="chead"><div class="mac">${esc(mac)}</div><div class="now">şimdi <b>${esc(m.dk||rows[0].dn||'')} · ${esc(m.sk||rows[0].sn||'')}</b>${m.mbs?'<span class="badge">MBS '+m.mbs+'</span>':''}</div></div>${rows.map(rowHTML).join('')}</div>`
+  }).join('');
+}
+
+function renderIzle(){
+  const I=(D&&D.izle)||[];$('#izleW').style.display=I.length?'block':'none';$('#nI').textContent=I.length;
+  $('#izle').innerHTML=groupBy(I).map(([mac,rows])=>`<div class="card"><div class="chead"><div class="mac">${esc(mac)}</div><div class="now">${esc(rows[0].dn||rows[0].dk)} · ${esc(rows[0].sn||rows[0].sk)}</div></div>${rows.map(a=>`<div class="row ${esc(a.tur)}"><div class="rtop"><span class="tag">${esc(a.tur)}</span><span class="badge">oran okunamadı</span></div><div class="oyna" style="font-size:16px">${esc(a.oyna)}</div><div class="note">Olasılık %${a.p} · oran en az ${f2(a.adil)} ise. ${esc(a.nerede||'')}</div></div>`).join('')}</div>`).join('')
+}
+
+function renderMaclar(){
+  if(!D)return;const M=D.maclar||[];$('#nM').textContent=M.length;
+  const rank=m=>{const b=m.pz&&m.pz.best&&m.pz.best[0];return b?b.ev:0};
+  $('#maclar').innerHTML=M.slice().sort((a,b)=>rank(b)-rank(a)).map(m=>{
+    const best=(m.pz&&m.pz.best)||[];
+    const opts=best.length?best.map(b=>{const cls=b.ev>=1.08&&b.p>=45?'g':b.ev>=1.08?'y':'n';const lab=cls==='g'?'eşikte':cls==='y'?'değer var, olasılık düşük':'değer yok';
+      return `<div class="opt"><div class="nm">${esc(b.m)} → <b>${esc(b.s)}</b><i>iddaa ${f2(b.o)} · en az ${f2(b.adil)} · %${b.p}</i></div><div class="ev ${cls}">${b.ev.toFixed(2)}<small>${lab}</small></div></div>`}).join(''):'<div class="opt"><div class="nm"><i>pazarlar okunamadı veya maç bitmek üzere</i></div></div>';
+    return `<div class="mt"><div class="t">${esc(m.mac)}</div><div class="l">${esc(m.lig||'')}</div><div class="sc"><b>${esc(m.sk)}</b><span class="l">${esc(m.dk)}</span></div>${m.L!=null?`<div class="l">Alt/Üst ${m.L}: Üst %${m.pU} ${m.us?'('+f2(m.us)+')':''} · Alt ${m.al?f2(m.al):'—'}</div>`:''}${opts}</div>`
+  }).join('');
+}
+
+function resHTML(a){
+  if(a.sonuc==='tuttu')return '<span class="res tuttu">tuttu</span>';
+  if(a.sonuc==='tutmadi')return '<span class="res tutmadi">tutmadı</span>';
+  if(a.durum==='bitti')return '<span class="res bil">bilinmiyor</span>';
+  return '<span class="res devam">sürüyor</span>';
+}
+function durHTML(a){
+  const m={taze:'taze',eski:'eski',skor:'skor değişti',bitti:'maç bitti'}[a.durum]||a.durum;
+  return `<span class="badge ${a.durum==='taze'?'taze':a.durum==='skor'?'skor':a.durum==='eski'?'eski':''}">${m}</span>`;
+}
+function renderGec(){
+  if(!D)return;
+  const fl=[['hepsi','Tümü'],['oran','Oranlı'],['kb','Korner ve bilgi']];
+  $('#filters').innerHTML=fl.map(f=>`<button data-f="${f[0]}" class="${FILT===f[0]?'on':''}">${f[1]}</button>`).join('');
+  document.querySelectorAll('#filters button').forEach(b=>b.onclick=()=>{FILT=b.dataset.f;renderGec()});
+  let G=(D.gecmis||[]).concat(D.izle||[]).filter(a=>FILT==='hepsi'?1:FILT==='oran'?a.oran!=null:(a.tur==='KORNER'||a.tur==='BİLGİ'));
+  G.sort((x,y)=>(y.d+y.at)<(x.d+x.at)?-1:1);
+  $('#gec').innerHTML=G.length?G.map(a=>`<tr><td class="n" data-l="Saat">${esc(a.at)}<br><span class="l" style="color:var(--dim);font-size:12px">${esc(a.dk)} · ${esc(a.sk)}</span></td><td class="mc"><b>${esc(a.mac)}</b><br><span style="color:var(--acc)">${esc(a.oyna)}</span>${a.simdi?`<br><span style="color:var(--dim);font-size:12px">şimdi ${esc(a.simdi)}</span>`:''}</td><td class="n" data-l="Oran / en az">${a.oran!=null?f2(a.oran):'—'} / ${f2(a.adil)}</td><td class="n" data-l="Olasılık">%${a.p}</td><td data-l="Durum">${durHTML(a)}</td><td data-l="Sonuç">${resHTML(a)}</td></tr>`).join(''):'<tr><td colspan="6" style="color:var(--muted)">Kayıt yok.</td></tr>'
+}
+
+function renderKarne(){
+  if(!D)return;const k=D.karne.hafta;
+  const sonuc=k.tuttu+k.tutmadi;
+  $('#karneT').innerHTML=[
+    ['Uyarı',k.n,'son 7 gün'],['Tuttu',k.tuttu,''],['Tutmadı',k.tutmadi,''],['Sürüyor',k.suruyor,''],['Bilinmiyor',k.bilinmiyor,'sonuç okunamadı'],['Birim',(k.birim>0?'+':'')+k.birim,k.oynanan+' oranlı']
+  ].map(t=>`<div class="tile"><div class="k">${t[0]}</div><div class="v">${t[1]}</div><div class="s">${t[2]}</div></div>`).join('');
+  $('#tip').innerHTML=Object.entries(k.tip).map(([n,q])=>{const s=q.tuttu+q.tutmadi,r=s?Math.round(q.tuttu/s*100):null;
+    return `<tr><td><b>${esc(n)}</b></td><td class="n">${q.n}</td><td class="n">${q.tuttu}</td><td class="n">${q.tutmadi}</td><td><div class="hit"><span class="n">${r==null?'—':'%'+r}</span><div class="bar"><i style="width:${r||0}%"></i></div></div></td><td class="n">${(q.birim>0?'+':'')+q.birim}</td></tr>`}).join('');
+  $('#karneN').textContent=sonuc<30?`Sonuçlanan uyarı sayısı ${sonuc}. Bu kadar azla isabet oranı yorumlanamaz, 2–3 hafta veri gerekir.`:'';
+}
+
+function renderVeri(){
+  if(!D)return;const v=D.veri||{},g=v.genel||{};
+  $('#veri').innerHTML=[`Kayıt ${v.kayit}`,`Kullanılan ${v.kullanilan}`,`Biten maç ${v.biten}`,`Gerçek gol oranı %${g.golOran}`,`Model gol oranı %${g.modelGol}`,`Düzeltme katsayısı ${g.k}`,`Kalibrasyon ${v.aktif?'açık':'kapalı (veri az)'}`].map(t=>`<span class="chip">${t}</span>`).join('');
+  const b=D.bil||[];$('#nB').textContent=b.length;$('#bil').innerHTML=b.map(t=>`<span class="chip">${esc(t)}</span>`).join('')||'<span class="chip">yok</span>';
+}
+function renderIzList(){
+  if(!IZ)return;$('#izT').textContent=IZ.guncel||'';
+  $('#izlist').innerHTML=(IZ.izle||[]).map(r=>`<div class="izr"><div class="t">${esc(r.mac)} <span class="chip">${esc(r.t)}</span></div><div class="chips">${(r.sc||[]).map(s=>`<span class="chip">${esc(s[0])}: %${s[1]} · en az ${f2(s[2])}</span>`).join('')}</div></div>`).join('')||'<p>Liste boş.</p>'
+}
+
+function renderGidis(){
+  if(!D)return;const S=D.seri||[];$('#serN').textContent=S.length+' oranlı sonuç';
+  if(S.length<2){$('#seri').innerHTML='<p class="note">Eğri için en az 2 sonuçlanmış oranlı uyarı gerekir.</p>'}
+  else{const W=300,H=96,P=6,v=S.map(x=>x[1]),mn=Math.min(0,...v),mx=Math.max(0,...v),r=(mx-mn)||1;
+    const X=i=>P+i*(W-2*P)/(S.length-1),Y=y=>H-P-(y-mn)/r*(H-2*P);
+    const pts=S.map((x,i)=>X(i).toFixed(1)+','+Y(x[1]).toFixed(1)).join(' ');const last=v[v.length-1];
+    $('#seri').innerHTML=`<svg class="spark" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none"><line x1="0" x2="${W}" y1="${Y(0)}" y2="${Y(0)}" stroke="var(--line2)" stroke-dasharray="3 3"/><polyline fill="none" stroke="${last>=0?'var(--ok)':'var(--bad)'}" stroke-width="2.2" stroke-linejoin="round" points="${pts}"/></svg><div class="note">Her uyarıya 1 birim oynansaydı toplam: <b style="color:var(--ink)">${last>0?'+':''}${last}</b>. Az veride bu eğri anlam taşımaz.</div>`}
+  const K=D.kal||[];
+  $('#kal').innerHTML=K.length?'<div class="tablew" style="border:0"><table style="min-width:0"><thead><tr><th>Model dedi</th><th>Uyarı</th><th>Gerçek</th></tr></thead><tbody>'+K.map(k=>`<tr><td class="n">%${k.b}</td><td class="n">${k.n}</td><td><div class="hit"><span class="n">%${k.hit}</span><div class="bar"><i style="width:${k.hit}%"></i></div></div></td></tr>`).join('')+'</tbody></table></div><div class="note">Model %60 diyorsa uzun vadede yaklaşık %60 tutmalı. Her satırda en az 20–30 sonuç olmadan fark anlamsızdır.</div>':'<p class="note">Sonuçlanan uyarı yok.</p>';
+  const y=D.yk;if(!y)return;const q=y.yakin,u=y.uyari;
+  const fm=(r,l)=>`<div class="tile"><div class="k">${l}</div><div class="v">${r.n}</div><div class="s">${r.tuttu} tuttu · ${r.tutmadi} tutmadı · ${(r.birim>0?'+':'')+r.birim} birim</div></div>`;
+  $('#yakin').innerHTML=`<div class="note">Eşiğin hemen altında kalan (EV 1.00–1.08) ya da düşük güvenli lig nedeniyle elenen seçenekleri de kaydediyoruz. Bunlar daha iyi sonuç verirse eşiği gevşetmek gerekir, kötüyse sıkı eşik doğrudur.</div><div class="tiles">${fm(u,'Verdiğimiz uyarılar')}${fm(q,'Eşiğin altında kalanlar')}</div>`+((y.son||[]).length?'<div class="yak">'+y.son.map(a=>`<div class="yk"><div class="a"><b>${esc(a.mac)}</b> · ${esc(a.dk)} · ${esc(a.sk)}<i>${esc(a.oyna)} · ${a.oran!=null?'iddaa '+f2(a.oran)+' · ':''}%${a.p} · ${esc(a.why||'')}</i></div><div class="b">${a.sonuc==='tuttu'?'tuttu':a.sonuc==='tutmadi'?'tutmadı':'sürüyor'}</div></div>`).join('')+'</div>':'');
+  const h=D.saglik;if(h){const bad=!h.canliOk||h.eslOran<40;$('#yakin').innerHTML+=`<div class="hc ${bad?'bad':''}"><i></i>Veri kontrolü: ${h.canliOk?'liste okundu':'liste okunamadı'} · eşleşme %${h.eslOran} · ${h.drop} mantıksız uyarı elendi</div>`+((h.not||[]).length?`<div class="note">${h.not.map(esc).join('<br>')}</div>`:'')}
+}
+function all(){renderMe();renderHead();renderFirsat();renderIzle();renderMaclar();renderGec();renderKarne();renderGidis();renderVeri();renderIzList()}
+async function load(){try{const r=await fetch('data.json?t='+Date.now(),{cache:'no-store'});if(r.ok){D=await r.json();all()}}catch(e){renderHead()}}
+async function loadIz(){try{const r=await fetch('izle.json?t='+Date.now(),{cache:'no-store'});if(r.ok){IZ=await r.json();renderIzList()}}catch(e){}}
+renderMe();initFb();load();loadIz();setInterval(load,30000);setInterval(loadIz,120000);
+setInterval(()=>{if(D){renderHead();renderFirsat()}},5000);
+</script>
+</body>
+</html>
